@@ -2,9 +2,20 @@
 A Library of PowerShell Scripts to interact with AGM
 
 
+## Guided Wizards
 
+The following functions have guided wizards to help you create commands.   Simply run these commands with the -g option to start the wizard:
 
-## SQL Test and Dev Image usage
+```
+New-AGMLibMSSQLMount -g
+New-AGMLibVM -g
+New-AGMLibVMExisting -g
+```
+
+## User Stories
+Here are some user stories.
+
+### SQL Test and Dev Image usage
 
 In this 'story' a user wants to mount the latest snapshot of a SQL DB to a host
 
@@ -121,7 +132,7 @@ The user deletes the child app:
 PS /Users/anthony> Remove-AGMApplication 52410625
 ```
 
-## SQL Test and Dev Image usage with point in time recovery
+### SQL Test and Dev Image usage with point in time recovery
 
 In this 'story' a user wants to mount a specific snapshot of a SQL DB to a host rolled to a specific point in time.   We start with an appname:
 
