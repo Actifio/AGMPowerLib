@@ -30,49 +30,39 @@ Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostn
 
 
     # if the user gave us nothing to start work, then ask for a VMware VM name
-    if ($guided)
+    if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
     {
-        if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
+        $guided = $true
+        Clear-Host
+        Write-host "VM source selection menu"
+        Write-host ""
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
+        $i = 1
+        foreach ($vm in $vmgrab)
+        { 
+            $vmname = $vm.appname
+            $appliance = $vm.cluster.name 
+            Write-Host -Object "$i`: $vmname ($appliance)"
+            $i++
+        }
+        While ($true) 
         {
-            $appname = read-host "Which VM do you want to work with (if you don't know, hit enter for a list of protected VMs"
-            if ($appname -eq "")
+            Write-host ""
+            $listmax = $vmgrab.appname.count
+            [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
+            if ($vmselection -lt 1 -or $vmselection -gt $listmax)
             {
-                Clear-Host
-                $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
-                $i = 1
-                foreach ($vm in $vmgrab)
-                { 
-                    $vmname = $vm.appname
-                    $appliance = $vm.cluster.name 
-                    Write-Host -Object "$i`: $vmname ($appliance)"
-                    $i++
-                }
-                While ($true) 
-                {
-                    Write-host ""
-                    $listmax = $vmgrab.appname.count
-                    [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
-                    if ($vmselection -lt 1 -or $vmselection -gt $listmax)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                    } 
-                    else
-                    {
-                        break
-                    }
-                }
-                $appname =  $vmgrab.appname[($vmselection - 1)]
-                $appid = $vmgrab.id[($vmselection - 1)]
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+            } 
+            else
+            {
+                break
             }
         }
+        $appname =  $vmgrab.appname[($vmselection - 1)]
+        $appid = $vmgrab.id[($vmselection - 1)]
     }
-    else 
-    {
-        if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
-        {
-            $appname = read-host "Which VM do you want to work with"
-        }
-    }
+
 
     # if we got a VMware appname lets check it right now
     if ( ($appname) -and (!($appid)) )
@@ -124,7 +114,7 @@ Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostn
     if ($targethostid)
     {
         $hostgrab = Get-AGMHost -filtervalue id=$targethostid
-        if (!($hostgrab))
+        if ($hostgrab.id.count -eq -0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to resolve $targethostid to a single host ID.  Use Get-AGMLibHostID and try again specifying -targethostid"
             return
@@ -147,7 +137,7 @@ Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostn
     if ($imagename)
     {
         $imagegrab = Get-AGMImage -filtervalue backupname=$imagename
-        if (!($imagegrab))
+        if ($imagegrab.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
             return

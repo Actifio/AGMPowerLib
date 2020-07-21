@@ -34,69 +34,68 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
 
     #>
 
+    # its pointless procededing without a connection.
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
     {
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
 
-    # if the user gave us nothing to start work, then ask for a VMware VM name
-    if ($guided)
+    # if the user gave us nothing to start work, then enter guided mode
+    if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
-        if ( (!($appname)) -and (!($imagename)) -and (!($appid)) )
-        {
-            $appname = read-host "AppName of the source DB (if you don't know, hit enter for a guided menu)"
-            if ($appname -eq "")
+        $guided = $true
+        Clear-Host
+        Write-Host "What App Type do you want to work with:"
+        Write-Host "1`: SQL Server (default)"
+        Write-Host "2`: Sql Instance"
+        Write-Host "3`: SQL Server Availability Group"
+        Write-Host "4`: Consistency Group"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list"
+        if ($userselection -eq "") { $userselection = 1 }
+        if ($userselection -eq 1) {  $apptype = "SqlServerWriter"  }
+        if ($userselection -eq 2) {  $apptype = "SqlInstance"  }
+        if ($userselection -eq 3) {  $apptype = "SQLServerAvailabilityGroup"  }
+        if ($userselection -eq 3) {  $apptype = "ConsistGrp"  }
+        Clear-Host
+        $applist = Get-AGMApplication -filtervalue "apptype=$apptype&managed=True" | sort-object appname
+        $i = 1
+        foreach ($app in $applist)
+        { 
+            $applistname = $app.appname
+            $appliance = $app.cluster.name 
+            if ($userselection -eq 1)
             {
-                Clear-Host
-                Write-Host "App Type"
-                Write-Host "1`: SqlServerWriter (default)"
-                Write-Host "2`: SqlInstance"
-                Write-Host "3`: ConsistGrp"
-                Write-Host ""
-                [int]$userselection = Read-Host "Please select from this list:"
-                if ($userselection -eq "") { $userselection = 1 }
-                if ($userselection -eq 1) {  $apptype = "SqlServerWriter"  }
-                if ($userselection -eq 2) {  $apptype = "SqlInstance"  }
-                if ($userselection -eq 3) {  $apptype = "ConsistGrp"  }
-        
-                Clear-Host
-                $applist = Get-AGMApplication -filtervalue "apptype=$apptype&managed=True" | sort-object appname
-                $i = 1
-                foreach ($app in $applist)
-                { 
-                    $applistname = $app.appname
-                    $appliance = $app.cluster.name 
-                    Write-Host -Object "$i`: $applistname ($appliance)"
-                    $i++
-                }
-                While ($true) 
-                {
-                    Write-host ""
-                    $listmax = $applist.appname.count
-                    [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
-                    if ($appselection -lt 1 -or $appselection -gt $listmax)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                    } 
-                    else
-                    {
-                        break
-                    }
-                }
-                $appname =  $applist.appname[($appselection - 1)]
-                $appid = $applist.id[($appselection - 1)]
-                $sourcehostid = $applist.host.id[($appselection - 1)]
+                $pathname = $app.pathname
+                Write-Host -Object "$i`: $pathname`\$applistname ($appliance)"
+            }
+            else {
+                Write-Host -Object "$i`: $applistname ($appliance)"
+            }
+            
+            $i++
+        }
+        While ($true) 
+        {
+            Write-host ""
+            $listmax = $applist.appname.count
+            [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
+            if ($appselection -lt 1 -or $appselection -gt $listmax)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+            } 
+            else
+            {
+                break
             }
         }
+        $appname =  $applist.appname[($appselection - 1)]
+        $appid = $applist.id[($appselection - 1)]
+        $sourcehostid = $applist.host.id[($appselection - 1)]
+
     }
-    else 
-    {
-        if ( (!($appname)) -and (!($imagename)) -and (!($appid)) )
-        {
-            $appname = read-host "AppName of the source App"
-        }
-    }
+
 
     if (($appname) -and (!($appid)) )
     {
@@ -119,6 +118,7 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
         if(!($appgrab))
         {
             Get-AGMErrorMessage -messagetoprint "Cannot find appid $appid"
+            return
         }
         else 
         {
@@ -130,18 +130,36 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
 
     if ( (!($targethostname)) -and (!($targethostid)))
     {
-        [string]$targethostname = Read-Host "Target HostName (press enter to mount to source host)"
-        if ($targethostname -eq "")
+        $hostgrab1 = Get-AGMApplication -filtervalue apptype=SqlInstance
+        $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name | sort-object name 
+        if ($hostgrab -eq "" )
         {
-            if ($sourcehostid)
+            Get-AGMErrorMessage -messagetoprint "Cannot find any hosts with SQLInstances"
+            return
+        }
+        Clear-Host
+        Write-Host "Target host selection menu"
+        $i = 1
+        foreach ($name in $hostgrab.name)
+        { 
+            Write-Host -Object "$i`: $name"
+            $i++
+        }
+        While ($true) 
+        {
+            $listmax = $hostgrab.name.count
+            [int]$hostselection = Read-Host "Please select a host (1-$listmax)"
+            if ($hostselection -lt 1 -or $hostselection -gt $listmax)
             {
-                $targethostid = $sourcehostid
-            }
-            else 
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+            } 
+            else
             {
-                $targethostid = (Get-AGMApplication -filtervalue id=$appid).host.id
+                break
             }
         }
+        $targethostname =  $hostgrab.name[($hostselection - 1)]
+        $targethostid = $hostgrab.id[($hostselection - 1)]
     }
 
 
@@ -241,7 +259,7 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
                 $imagecheck = Get-AGMLibLatestImage $appid
                 if (!($imagecheck.backupname))
                 {
-                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLatestImage $appid"
+                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
                     return
                 }   
                 else {
@@ -258,13 +276,14 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
             }
             else
             {
-                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot"  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
-                if (!($imagelist))
+                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot"  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
+                if ($imagelist1.count -eq 0)
                 {
                     Get-AGMErrorMessage -messagetoprint "Failed to fetch any snapshot Images for appid $appid"
                     return
                 }
-                elseif ($imagelist.Length -eq 1)
+                $imagelist = $imagelist1  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
+                if ($imagelist1.count -eq 1)
                 {
                     $imagegrab = Get-AGMImage -id $($imagelist).id
                     $imagename = $imagegrab.backupname                
@@ -731,10 +750,10 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
     # learn about the image
     if (!($imagename)) 
     {
-        $imagegrab = Get-AGMLatestImage $appid
+        $imagegrab = Get-AGMLibLatestImage $appid
         if (!($imagegrab.backupname))
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLatestImage $appid"
+            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
             return
         }   
         else {

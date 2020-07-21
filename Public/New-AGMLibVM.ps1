@@ -28,41 +28,37 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
 
 
     # if the user gave us nothing to start work, then ask for a VMware VM name
-    if ($guided)
+    if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
     {
-        if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
+        $guided = $true
+        Clear-Host
+        write-host "VM Selection menu"
+        Write-host ""
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
+        $i = 1
+        foreach ($vm in $vmgrab)
+        { 
+            $vmlistname = $vm.appname
+            $appliance = $vm.cluster.name 
+            Write-Host -Object "$i`: $vmlistname ($appliance)"
+            $i++
+        }
+        While ($true) 
         {
-            $appname = read-host "AppName of the source VM (if you don't know, hit enter for a list of protected VMs"
-            if ($appname -eq "")
+            Write-host ""
+            $listmax = $vmgrab.appname.count
+            [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
+            if ($vmselection -lt 1 -or $vmselection -gt $listmax)
             {
-                Clear-Host
-                $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
-                $i = 1
-                foreach ($vm in $vmgrab)
-                { 
-                    $vmlistname = $vm.appname
-                    $appliance = $vm.cluster.name 
-                    Write-Host -Object "$i`: $vmlistname ($appliance)"
-                    $i++
-                }
-                While ($true) 
-                {
-                    Write-host ""
-                    $listmax = $vmgrab.appname.count
-                    [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
-                    if ($vmselection -lt 1 -or $vmselection -gt $listmax)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                    } 
-                    else
-                    {
-                        break
-                    }
-                }
-                $appname =  $vmgrab.appname[($vmselection - 1)]
-                $appid = $vmgrab.id[($vmselection - 1)]
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+            } 
+            else
+            {
+                break
             }
         }
+        $appname =  $vmgrab.appname[($vmselection - 1)]
+        $appid = $vmgrab.id[($vmselection - 1)]
     }
     else 
     {
@@ -96,7 +92,7 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
     if ($imagename)
     {
         $imagegrab = Get-AGMImage -filtervalue backupname=$imagename
-        if (!($imagegrab))
+        if ($imagegrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
             return
@@ -106,25 +102,85 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
             $imageid = $imagegrab.id
         }
     }
-    if ($appid)
-    {
-        $imagegrab = Get-AGMLibLatestImage $appid
-        if (!($imagegrab.backupname))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLatestImage $appid"
-            return
-        }   
-        else {
-            $imagename = $imagegrab.backupname
-            $imageid = $imagegrab.id
-        }
-    }
-
+    
 
 
     # this if for guided menu
     if ($guided)
     {
+        if (!($imagename))
+        {
+            Clear-Host
+            Write-Host "Image selection"
+            Write-Host "1`: Use the latest snapshot(default)"
+            Write-Host "2`: Select an image"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if (($userselection -eq "") -or ($userselection -eq 1))
+            {
+                $imagecheck = Get-AGMLibLatestImage $appid
+                if (!($imagecheck.backupname))
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
+                    return
+                }   
+                else {
+                    $imagegrab = Get-AGMImage -id $imagecheck.id
+                    $imagename = $imagegrab.backupname                
+                    $imageid = $imagegrab.id
+                    $consistencydate = $imagegrab.consistencydate
+                    $restorableobjects = $imagegrab.restorableobjects
+                }
+            }
+            else
+            {
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot"  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
+                if ($imagelist.backupname.count -eq 0)
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any snapshot Images for appid $appid"
+                    return
+                }
+                if ($imagelist.backupname.count -eq 1)
+                {
+                    $imagegrab = Get-AGMImage -id ($imagelist).id
+                    $imagename = $imagegrab.backupname                
+                    $consistencydate = $imagegrab.consistencydate
+                    $restorableobjects = $imagegrab.restorableobjects
+                } 
+                else
+                {
+                    Clear-Host
+                    Write-Host "Snapshot list.  Choose the best consistency date."
+                    $i = 1
+                    foreach
+                    ($image in $imagelist.consistencydate)
+                        { Write-Host -Object "$i`:  $image"
+                        $i++
+                    }
+                    While ($true) 
+                    {
+                        Write-host ""
+                        $listmax = $imagelist.Length
+                        [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                        if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                        {
+                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                    $imageid =  $imagelist[($imageselection - 1)].id
+                    $imagegrab = Get-AGMImage -id $imageid
+                    $imagename = $imagegrab.backupname                
+                    $consistencydate = $imagegrab.consistencydate 
+                    $restorableobjects = $imagegrab.restorableobjects
+                }
+            }
+        }
+
+
         Clear-Host
         if (!($label))
         {
@@ -142,12 +198,12 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
         # we now learn what vcenters are on that appliance and build a list, if there is more than 1
         $vclist = Get-AGMHost -filtervalue "clusterid=$clusterid&isvcenterhost=true&hosttype=vcenter" | select-object -Property name, srcid, id | Sort-Object name
 
-        if (!($vclist))
+        if ($vclist.name.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any vCenters"
             return
         }
-        elseif ($vclist.Length -eq 1) 
+        elseif ($vclist.name.count -eq 1) 
         {
             $vcenterid = ($vclist).id
             $srcid =  ($vclist).srcid
@@ -181,12 +237,12 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
         }
         # we now learn what ESX hosts are known to the selected vCenter
         $esxlist = Get-AGMHost -filtervalue "vcenterhostid=$srcid&isesxhost=true&originalhostid=0"  | select-object -Property id, name | Sort-Object name
-        if (!($esxlist))
+        if ($esxlist.name.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any ESX Servers"
             return
         }
-        elseif ($esxlist.Length -eq 1)
+        elseif ($esxlist.name.count -eq 1)
         {
             $esxhostid =  ($esxlist).id
         } 
@@ -220,12 +276,12 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
         # we now learn what datastores are known to the selected ESX host
         $dslist = (Get-AGMHost -id $esxhostid).sources.datastorelist | select-object name,freespace | sort-object name | Get-Unique -asstring
 
-        if (!($dslist))
+        if ($dslist.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any DataStores"
             return
         }
-        elseif ($dslist.Length -eq 1) 
+        elseif ($dslist.count -eq 1) 
         {
             $datastore =  ($dslist).name
         }
@@ -295,20 +351,17 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
 
         #now the volumes 
         Clear-Host
-        $vollist1 = Get-AGMimage -id $imageid | select-object restorableobjects
-        $vollist = $vollist1.restorableobjects | select-object name | sort-object name | Get-Unique -asstring
- 
-        if (!($vollist))
+        if ($restorableobjects.name.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any volumes"
             return
         }
-        if ($vollist.Length -eq 1) 
+        if ($restorableobjects.name.count -eq 1) 
         {
             $selectedobjects = @(
-                    [pscustomobject]@{restorableobject=$vollist.name}
+                    [pscustomobject]@{restorableobject=$restorableobjects.name}
             )
-            $uservolumelistfinal = $vollist.name
+            $uservolumelistfinal = $restorableobjects.name
         }
         else
         {
@@ -318,21 +371,20 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
             Write-Host "0`: All volumes (default)"
             $i = 1
             foreach
-            ($volume in $vollist.name)
+            ($volume in $restorableobjects.name)
                 { Write-Host -Object "$i`: $volume"
                 $i++
             }
-            $listmax = $vollist.Length
             [string]$userselection = Read-Host "Please select from this list (0 or comma separated list)"
             if (($userselection -eq "0") -or ($userselection -eq ""))
             {
                 $selectedobjects = @(
-                    foreach ($volume in $vollist.name)
+                    foreach ($volume in $restorableobjects.name)
                     {
                         [pscustomobject]@{restorableobject=$volume}
                     }   
                 )
-                foreach ($volume in $vollist.name)
+                foreach ($volume in $restorableobjects.name)
                 {
                     $uservolumelist = $uservolumelist + "," + $volume
                 }
@@ -343,12 +395,12 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
                 $selectedobjects = @(
                     foreach ($volume in $userselection.Split(","))
                     {
-                        [pscustomobject]@{restorableobject=$vollist[($volume - 1)].name}
+                        [pscustomobject]@{restorableobject=$restorableobjects[($volume - 1)].name}
                     }   
                 )
                 foreach ($volume in $userselection.Split(","))
                 {
-                    $uservolumelist = $uservolumelist + "," + $vollist[($volume - 1)].name 
+                    $uservolumelist = $uservolumelist + "," + $restorableobjects[($volume - 1)].name 
                 }
                 $uservolumelistfinal = $uservolumelist.substring(1)
             }
