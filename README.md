@@ -4,12 +4,13 @@ A Library of PowerShell Scripts to interact with AGM
 
 ## Guided Wizards
 
-The following functions have guided wizards to help you create commands.   Simply run these commands with the -g option to start the wizard:
+The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard:
 
 ```
-New-AGMLibMSSQLMount -g
-New-AGMLibVM -g
-New-AGMLibVMExisting -g
+New-AGMLibContainer
+New-AGMLibMSSQLMount
+New-AGMLibVM 
+New-AGMLibVMExisting 
 ```
 
 ## User Stories
