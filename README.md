@@ -1,6 +1,57 @@
 # AGMPowerLib
 A Library of PowerShell Scripts to interact with AGM
 
+### Install or Upgrade AGMPowerLib
+
+Install from PowerShell Gallery:
+
+```
+Install-Module -Name AGMPowerLib
+```
+
+If the install worked, you can now move on.
+
+#### Upgrades using PowerShell Gallery
+
+Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
+```
+Update-Module -name AGMPowerLib
+```
+It will install the latest version and leave the older version in place.  To see the version in use versus all versions downloaded use these two commands:
+```
+Get-InstalledModule AGMPowerLib
+Get-InstalledModule AGMPowerLib -AllVersions
+```
+To uninstall all older versions run this command:
+```
+$Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllVersions | ? {$_.Version -ne $Latest.Version} | Uninstall-Module
+```
+
+#### Manual install
+
+Serious corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we have the following process:
+
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file
+1.  Copy the Zip file to the server where you want to install it
+1.  For Windows, Right select on the zip file, choose  Properties and then use the Unblock button next to the message:  "This file came from another computer and might be blocked to help protect  your computer."
+1.  For Windows, now right select and use Extract All to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder.
+1.  Now start PWSH and change directory to the  AGMPowerLib-main directory that should contain our module files.   
+1.  There is an installer, Install-AGMPowerLib.ps1 so run that with ./Install-AGMPowerLib.ps1
+If you find multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
+
+
+If the install fails with:
+```
+PS C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main> .\Install-AGMPowerLib.ps1
+.\Install-AGMPowerLib.ps1: File C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 cannot be loaded. 
+The file C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 is not digitally signed. 
+You cannot run this script on the current system. For more information about running scripts and setting execution policy, see about_Execution_Policies at https://go.microsoft.com/fwlink/?LinkID=135170.
+```
+Then  run this command:
+```
+Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
+```
+Then re-run the installer.  The installer will unblock all the files.
 
 ## Guided Wizards
 
