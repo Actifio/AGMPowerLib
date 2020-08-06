@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.2'
+ModuleVersion = '0.0.0.3'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -121,6 +121,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.3] 2020-08-06
+        Change NewVM to not require volumes.
+
         ## [0.0.0.2] 2020-07-21
         Added Container scripts, improved error handling, made guided mounts the default if user runs command without parms
                 
