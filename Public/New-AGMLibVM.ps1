@@ -494,31 +494,53 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
 
     if (!($selectedobjects))
     {
-        $selectedobjects = ""
+        $body = [ordered]@{
+            "@type" = "mountRest";
+            label = $label
+            restoreoptions = @(
+                @{
+                    name = 'mapdiskstoallesxhosts'
+                    value = "$mapdiskstoallesxhosts"
+                }
+            )
+            datastore = $datastore;
+            hypervisor = @{id=$esxhostid}
+            mgmtserver = @{id=$vcenterid}
+            vmname = $vmname;
+            hostname = $vmname;
+            poweronvm = "$poweronvm";
+            physicalrdm = $physicalrdm;
+            rdmmode = $rdmmode;
+            migratevm = "false";
+        }
+    }
+    else 
+    {
+        $body = [ordered]@{
+            "@type" = "mountRest";
+            label = $label
+            restoreoptions = @(
+                @{
+                    name = 'mapdiskstoallesxhosts'
+                    value = "$mapdiskstoallesxhosts"
+                }
+            )
+            datastore = $datastore;
+            hypervisor = @{id=$esxhostid}
+            mgmtserver = @{id=$vcenterid}
+            vmname = $vmname;
+            hostname = $vmname;
+            poweronvm = "$poweronvm";
+            physicalrdm = $physicalrdm;
+            rdmmode = $rdmmode
+            selectedobjects = @(
+                $selectedobjects
+            )
+            migratevm = "false";
+        }
     }
 
-    $body = [ordered]@{
-        "@type" = "mountRest";
-        label = $label
-        restoreoptions = @(
-            @{
-                name = 'mapdiskstoallesxhosts'
-                value = "$mapdiskstoallesxhosts"
-            }
-        )
-        datastore = $datastore;
-        hypervisor = @{id=$esxhostid}
-        mgmtserver = @{id=$vcenterid}
-        vmname = $vmname;
-        hostname = $vmname;
-        poweronvm = "$poweronvm";
-        physicalrdm = $physicalrdm;
-        rdmmode = $rdmmode
-        selectedobjects = @(
-            $selectedobjects
-        )
-        migratevm = "false";
-    }
+
 
 
     $json = $body | ConvertTo-Json
