@@ -15,7 +15,7 @@ function GetPSModulePath
     }
     else 
     {
-        return $env:PSModulePath.Split(';')
+        return $env:PSModulePath.Split(';') -notmatch "WindowsPowerShell"
     }
 
 }
@@ -99,6 +99,12 @@ if ( $hostVersionInfo -lt "7" )
     Write-Host "You will need to install PowerShell Version 7 and try again"
     break
 }
+
+Import-LocalizedData -BaseDirectory .\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
+Write-host 'Detected PowerShell version:   ' $hostVersionInfo
+Write-host 'Downloaded ActPowerCLI version:' $ActModuleData.ModuleVersion
+Write-host ""
+
 
 [Array]$ActInstall = GetAGMPowerLibInstall
 if ($ActInstall.Length -gt 0)
