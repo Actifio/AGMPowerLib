@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.3'
+ModuleVersion = '0.0.0.4'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -74,6 +74,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibContainerYAML',
 'Get-AGMLibHostID',
 'Get-AGMLibImageDetails',
+'Get-AGMLibImageRange',
 'Get-AGMLibFollowJobStatus',
 'Get-AGMLibLastPostCommand',
 'Get-AGMLibLatestImage',
@@ -81,6 +82,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibImage',
 'New-AGMLibMSSQLMount',
 'New-AGMLibVM',
+'New-AGMLibMultiVM',
 'New-AGMLibVMExisting',
 'New-AGMLibContainerMount')
 
@@ -121,6 +123,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.4] 2020-08-09
+        Added Get-AGMLibImageRange, New-AGMLibMultiVM
+        Change Get-AGMLibActiveImage so that output is no longer a table
+
         ## [0.0.0.3] 2020-08-06
         Change NewVM to not require volumes.
 
