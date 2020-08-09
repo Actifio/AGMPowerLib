@@ -71,7 +71,7 @@ Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("u"
                 label = $id.label
             }
         }
-        $AGMArray | FT -AutoSize
+        $AGMArray 
     }
     else
     {
