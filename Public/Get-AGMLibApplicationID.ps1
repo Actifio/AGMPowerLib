@@ -50,7 +50,7 @@ Function Get-AGMLibApplicationID ([string]$appname)
                 managed = $id.managed
             }
         }
-        $AGMArray | FT -AutoSize | Sort-Object -Property hostname -Descending
+        $AGMArray | Sort-Object -Property hostname -Descending
     }
     else
     {

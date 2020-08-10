@@ -43,7 +43,7 @@ Function Get-AGMLibRunningJobs
                 duration = Convert-AGMDuration $id.duration
             }
         }
-        $AGMArray | FT -AutoSize
+        $AGMArray 
     }
     else
     {

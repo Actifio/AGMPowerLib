@@ -47,7 +47,7 @@ Function Get-AGMLibHostID ([string]$hostname)
                 appliancetype = $id.appliancetype
             }
         }
-        $AGMArray | FT -AutoSize | Sort-Object -Property hostname -Descending
+        $AGMArray | Sort-Object -Property hostname -Descending
     }
     else
     {

@@ -64,7 +64,7 @@ Function Get-AGMLibFollowJobStatus ([string]$jobname)
             {
                 $jobgrab.duration = Convert-AGMDuration $jobgrab.duration
             }
-            $jobgrab | select-object jobname, status, message, startdate, enddate, duration | Format-Table
+            $jobgrab | select-object jobname, status, message, startdate, enddate, duration 
             $done = 1    
         }
     } until ($done -eq 1)

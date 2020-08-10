@@ -1,15 +1,18 @@
-Function New-AGMLibMultiVM ([array]$imagelist,[array]$datastorelist,[string]$mountmode,[string]$poweronvm,[array]$esxhostlist,[int]$vcenterid,[string]$mapdiskstoallesxhosts) 
+Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$prefix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label) 
 {
     <#
     .SYNOPSIS
     Mounts a number of new VMs
 
     .EXAMPLE
-    New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist $datastorelist -poweronvm false
+    New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist $datastorelist -poweronvm false -prefix "recover-"
 
     This command will use the output of Get-AGMLibImageRange as $imagelist
     The ESXHostlist should be a list of ESX Host IDs
     The Datastorelist should be a list of datastores.
+    The prefix is optional but recommended
+    By default it will add the Image Name as a suffix since this gives a degree of uniqueness
+    By default it will use a label of "MultiVM Recovery" to make the VMs easier to find
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -97,6 +100,10 @@ Function New-AGMLibMultiVM ([array]$imagelist,[array]$datastorelist,[string]$mou
     foreach ($image in $imagelist)
     {
         $vmname = $image.appname + "_" + $image.backupname
+        if ($prefix)
+        {
+            $vmname = $prefix + $vmname
+        }
         $imageid = $image.id
         $esxhostid = $esxhostlist[$esxroundrobin]
         $datastore = $datastorelist[$dsroundrobin]
@@ -120,17 +127,24 @@ Function New-AGMLibMultiVM ([array]$imagelist,[array]$datastorelist,[string]$mou
             migratevm = "false";
         }
         $json = $body | ConvertTo-Json
-        Write-Host "Mounting AppName:" $image.appname "ImageName:" $image.backupname "ConsistencyDate:" $image.consistencydate
-        Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
-        $esxroundrobin += 1
-        $dsroundrobin += 1
-        if ($esxroundrobin -eq $esxhostcount )
+        if ($image.apptype -eq "VMBackup")
         {
-            $esxroundrobin = 0
+            Write-Host "Mounting AppName:" $image.appname "ImageName:" $image.backupname "ConsistencyDate:" $image.consistencydate "as:" $vmname
+            Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
+            $esxroundrobin += 1
+            $dsroundrobin += 1
+            if ($esxroundrobin -eq $esxhostcount )
+            {
+                $esxroundrobin = 0
+            }
+            if ($dsroundrobin -eq $datastorecount )
+            {
+                $dsroundrobin = 0
+            }
         }
-        if ($dsroundrobin -eq $datastorecount )
+        else 
         {
-            $dsroundrobin = 0
+            Write-Host "******* Not mounting AppName:" $image.appname "ImageName:" $image.backupname "because it has an apptype of" $image.apptype "*******"
         }
     }
 }
