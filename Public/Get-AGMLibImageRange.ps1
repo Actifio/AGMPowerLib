@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[int]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours) 
+Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[int]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -13,6 +13,11 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
     .EXAMPLE
     Get-AGMLibImageRange -appid 4771
     Get all snapshot created in the last day for appid 4771
+
+    .EXAMPLE
+    Get-AGMLibImageRange -appid 4771 -o
+    Get all snapshot and OnVault images created in the last day for appid 4771
+    Only unique OnVault images will be shown, meaning if a snapshot and an OnVault image have the same consistencydate only the snapashot will be shown
     
     .EXAMPLE
     Get-AGMLibImageRange -appname smalldb
@@ -43,8 +48,13 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
     Get all snapshots created in the last two days for any VMBackup
 
     .EXAMPLE
-    Get-AGMLibImageRange -appid 4771 -olderlimit -newerlimit 4 -consistencydate "2020-08-04 12:00"
+    Get-AGMLibImageRange -appid 4771 -olderlimit 4 -newerlimit 4 -consistencydate "2020-08-04 12:00"
     Get all snapshots created up to four days before or 4 days afer the date specified for the app specified
+
+    .EXAMPLE
+    Get-AGMLibImageRange -appid 4771 -olderlimit 4 -newerlimit 2 
+    Get all snapshots created between 4 days ago (from olderlimit) and 2 days ago (from newerlimit, being 2 days newer than olderlimit) for the app specified.  
+    Note that if you make newerlimit greater than older limit you  will be looking into the future, meaning you will get all images created from 4 days ago until now.
 
     .DESCRIPTION
     A function to find a range of images available for an application
@@ -95,6 +105,11 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
         $fv = $fv + "&jobclass=snapshot"
     }
 
+    if ($onvault)
+    {
+        $fv = $fv + "&jobclass=OnVault"
+    }
+
     if ($appliancename)
     { 
         $clusterid = (Get-AGMAppliance -filtervalue name=$appliancename).clusterid
@@ -118,15 +133,15 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
         $lowerlimit = -1
         if (!($consistencydate))
         {
-            $consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')
         }
         if ($hours)
         { 
-            $lowerrange = (Get-date).Addhours(-1).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$lowerrange = (Get-date).Addhours(-1).ToString('yyyy-MM-dd HH:mm:ss')
         }
         else 
         {
-            $lowerrange = (Get-date).adddays(-1).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$lowerrange = (Get-date).adddays(-1).ToString('yyyy-MM-dd HH:mm:ss')
         }
         $fv = $fv + "&consistencydate>$lowerrange"
     }
@@ -140,11 +155,11 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
         $lowerrange = $consistencydate.ToString('yyyy-MM-dd HH:mm:ss')
         if ($hours)
         { 
-            $upperrange = ($consistencydate).Addhours($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$upperrange = ($consistencydate).Addhours($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
         }
         else 
         {
-            $upperrange = ($consistencydate).adddays($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$upperrange = ($consistencydate).adddays($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
         }
         $fv = $fv + "&consistencydate>$lowerrange&consistencydate<$upperrange"
     }
@@ -152,40 +167,47 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
     {
         if (!($consistencydate))
         {
-            $consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')
         }
         $upperrange = $consistencydate.ToString('yyyy-MM-dd HH:mm:ss')
         if ($hours)
         { 
-            $lowerrange = ($consistencydate).Addhours(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$lowerrange = ($consistencydate).Addhours(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
         }
         else 
         {
-            $lowerrange = ($consistencydate).adddays(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            [datetime]$lowerrange = ($consistencydate).adddays(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
         }
         $fv = $fv + "&consistencydate>$lowerrange&consistencydate<$upperrange"
     }
     else 
     {
-        if (!($consistencydate))
+        if ($consistencydate)
         {
-            $consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')
-        }
-        if ($hours)
-        { 
-            $upperrange = ($consistencydate).Addhours($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            if ($hours)
+            { 
+                [datetime]$upperrange = ($consistencydate).Addhours($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+                [datetime]$lowerrange = ($consistencydate).Addhours(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            }
+            else 
+            {
+                [datetime]$upperrange = ($consistencydate).adddays($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+                [datetime]$lowerrange = ($consistencydate).adddays(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            }
         }
         else 
         {
-            $upperrange = ($consistencydate).adddays($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
-        }
-        if ($hours)
-        { 
-            $lowerrange = ($consistencydate).Addhours(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
-        }
-        else 
-        {
-            $lowerrange = ($consistencydate).adddays(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            if ($hours)
+            { 
+                [datetime]$lowerrange = (Get-date).Addhours(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+                [datetime]$upperrange = ($lowerrange ).Addhours($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+                
+            }
+            else 
+            {
+                [datetime]$lowerrange = (Get-date).adddays(-$olderlimit).ToString('yyyy-MM-dd HH:mm:ss')
+                [datetime]$upperrange = ($lowerrange).adddays($newerlimit).ToString('yyyy-MM-dd HH:mm:ss')
+            }
         }
         $fv = $fv + "&consistencydate>$lowerrange&consistencydate<$upperrange"
     }
@@ -208,6 +230,7 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
                 appid = $id.appid
                 appliancename = $id.appliancename
                 jobclass = $id.jobclass
+                jobclasscode = $id.jobclasscode
                 backupname = $id.backupname
                 id = $id.id
                 consistencydate = $id.consistencydate
@@ -215,7 +238,14 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
 
             }
         }
-        $AGMArray | select apptype, appliancename, hostname, appname, appid, jobclass, backupname, id, consistencydate, endpit | Sort-Object -Property appliancename,hostname
+        if ($onvault)
+        {
+            $AGMArray | Select-Object apptype, appliancename, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate,jobclasscode
+        }
+        else 
+        {
+            $AGMArray | Select-Object apptype, appliancename, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate
+        }
     }
     else
     {

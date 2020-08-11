@@ -1,4 +1,4 @@
-Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$prefix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label) 
+Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label) 
 {
     <#
     .SYNOPSIS
@@ -13,6 +13,13 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
     The prefix is optional but recommended
     By default it will add the Image Name as a suffix since this gives a degree of uniqueness
     By default it will use a label of "MultiVM Recovery" to make the VMs easier to find
+
+    .EXAMPLE
+    New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhosttid $esxhostid -datastore $datastore -poweronvm false -prefix "recover-"
+    
+    If you only have a single ESX host and Datastore you can specify them singly using -esxhostid and -datastore
+    Clearly all your mounts will go to a single ESX Host and datastore
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -21,6 +28,41 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
         return
     }
 
+    # handle vcenterid
+    if ($vcenterid.id)
+    {
+        if ($vcenterid.id.count -gt 1)
+        {
+            Get-AGMErrorMessage -messagetoprint "There is more than vCenterID specified.  This function can only use one vCenterID"
+            return
+        }
+        else 
+        {
+            $vcenterid = $vcenterid.id            
+        }
+     }
+
+    # handle esxlist
+    if ($esxhostlist.id)
+    {
+        $esxhostlist = ($esxhostlist).id 
+    }
+    if ( (!($esxhostlist)) -and ($esxhostid) )
+    {
+        $esxhostlist = $esxhostid
+    }
+
+    # handle datastorelist
+    if ($datastorelist.name)
+    {
+        $datastorelist = ($datastorelist).name | Get-Unique -asstring
+    }
+    if ( (!($datastorelist)) -and ($datastore) )
+    {
+        $datastorelist = $datastore
+    }
+
+
     if (!($imagelist))
     {
         Get-AGMErrorMessage -messagetoprint "Please supply an imagelist"
@@ -28,12 +70,12 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
     }
     if (!($datastorelist))
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply a datastorelist as a simple array"
+        Get-AGMErrorMessage -messagetoprint "Please supply an array of datastores using -datastorelist or a single datastore using -datastore"
         return
     }
     if (!($esxhostlist))
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply an esxhostlist as a simple array"
+        Get-AGMErrorMessage -messagetoprint "Please supply an array of ESXHost IDs using -esxhostlist or a single ESX Host ID using -esxhostid"
         return
     }
     if (!($vcenterid))
@@ -92,10 +134,15 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
         $label = "MultiVM Recovery"
     }
 
+
+
+
     $esxhostcount = $esxhostlist.count
     $datastorecount = $datastorelist.count
     $esxroundrobin = 0
     $dsroundrobin = 0
+    $lastappid = ""
+    $lastcondate = ""
 
     foreach ($image in $imagelist)
     {
@@ -127,9 +174,13 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
             migratevm = "false";
         }
         $json = $body | ConvertTo-Json
-        if ($image.apptype -eq "VMBackup")
+        if (($lastappid -eq $image.appid) -and ($lastcondate -eq $image.consistencydate))
         {
-            Write-Host "Mounting AppName:" $image.appname "ImageName:" $image.backupname "ConsistencyDate:" $image.consistencydate "as:" $vmname
+            Write-Host "Not mounting AppName:" $image.appname " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "because the previous mount had the same appid and consistency date" 
+        }
+        elseif ($image.apptype -eq "VMBackup")
+        {
+            Write-Host "    Mounting AppName:" $image.appname " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "as:" $vmname "to ESX Host ID" $esxhostid "using Datastore" $datastore
             Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
             $esxroundrobin += 1
             $dsroundrobin += 1
@@ -141,6 +192,8 @@ Function New-AGMLibMultiVM ([array]$imagelist,[int]$vcenterid,[array]$esxhostlis
             {
                 $dsroundrobin = 0
             }
+            $lastappid = $image.appid
+            $lastcondate = $image.consistencydate
         }
         else 
         {
