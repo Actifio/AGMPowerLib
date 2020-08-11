@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.5'
+ModuleVersion = '0.0.0.6'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -123,6 +123,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.5] 2020-08-11
+        Improved New-AGMLibMultiVM and Get-AGMLibImageRange
+
         ## [0.0.0.5] 2020-08-10
         Improved New-AGMLibMultiVM
         Stop using format table for any output. 
