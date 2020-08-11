@@ -123,7 +123,7 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.5] 2020-08-11
+        ## [0.0.0.6] 2020-08-11
         Improved New-AGMLibMultiVM and Get-AGMLibImageRange
 
         ## [0.0.0.5] 2020-08-10
