@@ -1,4 +1,4 @@
-Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label) 
+Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$suffix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS
@@ -8,11 +8,25 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
     New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist $datastorelist -poweronvm false -prefix "recover-"
 
     This command will use the output of Get-AGMLibImageRange as $imagelist
-    The ESXHostlist should be a list of ESX Host IDs
-    The Datastorelist should be a list of datastores.
+    So we could create a list like this:
+    $imagelist = Get-AGMLibImageRange -fuzzyappname demo-sql -olderlimit 3
+
+    We could get a list of vCenters with a command like this:
+    Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
+    Then set it:
+    $vcenterid = 5552150
+
+    The ESXHostlist should be a list of ESX Host IDs.  For instance we could use this:
+    $esxhostlist = Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
+
+    The Datastorelist should be a list of datastores.  Here is an example command:
+    $datastorelist = ((Get-AGMHost -id 5552166).sources.datastorelist | select-object name| sort-object name | Get-Unique -asstring).name
+
     The prefix is optional but recommended
-    By default it will add the Image Name as a suffix since this gives a degree of uniqueness
-    By default it will use a label of "MultiVM Recovery" to make the VMs easier to find
+    The suffix is optional but recommended
+    If more than one image from a single application is in the image list, then an incremental numerical suffix will be applied.
+    If you want to control the starting number of that index use -startindex
+    By default it will use a label of "MultiVM Recovery" to make the VMs easier to find 
 
     .EXAMPLE
     New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhosttid $esxhostid -datastore $datastore -poweronvm false -prefix "recover-"
@@ -134,52 +148,76 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
         $label = "MultiVM Recovery"
     }
 
-
-
-
     $esxhostcount = $esxhostlist.count
     $datastorecount = $datastorelist.count
     $esxroundrobin = 0
     $dsroundrobin = 0
     $lastappid = ""
     $lastcondate = ""
+    # we use this hash to store the starting index for each appid.   The user can specify the starting number or we will start at 1
+    $appiditeration = @{}
+    if (!($startindex))
+    {
+        $startindex = 1
+    }
+    # count number of times each appid appears
+    $appidcount = $imagelist |  Group-Object -Property appid -NoElement
 
     foreach ($image in $imagelist)
     {
-        $vmname = $image.appname + "_" + $image.backupname
-        if ($prefix)
-        {
-            $vmname = $prefix + $vmname
-        }
-        $imageid = $image.id
-        $esxhostid = $esxhostlist[$esxroundrobin]
-        $datastore = $datastorelist[$dsroundrobin]
-        $body = [ordered]@{
-            "@type" = "mountRest";
-            label = "$label"
-            restoreoptions = @(
-                @{
-                    name = 'mapdiskstoallesxhosts'
-                    value = "$mapdiskstoallesxhosts"
-                }
-            )
-            datastore = $datastore;
-            hypervisor = @{id=$esxhostid}
-            mgmtserver = @{id=$vcenterid}
-            vmname = $vmname;
-            hostname = $vmname;
-            poweronvm = "$poweronvm";
-            physicalrdm = $physicalrdm;
-            rdmmode = $rdmmode;
-            migratevm = "false";
-        }
-        $json = $body | ConvertTo-Json
         if (($lastappid -eq $image.appid) -and ($lastcondate -eq $image.consistencydate))
         {
             Write-Host "Not mounting AppName:" $image.appname " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "because the previous mount had the same appid and consistency date" 
         }
-        elseif ($image.apptype -eq "VMBackup")
+        elseif ($image.apptype -eq "VMBackup") 
         {
+            $vmname = $image.appname 
+            if ($suffix)
+            {
+                $vmname = $vmname + $suffix
+            }
+            if ($prefix)
+            {
+                $vmname = $prefix + $vmname
+            }
+            # to guarantee unique names we will put an index ID after each mount starting at 1 or the specified $startindex per appid where there is more than image per appid
+            $tempid = $image.appid
+            if (($appidcount | where-object {$_.name -eq $tempid}).Count -gt 1)
+            {
+                if (!($appiditeration.$tempid ))
+                {
+                    $appiditeration = $appiditeration + @{ $tempid = $startindex }
+                }
+                else
+                {
+                    $appiditeration.$tempid  += 1
+                }
+                $vmname = $vmname + "_" + $appiditeration.$tempid
+            }
+            # we can now set the values needed for the mount
+            $imageid = $image.id
+            $esxhostid = $esxhostlist[$esxroundrobin]
+            $datastore = $datastorelist[$dsroundrobin]
+            $body = [ordered]@{
+                "@type" = "mountRest";
+                label = "$label"
+                restoreoptions = @(
+                    @{
+                        name = 'mapdiskstoallesxhosts'
+                        value = "$mapdiskstoallesxhosts"
+                    }
+                )
+                datastore = $datastore;
+                hypervisor = @{id=$esxhostid}
+                mgmtserver = @{id=$vcenterid}
+                vmname = $vmname;
+                hostname = $vmname;
+                poweronvm = "$poweronvm";
+                physicalrdm = $physicalrdm;
+                rdmmode = $rdmmode;
+                migratevm = "false";
+            }
+            $json = $body | ConvertTo-Json
             Write-Host "    Mounting AppName:" $image.appname " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "as:" $vmname "to ESX Host ID" $esxhostid "using Datastore" $datastore
             Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
             $esxroundrobin += 1
