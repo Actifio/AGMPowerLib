@@ -100,7 +100,7 @@ if ( $hostVersionInfo -lt "7" )
     break
 }
 
-Import-LocalizedData -BaseDirectory .\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
+Import-LocalizedData -BaseDirectory $PSScriptRoot\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
 Write-host 'Detected PowerShell version:   ' $hostVersionInfo
 Write-host 'Downloaded ActPowerCLI version:' $ActModuleData.ModuleVersion
 Write-host ""
