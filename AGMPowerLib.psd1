@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.7'
+ModuleVersion = '0.0.0.8'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -79,12 +79,17 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibLastPostCommand',
 'Get-AGMLibLatestImage',
 'Get-AGMLibRunningJobs',
+'New-AGMLibContainerMount',
+'New-AGMLibGCPVM',
 'New-AGMLibImage',
 'New-AGMLibMSSQLMount',
 'New-AGMLibVM',
 'New-AGMLibMultiVM',
+'New-AGMLibOracleMount',
+'New-AGMLibMSSQLMigrate',
+'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
-'New-AGMLibContainerMount')
+'Set-AGMLibMSSQLMigrate')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -123,6 +128,14 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.8] 2020-08-21
+        Added New-AGMLibOracleMount, Set-AGMLibMSSQLMigrate, New-AGMLibMSSQLMigrate, New-AGMLibSystemStateToVM
+        Improved New-AGMLibMultiVM
+        Improved Get-AGMLibActiveImage
+        Improved Get-AGMLibLastPostCommand to also offer flags for put or delete
+        Added SLA ID to Get-AGMLibApplicationID
+        
+
         ## [0.0.0.7] 2020-08-12
         Improved New-AGMLibMultiVM
 
