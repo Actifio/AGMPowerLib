@@ -54,7 +54,7 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
     .EXAMPLE
     Get-AGMLibImageRange -appid 4771 -olderlimit 4 -newerlimit 2 
     Get all snapshots created between 4 days ago (from olderlimit) and 2 days ago (from newerlimit, being 2 days newer than olderlimit) for the app specified.  
-    Note that if you make newerlimit greater than older limit you  will be looking into the future, meaning you will get all images created from 4 days ago until now.
+    Note that if you make newerlimit greater than olderlimit you  will be looking into the future, meaning you will get all images created from 4 days ago until now.
 
     .DESCRIPTION
     A function to find a range of images available for an application
@@ -65,6 +65,15 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
     {
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
+    }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
     }
     
     if ($appid)
@@ -130,7 +139,6 @@ Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[in
 
     if ( (!($newerlimit)) -and (!($olderlimit)) )
     {
-        $lowerlimit = -1
         if (!($consistencydate))
         {
             [datetime]$consistencydate = (Get-date).AddMinutes(1).ToString('yyyy-MM-dd HH:mm:ss')

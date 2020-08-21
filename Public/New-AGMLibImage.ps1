@@ -32,6 +32,15 @@ Function New-AGMLibImage ([int]$appid,[int]$policyid,[string]$capturetype,[switc
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
 
     if ($capturetype)
     {
@@ -70,7 +79,7 @@ Function New-AGMLibImage ([int]$appid,[int]$policyid,[string]$capturetype,[switc
         }
         else 
         {
-            $policyid = $($policygrab | where {$_.op -eq "snap"} | select -last 1).id
+            $policyid = $($policygrab | Where-Object {$_.op -eq "snap"} | Select-Object -last 1).id
             if (!($policyid))
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to learn Snap Policy ID for SLT ID $sltid"

@@ -1,4 +1,4 @@
-Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$suffix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$suffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS
@@ -24,8 +24,13 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
 
     The prefix is optional but recommended
     The suffix is optional but recommended
-    If more than one image from a single application is in the image list, then an incremental numerical suffix will be applied.
+
+    There are three mechanisms to get unique VM names:
+    1)  You can specify -i and the Image Name will be appended as a suffix to the VMname
+    2)  You can instead specify -c and the Consistency Date will be appended as a suffix to the VMname
+    3)  If you don't specify -c or -i, then if more than one image from a single application is in the image list, then an incremental numerical suffix will be applied.
     If you want to control the starting number of that index use -startindex
+
     By default it will use a label of "MultiVM Recovery" to make the VMs easier to find 
 
     .EXAMPLE
@@ -40,6 +45,15 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
     {
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
+    }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
     }
 
     # handle vcenterid
@@ -180,19 +194,30 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
             {
                 $vmname = $prefix + $vmname
             }
-            # to guarantee unique names we will put an index ID after each mount starting at 1 or the specified $startindex per appid where there is more than image per appid
-            $tempid = $image.appid
-            if (($appidcount | where-object {$_.name -eq $tempid}).Count -gt 1)
+            if ($imagesuffix)
             {
-                if (!($appiditeration.$tempid ))
+                $vmname = $vmname + "_" + $image.backupname
+            }
+            elseif ($condatesuffix)
+            {
+                $vmname = $vmname + "_" + $image.consistencydate.Replace(" ","_")
+            }
+            else 
+            {   
+                # to guarantee unique names we will put an index ID after each mount starting at 1 or the specified $startindex per appid where there is more than image per appid
+                $tempid = $image.appid
+                if (($appidcount | where-object {$_.name -eq $tempid}).Count -gt 1)
                 {
-                    $appiditeration = $appiditeration + @{ $tempid = $startindex }
+                    if (!($appiditeration.$tempid ))
+                    {
+                        $appiditeration = $appiditeration + @{ $tempid = $startindex }
+                    }
+                    else
+                    {
+                        $appiditeration.$tempid  += 1
+                    }
+                    $vmname = $vmname + "_" + $appiditeration.$tempid
                 }
-                else
-                {
-                    $appiditeration.$tempid  += 1
-                }
-                $vmname = $vmname + "_" + $appiditeration.$tempid
             }
             # we can now set the values needed for the mount
             $imageid = $image.id

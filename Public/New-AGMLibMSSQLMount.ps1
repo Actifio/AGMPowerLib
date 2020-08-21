@@ -40,6 +40,15 @@ Function New-AGMLibMSSQLMount ([int]$appid,[int]$targethostid,[string]$imagename
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
 
     # if the user gave us nothing to start work, then enter guided mode
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))

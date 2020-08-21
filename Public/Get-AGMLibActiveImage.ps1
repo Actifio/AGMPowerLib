@@ -1,4 +1,4 @@
-Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("u")]$unmount) 
+Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("i")]$imageidprint,[switch][alias("n")]$nfsprint,[switch][alias("u")]$unmount) 
 {
     <#
     .SYNOPSIS
@@ -6,7 +6,11 @@ Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("u"
 
     .EXAMPLE
     Get-AGMActiveImages
-    Displays all active images
+    Displays all active images (mounts)
+
+    .EXAMPLE
+    Get-AGMActiveImages
+    Displays all active images (mounts)
 
     .EXAMPLE
     Get-AGMActiveImages -appid 4771
@@ -22,25 +26,30 @@ Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("u"
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
     
-    $fv = "characteristic=MOUNT"
+    $fv = "characteristic=MOUNT&characteristic=UNMOUNT"
     if ($unmount)
     {
         $fv = "characteristic=UNMOUNT"
     }
     if ($jobclass)
     {
-        $fv = "characteristic=MOUNT&jobclass=$jobclass"
+        $fv = $fv + "&jobclass=$jobclass"
     }
     if ($appid) 
     {
-        $fv = "characteristic=MOUNT&appid=$id" 
+        $fv = $fv + "&appid=$id" 
     }
-    if ( ($appid) -and  ($jobclass) )
-    {
-        $fv = "characteristic=MOUNT&appid=$id&jobclass=$jobclass"
-    }
-    
+   
     
     $backup = Get-AGMImage -filtervalue "$fv" 
     if ($backup.id)
@@ -58,20 +67,68 @@ Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("u"
             $enddate=(GET-DATE)
             $age = NEW-TIMESPAN –Start $StartDate –End $EndDate
             $id | Add-Member -NotePropertyName daysold -NotePropertyValue $age.days 
-            $AGMArray += [pscustomobject]@{
-                imagename = $id.backupname
-                apptype = $id.apptype
-                hostname = $id.hostname
-                appname = $id.appname
-                mountedhostname = $id.mountedhostname
-                childappname = $id.childappname
-                appliancename = $id.appliancename
-                consumedsize = $id.consumedsize
-                daysold = $id.daysold
-                label = $id.label
+            if ($id.characteristic -eq "Mount")
+            {
+                $imagestate = "Mounted"
+            }
+            else 
+            {
+                $imagestate = "Unmounted"
+            }
+            if ($imageidprint)
+            {
+                $AGMArray += [pscustomobject]@{
+                    id = $id.id
+                    apptype = $id.apptype
+                    appliancename = $id.appliancename
+                    hostname = $id.hostname
+                    appname = $id.appname
+                    mountedhost = $id.mountedhostname
+                    allowedip = $id.allowedips
+                    childappname = $id.childappname
+                    consumedsize_gib = [math]::Round($id.consumedsize / 1073741824,3)
+                    daysold = $id.daysold
+                    label = $id.label
+                    imagestate = $imagestate
+                }
+            }
+            elseif ($nfsprint)
+            {
+                if ($id.allowedips)
+                {
+                    $AGMArray += [pscustomobject]@{
+                        id = $id.id
+                        apptype = $id.apptype
+                        appliancename = $id.appliancename
+                        hostname = $id.hostname
+                        appname = $id.appname
+                        allowedip = $id.allowedips
+                        consumedsize_gib = [math]::Round($id.consumedsize / 1073741824,3)
+                        daysold = $id.daysold
+                        label = $id.label
+                        imagestate = $imagestate
+                    }
+                }
+            }
+            else 
+            {
+                $AGMArray += [pscustomobject]@{
+                    imagename = $id.backupname
+                    apptype = $id.apptype
+                    appliancename = $id.appliancename
+                    hostname = $id.hostname
+                    appname = $id.appname
+                    mountedhost = $id.mountedhostname
+                    allowedip = $id.allowedips
+                    childappname = $id.childappname
+                    consumedsize_gib = [math]::Round($id.consumedsize / 1073741824,3)
+                    daysold = $id.daysold
+                    label = $id.label
+                    imagestate = $imagestate
+                }
             }
         }
-        $AGMArray 
+        $AGMArray  | sort-Object appliancename,hostname,appname
     }
     else
     {

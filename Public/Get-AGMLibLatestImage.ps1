@@ -28,6 +28,15 @@ Function Get-AGMLibLatestImage([int]$id, [string]$jobclass)
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
     
     if (!($id))
     {
@@ -49,7 +58,7 @@ Function Get-AGMLibLatestImage([int]$id, [string]$jobclass)
         $backup | Add-Member -NotePropertyName appid -NotePropertyValue $backup.application.id
         $backup | Add-Member -NotePropertyName appliance -NotePropertyValue $backup.cluster.name
         $backup | Add-Member -NotePropertyName hostname -NotePropertyValue $backup.host.hostname
-        $backup | select appliance, hostname, appname, appid, jobclass, backupname, id, consistencydate, endpit, sltname, slpname, policyname
+        $backup | Select-Object appliance, hostname, appname, appid, jobclass, backupname, id, consistencydate, endpit, sltname, slpname, policyname
     }
     else
     {
