@@ -64,39 +64,57 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
     # if the user gave us nothing to start work, then enter guided mode
     if (( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) ) -or ($guided))
     {
+        Clear-Host
+        write-host "Oracle App Selection menu"
+        Write-host ""
         $guided = $true
         $applist = Get-AGMApplication -filtervalue "apptype=Oracle&managed=True" | sort-object appname
-        $i = 1
-        foreach ($app in $applist)
-        { 
-            $applistname = $app.appname
-            $appliance = $app.cluster.name 
-            if ($userselection -eq 1)
-            {
-                Write-Host -Object "$i`: $applistname ($appliance)"
-            }
-            else {
-                Write-Host -Object "$i`: $applistname ($appliance)"
-            }
-            
-            $i++
-        }
-        While ($true) 
+        if ($applist.count -eq 0)
         {
-            Write-host ""
-            $listmax = $applist.appname.count
-            [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
-            if ($appselection -lt 1 -or $appselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
-            }
+            Get-AGMErrorMessage -messagetoprint "There are no Managed Oracle apps to list"
+            return
         }
-        $appname =  $applist.appname[($appselection - 1)]
-        $appid = $applist.id[($appselection - 1)]
+        if ($applist.count -eq 1)
+        {
+            $appname =  $applist.appname
+            $appid = $applist.id
+            write-host "Found one Oracle app $appname"
+            write-host ""
+        }
+        else 
+        {
+            $i = 1
+            foreach ($app in $applist)
+            { 
+                $applistname = $app.appname
+                $appliance = $app.cluster.name 
+                if ($userselection -eq 1)
+                {
+                    Write-Host -Object "$i`: $applistname ($appliance)"
+                }
+                else {
+                    Write-Host -Object "$i`: $applistname ($appliance)"
+                }
+                
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $applist.appname.count
+                [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $appname =  $applist.appname[($appselection - 1)]
+            $appid = $applist.id[($appselection - 1)]
+        }
     }
 
 

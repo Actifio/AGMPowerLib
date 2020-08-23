@@ -46,30 +46,45 @@ Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostn
         Write-host "VM source selection menu"
         Write-host ""
         $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
-        $i = 1
-        foreach ($vm in $vmgrab)
-        { 
-            $vmname = $vm.appname
-            $appliance = $vm.cluster.name 
-            Write-Host -Object "$i`: $vmname ($appliance)"
-            $i++
-        }
-        While ($true) 
+        if ($vmgrab.count -eq 0)
         {
-            Write-host ""
-            $listmax = $vmgrab.appname.count
-            [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
-            if ($vmselection -lt 1 -or $vmselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
-            }
+            Get-AGMErrorMessage -messagetoprint "There are no Managed VMware apps to list"
+            return
         }
-        $appname =  $vmgrab.appname[($vmselection - 1)]
-        $appid = $vmgrab.id[($vmselection - 1)]
+        if ($vmgrab.count -eq 1)
+        {
+            $appname =  $vmgrab.appname
+            $appid = $vmgrab.id
+            write-host "Found one VMware app $appname"
+            write-host ""
+        }
+        else 
+        {
+            $i = 1
+            foreach ($vm in $vmgrab)
+            { 
+                $vmname = $vm.appname
+                $appliance = $vm.cluster.name 
+                Write-Host -Object "$i`: $vmname ($appliance)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $vmgrab.appname.count
+                [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
+                if ($vmselection -lt 1 -or $vmselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $appname =  $vmgrab.appname[($vmselection - 1)]
+            $appid = $vmgrab.id[($vmselection - 1)]
+        }
     }
 
 

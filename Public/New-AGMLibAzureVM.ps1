@@ -1,54 +1,69 @@
-Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$imagename,
+Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$imagename,
 [string]$vmname,
+[switch]$migratevm,
 [switch]$poweroffvm,
 [string]$rehydrationmode,
 [string]$selectedobjects,
 [int]$cpu,
 [int]$memory,
 [string]$ostype,
-[string]$gcpkeyfile,
+[string]$resourcegroupname,
+[string]$storageaccount,
 [string]$volumeType,
-[string]$tags,
-[string]$projectid,
-[string]$sharedvpcprojectid,
 [string]$regioncode,
-[string]$zone,
 [string]$networkid,
-[string]$subnetid,
-[string]$privateipaddresses,
-[int]$bootdisksize,
-[switch]$migratevm,
+[string]$clientid,
+[string]$domain,
+[string]$secretkey,
+[string]$subscriptionId,
+[string]$network,
+[string]$network1,
+[string]$network2,
+[string]$network3,
+[string]$network4,
+[string]$network5,
+[string]$network6,
+[string]$network7,
+[string]$network8,
+[string]$network9,
+[string]$network10,
+[string]$network11,
+[string]$network12,
+[string]$network13,
+[string]$network14,
+[string]$network15,
 [switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
-    Mounts an image as a new GCP VM
+    Mounts an image as a new Azure VM
 
     .EXAMPLE
-    New-AGMLibGCPVM -g
+    New-AGMLibAzureVM -g
 
-    Runs a guided menu to create a new GCP VM.  
+    Runs a guided menu to create a new Azure VM.  
 
 
     .DESCRIPTION
-    A function to create new GCP VMs using a mount job
+    A function to create new Azure VMs using a mount job
 
     poweroffvm - by default is not set and VM is left powered on
     rehydrationmode - OnVault only can be: StorageOptimized,Balanced, PerformanceOptimized or MaximumPerformance
     selectedobjects - currently not cated for 
     cpu - autolearned from the image so they should only be issued if you want to vary them from the per image default
     memory - autolearned from the image so they should only be issued if you want to vary them from the per image default
+    bootdisksize - autolearned from the image so they should only be issued if you want to vary them from the per image default
     ostype - autolearned from the image so they should only be issued if you want to vary them from the per image default
-    gcpkeyfile - just give full path and file name, don't paste in file contents
-    volumeType - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
-    tags - comma separate if you have multiple
-    regioncode - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
-    zone - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
+    volumeType - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target Azure
+    regioncode - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target Azure
     privateipaddresses - comma separate if you have multiple
     bootdisksize - autolearned from the image so they should only be issued if you want to vary them from the per image default
     migratevm - by default is not set
+       networks - each network should have three semi-colon separated sections:
+    subnet id ; SecurityGroupIds comma separated ; private IPs comma separate
+    e.g.:     1234;5678,9012;10.1.1.1,10.1.1.1
 
-    Note image defaults can be shown with:   Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
+    Note image defaults can be shown with:   Get-AGMImageSystemStateOptions -imageid $imageid -target Azure
     
     #>
 
@@ -199,7 +214,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
     }
-    $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
+    $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target Azure
     $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
     $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
     $bootdiskdefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "BootDiskSize"}).defaultvalue
@@ -211,6 +226,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     {
         Clear-Host
         Write-Host ""
+        # migrate VM
         Write-Host "Migrate VM?"
         Write-Host "1`: Do not migrate VM(default)"
         Write-Host "2`: Migrate the VM to cloud storage"
@@ -219,6 +235,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if ($userselection -eq "") { $userselection = 1 }
         if ($userselection -eq 1) {  $migratevm = $FALSE  }
         if ($userselection -eq 2) {  $migratevm = $TRUE  }
+        # power off
         Write-Host "Power off after recovery?"
         Write-Host "1`: Do not power off after recovery(default)"
         Write-Host "2`: Power off after recovery"
@@ -228,10 +245,10 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if ($userselection -eq 1) {  $poweronvm = $TRUE  }
         if ($userselection -eq 2) {  $poweronvm = $FALSE  }
         Write-Host ""
+        # cpu and memory
         [int]$cpu = read-host "CPU (vCPU) (default $cpudefault)"
         [int]$memory = read-host "Memory (GB) (default $memorydefault)"
-
-        # this shouldn't be needed
+        # ostype shouldn't be needed
         if (!($ostype))
         {
             Write-Host ""
@@ -249,21 +266,11 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             write-host "`nOS type: $ostype"    
         }
         Write-Host ""
-        While ($true) 
-        {
-            [string]$gcpkeyfile = read-host "Name of GCP key file"
-            if (Test-Path $gcpkeyfile)
-            {
-                break
-            } 
-            else
-            {
-                Write-Host -Object "Could not locate $gcpkeyfile please check file name and location"
-            }
-        }
-
-        Write-Host ""
-        Write-Host "Disk Type"
+        #resource group name and storage account
+        [string]$resourcegroupname = Read-Host "Resource Group Name"
+        [string]$storageaccount = Read-Host "Storage Account"
+        #volume type
+        Write-Host "Volume Type"
         $i = 1
         $listmax = $volumetypelist.Length
         foreach ($disktype in $volumetypelist)
@@ -274,11 +281,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         [int]$userselection = Read-Host "Please select from this list (1-$listmax)"
         if ($userselection -eq "") { $userselection = 1 }
         $volumetype = $volumetypelist[($userselection - 1)]
-        Write-Host ""
-        [string]$tags = Read-Host "Tags (comma separated)"
-        [string]$projectid = Read-Host "Project ID (VPC)"
-        [string]$sharedvpcprojectid = Read-Host "Shared VPC projectid (optional)"
-
+        # region code
         Write-Host "Region Code"
         $i = 1
         $listmax = $regioncodelist.Length
@@ -300,35 +303,55 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             }
         }
         $regioncode = $regioncodelist.name[($userselection - 1)]
-    
-        Write-Host "Zone"
-        $zonelist = ($regioncodelist | where-object {$_.name -eq $regioncode}).subselect.choices.name
-        $i = 1
-        $listmax = $zonelist.Length
-        foreach ($choice in $zonelist)
-        { 
-            Write-Host -Object "$i`: $choice"
-            $i++
-        }
-        While ($true) 
-        {
-            [int]$userselection = Read-Host "Please select from this list (1-$listmax)"
-            if ($userselection -lt 1 -or $userselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
-            }
-        }
-        $zone = $zonelist[($userselection - 1)]
-
+        # network ID
         [string]$networkid = Read-Host "Network ID"
-        [string]$subnetid = Read-Host "Subnet ID"
-        [string]$privateipaddresses = Read-Host "Private IP Address (comma separated)"
+        # four secret things
+        [SecureString]$encclientid = Read-Host -AsSecureString "Client ID"
+        $clientid = ConvertFrom-SecureString -SecureString $encclientid -AsPlainText
+        [SecureString]$encdomain = Read-Host -AsSecureString "Domain"
+        $domain = ConvertFrom-SecureString -SecureString $encdomain -AsPlainText
+        [SecureString]$encsecretkey = Read-Host -AsSecureString "Secret Key"
+        $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
+        [SecureString]$encsubscriptionId = Read-Host -AsSecureString "Subscription ID"
+        $subscriptionId = ConvertFrom-SecureString -SecureString $encsubscriptionId -AsPlainText
+        #networks
+        [int]$networkcount = Read-Host "Number of networks (default is 1)"
+        if (!($networkcount)) { $networkcount = 1 }
+        foreach ($net in 1..$networkcount)
+        {
+            write-host ""
+            Write-host "Network $net settings"
+            Write-Host ""
+            [string]$subnetid = Read-Host "Subnet ID"
+            $networkinformation = $subnetid + ";"
 
-        [int]$bootdisksize = read-host "Boot Disk Size(default $bootdiskdefault)"
+            $secgroupinfo = ""
+            [int]$securitygroupcount = Read-Host "Number of Security Groups (default is 1)"
+            if (!($securitygroupcount)) { $securitygroupcount = 1 }
+            foreach ($secgroup in 1..$securitygroupcount)
+            {
+                [string]$securitygroupid = Read-Host "Security Group ID"
+                $secgroupinfo = $secgroupinfo + "," + $securitygroupid
+            }
+            if ($secgroupinfo -ne "") { $secgroupinfo = $secgroupinfo.substring(1) }
+            $networkinformation = $networkinformation + $secgroupinfo + ";"
+
+            $privateipinfo = ""
+            [int]$privateipcount = Read-Host "Number of Private IPs (default is 1)"
+            if (!($privateipcount)) { $privateipcount = 1 }
+            foreach ($privip in 1..$privateipcount)
+            {
+                [string]$privateip = Read-Host "Private IP Address"
+                $privateipinfo = $privateipinfo + "," + $privateip
+            }
+            if ($privateipinfo -ne "") { $privateipinfo = $privateipinfo.substring(1) }
+            $networkinformation = $networkinformation + $privateipinfo 
+            
+    
+            New-Variable -Name "network$net" -Value $networkinformation -force
+        }
+        # GUI doesn't ask, so don't ask here either
+        # [int]$bootdisksize = read-host "Boot Disk Size(default $bootdiskdefault)"
 
         if ($jobclass -eq "OnVault")
         {
@@ -358,18 +381,31 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibGCPVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -gcpkeyfile `"$gcpkeyfile`" -volumetype `"$volumetype`" -projectid `"$projectid`""
-        if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
-        if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
-        Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`" -networkid `"$networkid`" -subnetid `"$subnetid`""
-        if ($privateipaddresses) { Write-Host -nonewline " -privateipaddresses `"$privateipaddresses`"" }
-        Write-Host -nonewline " -bootdisksize $bootdisksize"
+        Write-Host -nonewline "New-AGMLibAzureVM -imageid $imageid -vmname `"$vmname`""
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
+        if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`""}
+        Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -resourcegroupname `"$resourcegroupname`" -storageaccount `"$storageaccount`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -networkid `"$networkid`" -clientid ******* -domain ******* -secretkey ******* -subscriptionid *******"
+        if ($network) { Write-Host -nonewline " -network1 `"$network`""}
+        if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
+        if ($network2) { Write-Host -nonewline " -network2 `"$network2`""}
+        if ($network3) { Write-Host -nonewline " -network3 `"$network3`""}
+        if ($network4) { Write-Host -nonewline " -network4 `"$network4`""}
+        if ($network5) { Write-Host -nonewline " -network5 `"$network5`""}
+        if ($network6) { Write-Host -nonewline " -network6 `"$network6`""}
+        if ($network7) { Write-Host -nonewline " -network7 `"$network7`""}
+        if ($network8) { Write-Host -nonewline " -network8 `"$network8`""}
+        if ($network9) { Write-Host -nonewline " -network9 `"$network9`""}
+        if ($network10) { Write-Host -nonewline " -network10 `"$network10`""}
+        if ($network11) { Write-Host -nonewline " -network11 `"$network11`""}
+        if ($network12) { Write-Host -nonewline " -network12 `"$network12`""}
+        if ($network13) { Write-Host -nonewline " -network13 `"$network13`""}
+        if ($network14) { Write-Host -nonewline " -network14 `"$network14`""}
+        if ($network15) { Write-Host -nonewline " -network15 `"$network15`""}   
+        Write-Host -nonewline " -bootdisksize $bootdisksize"
         if ($migratevm) { Write-Host -nonewline " -migratevm" }
-        if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`"" }
         Write-Host ""
-        Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Show the JSON used to run this command, but don't run it"
+        Write-Host "1`: Run the command now (default) - NOTE the access ID and secret key ID are not shown here"
+        Write-Host "2`: Show the JSON used to run this command, but don't run it - NOTE the access ID and secret key ID will be shown here"
         Write-Host "3`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
@@ -382,14 +418,10 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         }
     }
 
-    if (Test-Path $gcpkeyfile)
-    {
-        $gcpkey = [IO.File]::ReadAllText($gcpkeyfile)
-    }
     $body = [ordered]@{}
     $body += @{ hostname = $vmname }
     if ($poweroffvm) { $body += @{ poweronvm = "false" } } else { $body += @{ poweronvm = "true" } }
-    $body += @{ rehydrationmode = $rehydrationmode }
+    if ($rehydrationmode) { $body += @{ rehydrationmode = $rehydrationmode } }
     # selected objects needed
     # [string]$selectedobjects,
     $systemstateoptions = @()
@@ -397,51 +429,42 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         [ordered]@{ name = 'CPU'; value = $cpu }
         [ordered]@{ name = 'Memory'; value = $memory } 
         [ordered]@{ name = 'OSType'; value = $ostype } 
-        [ordered]@{ name = 'CloudType'; value = "GCP" }  
-        [ordered]@{ name = 'GCPkeys'; value = $gcpkey } 
+        [ordered]@{ name = 'CloudType'; value = "Azure" }  
+        [ordered]@{ name = 'resourcegroup'; value = $resourcegroup } 
+        [ordered]@{ name = 'storageaccount'; value = $storageaccount } 
         [ordered]@{ name = 'volumeType'; value = $volumetype } 
-    )
-
-    if ($tags)
-    {
-        foreach ($tag in $tags.split(","))
-        {
-            $systemstateoptions += @(
-            [ordered]@{ name = 'tags'; value = $tag } 
-            )
-        }
-    }
-    $systemstateoptions += @( 
-        [ordered]@{ name = 'alternateProjectId'; value = $projectid } 
-    )
-    
-
-    if ($sharedvpcprojectid)
-    {
-        $systemstateoptions += @(   
-            [ordered]@{ name = 'hostprojectid'; value = $sharedvpcprojectid } 
-        )
-    }    
-    $systemstateoptions += @(   
         [ordered]@{ name = 'RegionCode'; value = $regioncode } 
-        [ordered]@{ name = 'Zone'; value = $zone } 
-    )
-    $nicinfo = @()
-    $nicinfo += @(
         [ordered]@{ name = 'NetworkId'; value = $networkid }
-        [ordered]@{ name = 'SubnetId'; value = $subnetid } 
+        [ordered]@{ name = 'ClientId'; value = $clientid }
+        [ordered]@{ name = 'Domain'; value = $domain }
+        [ordered]@{ name = 'SecretKey'; value = $secretkey }
+        [ordered]@{ name = 'subscriptionId'; value = $subscriptionid }
     )
-    if ($privateipaddresses)
+    # add all the networks!
+    foreach ($netinfo in $network,$network1,$network2,$network3,$network4,$network5,$network6,$network7,$network8,$network9,$network10,$network11,$network12,$network13,$network14,$network15)
     {
-        foreach ($privateip in $privateipaddresses.split(","))
+        if ($netinfo)
         {
-            $nicinfo += @(
-                [ordered]@{ name = 'privateIpAddresses'; value = $privateip } 
+            $nicinfo = @()
+            $nicinfo = @( @{ name = 'SubnetId' ; value = $netinfo.split(";")[0] } )
+            $networksplit1 = $netinfo.split(";")[1]
+            foreach ($value in $networksplit1.split(","))
+            {   
+                $nicinfo += @( @{ name = 'SecurityGroupId' ; value = $value } )
+            }
+            $networksplit2 = $netinfo.split(";")[2]
+            foreach ($value in $networksplit2.split(","))
+            {   
+                $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } )
+            }
+
+            $systemstateoptions += @( 
+                [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
             )
         }
     }
+    # bootdisk size
     $systemstateoptions += @( 
-        [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
         [ordered]@{ name = 'BootDiskSize'; value = $bootdisksize }
     )
     $body += [ordered]@{ systemstateoptions = $systemstateoptions }

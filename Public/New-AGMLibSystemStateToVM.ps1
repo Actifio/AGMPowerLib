@@ -1,4 +1,4 @@
-Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$poweronvm,[int]$esxhostid,[int]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
+Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[int]$esxhostid,[int]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -132,6 +132,10 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     }
     
 
+    $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
+    $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
+    $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
+    $ostype = ($systemstateoptions| where-object {$_.name -eq "OSType"}).defaultvalue
 
     # this if for guided menu
     if ($guided)
@@ -319,6 +323,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         $nicinfo = ($systemstateoptions | where-object {$_.name -eq "NICInfo"}).structure 
         $niclist = ($nicinfo | where-object {$_.name -eq "NICType"}).choices.name
         Write-Host ""
+        # get CPU and memory
         [int]$cpu = read-host "CPU (vCPU) (default $cpudefault)"
         [int]$memory = read-host "Memory (GB) (default $memorydefault)"
 
@@ -353,8 +358,8 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
             Write-Host "1`: Use DHCP(default)"
             Write-Host "2`: Set IP Addresses"
             Write-Host ""
-            if ($userselection -eq "") { $userselection = 1 }
             [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq "") { $userselection = 1 }
             if ($userselection -eq "1")
             {
                 $networkname = Read-Host "VMware Network Name"  
@@ -385,12 +390,21 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         }
         if ($dhcpnetworks -ne "") { $dhcpnetworks = $dhcpnetworks.substring(1) }
         if ($fixedipnetworks -ne "") { $fixedipnetworks = $fixedipnetworks.substring(1) }
+    }
 
 
+    if (!($cpu)) { $cpu = $cpudefault }
+    if (!($memory)) { $memory = $memorydefault }
+    if (!($ostype)) { $ostype = ($systemstateoptions| where-object {$_.name -eq "OSType"}).defaultvalue }
+
+
+
+    if ($guided)
+    {
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -vmname $vmname -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
+        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -vmname $vmname -cpu $cpu -memory $memory -ostype `"$OSType`" -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($dhcpnetworks -ne "") { Write-Host " -dhcpnetworks `"$dhcpnetworks`"" }
         if ($fixedipnetworks -ne "") { Write-Host " -fixedipnetworks `"$fixedipnetworks`"" }
@@ -407,17 +421,6 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         {
             return
         }
-    }
-
-    # if user asks for volumes
-    if ($volumes)
-    {
-        $selectedobjects = @(
-            foreach ($volume in $volumes.Split(","))
-            {
-                [pscustomobject]@{restorableobject=$volume}
-            }   
-        )
     }
     
     if (!($imageid))
@@ -501,6 +504,6 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         Write-host "Post-AGMAPIData  -endpoint /backup/$imageid/mount -body `'$compressedjson`'"
         return
     }
-
+    
     Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 }
