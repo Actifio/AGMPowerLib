@@ -72,8 +72,50 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     {
         $guided = $TRUE
         write-host "Running guided mode"
-        write-host "Fetching VM and SystemState list from AGM"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True" | sort-object appname
+
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+            $mountappliancename =  $appliancegrab.name
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+        }
+        
+
+        write-host "Fetching VM and SystemState list from AGM for $mountappliancename"
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "There are no Managed System State or VMBackup apps to list"
@@ -164,8 +206,8 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
-            if ($imagelist.count -eq 0)
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
                 return

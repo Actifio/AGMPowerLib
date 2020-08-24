@@ -36,10 +36,10 @@ Function Get-AGMLibActiveImage([int]$appid, [string]$jobclass,[switch][alias("i"
         }
     }
     
-    $fv = "characteristic=MOUNT&characteristic=UNMOUNT"
+    $fv = "characteristic=1&characteristic=2&apptype!nas"
     if ($unmount)
     {
-        $fv = "characteristic=UNMOUNT"
+        $fv = "characteristic=2"
     }
     if ($jobclass)
     {
