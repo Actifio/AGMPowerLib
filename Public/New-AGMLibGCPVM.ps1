@@ -13,9 +13,22 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
 [string]$sharedvpcprojectid,
 [string]$regioncode,
 [string]$zone,
-[string]$networkid,
-[string]$subnetid,
-[string]$privateipaddresses,
+[string]$network,
+[string]$network1,
+[string]$network2,
+[string]$network3,
+[string]$network4,
+[string]$network5,
+[string]$network6,
+[string]$network7,
+[string]$network8,
+[string]$network9,
+[string]$network10,
+[string]$network11,
+[string]$network12,
+[string]$network13,
+[string]$network14,
+[string]$network15,
 [int]$bootdisksize,
 [switch]$migratevm,
 [switch][alias("g")]$guided) 
@@ -366,9 +379,36 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         }
         $zone = $zonelist[($userselection - 1)]
 
-        [string]$networkid = Read-Host "Network ID"
-        [string]$subnetid = Read-Host "Subnet ID"
-        [string]$privateipaddresses = Read-Host "Private IP Address (comma separated)"
+        #networks
+        [int]$networkcount = Read-Host "Number of networks (default is 1)"
+        if (!($networkcount)) { $networkcount = 1 }
+        foreach ($net in 1..$networkcount)
+        {
+            write-host ""
+            Write-host "Network $net settings"
+            Write-Host ""
+            $networkinformation = ""
+            [string]$networkid = Read-Host "Network ID (mandatory)"
+            $networkinformation = $networkid + ";"
+            [string]$subnetid = Read-Host "Subnet ID (mandatory)"
+            $networkinformation = $networkinformation + $subnetid + ";"
+            $privateipinfo = ""
+            [int]$privateipcount = Read-Host "Number of Private IPs (default is 0)"
+            if (!($privateipcount)) { $privateipcount = 0 }
+            if ($privateipcount -gt 0) 
+            {
+                foreach ($privip in 1..$privateipcount)
+                {
+                    [string]$privateip = Read-Host "Private IP Address"
+                    $privateipinfo = $privateipinfo + "," + $privateip
+                }
+            }
+            if ($privateipinfo -ne "") { $privateipinfo = $privateipinfo.substring(1) }
+            $networkinformation = $networkinformation + $privateipinfo 
+            
+    
+            New-Variable -Name "network$net" -Value $networkinformation -force
+        }
 
         [int]$bootdisksize = read-host "Boot Disk Size(default $bootdiskdefault)"
 
@@ -404,7 +444,22 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
         Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`" -networkid `"$networkid`" -subnetid `"$subnetid`""
-        if ($privateipaddresses) { Write-Host -nonewline " -privateipaddresses `"$privateipaddresses`"" }
+        if ($network) { Write-Host -nonewline " -network1 `"$network`""}
+        if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
+        if ($network2) { Write-Host -nonewline " -network2 `"$network2`""}
+        if ($network3) { Write-Host -nonewline " -network3 `"$network3`""}
+        if ($network4) { Write-Host -nonewline " -network4 `"$network4`""}
+        if ($network5) { Write-Host -nonewline " -network5 `"$network5`""}
+        if ($network6) { Write-Host -nonewline " -network6 `"$network6`""}
+        if ($network7) { Write-Host -nonewline " -network7 `"$network7`""}
+        if ($network8) { Write-Host -nonewline " -network8 `"$network8`""}
+        if ($network9) { Write-Host -nonewline " -network9 `"$network9`""}
+        if ($network10) { Write-Host -nonewline " -network10 `"$network10`""}
+        if ($network11) { Write-Host -nonewline " -network11 `"$network11`""}
+        if ($network12) { Write-Host -nonewline " -network12 `"$network12`""}
+        if ($network13) { Write-Host -nonewline " -network13 `"$network13`""}
+        if ($network14) { Write-Host -nonewline " -network14 `"$network14`""}
+        if ($network15) { Write-Host -nonewline " -network15 `"$network15`""}  
         Write-Host -nonewline " -bootdisksize $bootdisksize"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($migratevm) { Write-Host -nonewline " -migratevm" }
@@ -468,22 +523,26 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         [ordered]@{ name = 'RegionCode'; value = $regioncode } 
         [ordered]@{ name = 'Zone'; value = $zone } 
     )
-    $nicinfo = @()
-    $nicinfo += @(
-        [ordered]@{ name = 'NetworkId'; value = $networkid }
-        [ordered]@{ name = 'SubnetId'; value = $subnetid } 
-    )
-    if ($privateipaddresses)
+    # add all the networks!
+    foreach ($netinfo in $network,$network1,$network2,$network3,$network4,$network5,$network6,$network7,$network8,$network9,$network10,$network11,$network12,$network13,$network14,$network15)
     {
-        foreach ($privateip in $privateipaddresses.split(","))
+        if ($netinfo)
         {
-            $nicinfo += @(
-                [ordered]@{ name = 'privateIpAddresses'; value = $privateip } 
+            $nicinfo = @()
+            $nicinfo = @( @{ name = 'NetworkId' ; value = $netinfo.split(";")[0] } )
+            $nicinfo += @( @{ name = 'SubnetId' ; value = $netinfo.split(";")[1] } )
+            $networksplit2 = $netinfo.split(";")[2]
+            foreach ($value in $networksplit2.split(","))
+            {   
+                if ($value -ne "" ) { $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } ) }
+            }
+
+            $systemstateoptions += @( 
+                [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
             )
         }
     }
     $systemstateoptions += @( 
-        [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
         [ordered]@{ name = 'BootDiskSize'; value = $bootdisksize }
     )
     $body += [ordered]@{ systemstateoptions = $systemstateoptions }
