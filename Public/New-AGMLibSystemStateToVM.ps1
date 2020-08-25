@@ -156,7 +156,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -364,7 +364,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
         $ostype = ($systemstateoptions| where-object {$_.name -eq "OSType"}).defaultvalue
         $nicinfo = ($systemstateoptions | where-object {$_.name -eq "NICInfo"}).structure 
-        $niclist = ($nicinfo | where-object {$_.name -eq "NICType"}).choices.name
+
         Write-Host ""
         # get CPU and memory
         [int]$cpu = read-host "CPU (vCPU) (default $cpudefault)"
@@ -533,11 +533,6 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     $body += [ordered]@{ migratevm = "false" }
 
     $json = $body | ConvertTo-Json -depth 4
-
-    if ($monitor)
-    {
-        $wait = "y"
-    }
 
     if ($jsonprint -eq "yes")
     {

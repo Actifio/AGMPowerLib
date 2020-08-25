@@ -197,7 +197,7 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -309,8 +309,8 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         }
         Write-Host ""
         #resource group name and storage account
-        [string]$resourcegroupname = Read-Host "Resource Group Name"
-        [string]$storageaccount = Read-Host "Storage Account"
+        While ($true)  { if ($resourcegroupname -eq "") { [string]$resourcegroupname = Read-Host "Resource Group Name"} else { break } }
+        While ($true)  { if ($storageaccount -eq "") { [string]$storageaccount = Read-Host "Storage Account"} else { break } }
         #volume type
         Write-Host "Volume Type"
         $i = 1
@@ -346,16 +346,20 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         }
         $regioncode = $regioncodelist.name[($userselection - 1)]
         # network ID
-        [string]$networkid = Read-Host "Network ID"
+        While ($true)  { if ($networkid -eq "") { [string]$networkid = Read-Host "Network ID"} else { break } }
         # four secret things
-        [SecureString]$encclientid = Read-Host -AsSecureString "Client ID"
+        While ($true)  { if ($encclientid.length -eq 0) {  $encclientid = Read-Host -AsSecureString "Client ID" } else { break } }
         $clientid = ConvertFrom-SecureString -SecureString $encclientid -AsPlainText
-        [SecureString]$encdomain = Read-Host -AsSecureString "Domain"
+
+        While ($true)  { if ($encdomain.length -eq 0) {  $encdomain = Read-Host -AsSecureString "Domain" } else { break } }
         $domain = ConvertFrom-SecureString -SecureString $encdomain -AsPlainText
-        [SecureString]$encsecretkey = Read-Host -AsSecureString "Secret Key"
+
+        While ($true)  { if ($encsecretkey.length -eq 0) {  $encsecretkey = Read-Host -AsSecureString "Secret Key" } else { break } }
         $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
-        [SecureString]$encsubscriptionId = Read-Host -AsSecureString "Subscription ID"
+
+        While ($true)  { if ($encsubscriptionId.length -eq 0) {  $encsubscriptionId = Read-Host -AsSecureString "Subscription ID" } else { break } }
         $subscriptionId = ConvertFrom-SecureString -SecureString $encsubscriptionId -AsPlainText
+
         #networks
         [int]$networkcount = Read-Host "Number of networks (default is 1)"
         if (!($networkcount)) { $networkcount = 1 }
@@ -364,7 +368,8 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
             write-host ""
             Write-host "Network $net settings"
             Write-Host ""
-            [string]$subnetid = Read-Host "Subnet ID"
+            [string]$subnetid = ""
+            While ($true)  { if ($subnetid -eq "") { [string]$subnetid = Read-Host "Subnet ID"} else { break } }
             $networkinformation = $subnetid + ";"
 
             $secgroupinfo = ""
@@ -372,19 +377,24 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
             if (!($securitygroupcount)) { $securitygroupcount = 1 }
             foreach ($secgroup in 1..$securitygroupcount)
             {
-                [string]$securitygroupid = Read-Host "Security Group ID"
+                [string]$securitygroupid = ""
+                While ($true)  { if ($securitygroupid -eq "") { [string]$securitygroupid = Read-Host "Security Group ID"} else { break } }
                 $secgroupinfo = $secgroupinfo + "," + $securitygroupid
             }
             if ($secgroupinfo -ne "") { $secgroupinfo = $secgroupinfo.substring(1) }
             $networkinformation = $networkinformation + $secgroupinfo + ";"
 
             $privateipinfo = ""
-            [int]$privateipcount = Read-Host "Number of Private IPs (default is 1)"
-            if (!($privateipcount)) { $privateipcount = 1 }
-            foreach ($privip in 1..$privateipcount)
+            [int]$privateipcount = Read-Host "Number of Private IPs (default is 0)"
+            if (!($privateipcount)) { $privateipcount = 0 }
+            if ($privateipcount -gt 0) 
             {
-                [string]$privateip = Read-Host "Private IP Address"
-                $privateipinfo = $privateipinfo + "," + $privateip
+                foreach ($privip in 1..$privateipcount)
+                {
+                    [string]$privateip = ""
+                    While ($true)  { if ($privateip -eq "") { [string]$privateip = Read-Host "Private IP Address"} else { break } }
+                    $privateipinfo = $privateipinfo + "," + $privateip
+                }
             }
             if ($privateipinfo -ne "") { $privateipinfo = $privateipinfo.substring(1) }
             $networkinformation = $networkinformation + $privateipinfo 
@@ -497,9 +507,8 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
             $networksplit2 = $netinfo.split(";")[2]
             foreach ($value in $networksplit2.split(","))
             {   
-                $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } )
+                if ($value -ne "" ) { $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } ) }
             }
-
             $systemstateoptions += @( 
                 [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
             )

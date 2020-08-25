@@ -195,7 +195,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -306,14 +306,15 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host ""
         While ($true) 
         {
-            [string]$gcpkeyfile = read-host "Name of GCP key file"
-            if (Test-Path $gcpkeyfile)
+            [string]$gcpkeyfile = read-host "Name of GCP key file (with full path to file)"
+            # if (Test-Path $gcpkeyfile)     
+            if ([IO.File]::Exists($gcpkeyfile))
             {
                 break
             } 
             else
             {
-                Write-Host -Object "Could not locate $gcpkeyfile please check file name and location"
+                Write-Host -Object "Could not locate $gcpkeyfile.  Ensure full path to file name is supplied"
             }
         }
 
@@ -331,7 +332,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         $volumetype = $volumetypelist[($userselection - 1)]
         Write-Host ""
         [string]$tags = Read-Host "Tags (comma separated)"
-        [string]$projectid = Read-Host "Project ID (VPC)"
+        While ($true)  { if ($projectid -eq "") { [string]$projectid = Read-Host "Project ID (VPC)" } else { break } }
         [string]$sharedvpcprojectid = Read-Host "Shared VPC projectid (optional)"
 
         Write-Host "Region Code"
@@ -388,9 +389,11 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             Write-host "Network $net settings"
             Write-Host ""
             $networkinformation = ""
-            [string]$networkid = Read-Host "Network ID (mandatory)"
+            $networkid = ""
+            While ($true)  { if ($networkid -eq "") { [string]$networkid = Read-Host "Network ID (mandatory)" } else { break } }
             $networkinformation = $networkid + ";"
-            [string]$subnetid = Read-Host "Subnet ID (mandatory)"
+            $subnetid = ""
+            While ($true)  { if ($subnetid -eq "") { [string]$subnetid = Read-Host "Subnet ID (mandatory)" } else { break } }
             $networkinformation = $networkinformation + $subnetid + ";"
             $privateipinfo = ""
             [int]$privateipcount = Read-Host "Number of Private IPs (default is 0)"
@@ -399,7 +402,8 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             {
                 foreach ($privip in 1..$privateipcount)
                 {
-                    [string]$privateip = Read-Host "Private IP Address"
+                    [string]$privateip = ""
+                    While ($true)  { if ($privateip -eq "") { [string]$privateip = Read-Host "Private IP Address"} else { break } }
                     $privateipinfo = $privateipinfo + "," + $privateip
                 }
             }
@@ -443,7 +447,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host -nonewline "New-AGMLibGCPVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -gcpkeyfile `"$gcpkeyfile`" -volumetype `"$volumetype`" -projectid `"$projectid`""
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
-        Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`" -networkid `"$networkid`" -subnetid `"$subnetid`""
+        Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`""
         if ($network) { Write-Host -nonewline " -network1 `"$network`""}
         if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
         if ($network2) { Write-Host -nonewline " -network2 `"$network2`""}

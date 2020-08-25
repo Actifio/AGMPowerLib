@@ -196,7 +196,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -345,10 +345,14 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         }
         $regioncode = $regioncodelist.name[($userselection - 1)]
         #vpc ID, access ID and secretkey
-        [string]$vpcid = Read-Host "VPC ID"
-        [SecureString]$encaccesskeyid = Read-Host -AsSecureString "Access Key ID"
+        While ($true)  { if ($vpcid -eq "") { [string]$vpcid = Read-Host "VPC ID" } else { break } }
+
+        $accesskeyid = ""
+        While ($true)  { if ($encaccesskeyid.length -eq 0) {  $encaccesskeyid = Read-Host -AsSecureString "Access Key ID" } else { break } }
+        $secretkey = ""
+        While ($true)  { if ($encsecretkey.length -eq 0) {  $encsecretkey = Read-Host -AsSecureString "Secret Key"  } else { break } }
+
         $accesskeyid = ConvertFrom-SecureString -SecureString $encaccesskeyid -AsPlainText
-        [SecureString]$encsecretkey = Read-Host -AsSecureString "Secret Key"
         $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
         #networks
         [int]$networkcount = Read-Host "Number of networks (default is 1)"
@@ -358,7 +362,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             write-host ""
             Write-host "Network $net settings"
             Write-Host ""
-            [string]$subnetid = Read-Host "Subnet ID"
+            [string]$subnetid = ""
+            While ($true)  { if ($subnetid -eq "") { [string]$subnetid = Read-Host "Subnet ID"} else { break } }
             $networkinformation = $subnetid + ";"
 
             $secgroupinfo = ""
@@ -366,7 +371,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             if (!($securitygroupcount)) { $securitygroupcount = 1 }
             foreach ($secgroup in 1..$securitygroupcount)
             {
-                [string]$securitygroupid = Read-Host "Security Group ID"
+                [string]$securitygroupid = ""
+                While ($true)  { if ($securitygroupid -eq "") { [string]$securitygroupid = Read-Host "Security Group ID"} else { break } }
                 $secgroupinfo = $secgroupinfo + "," + $securitygroupid
             }
             if ($secgroupinfo -ne "") { $secgroupinfo = $secgroupinfo.substring(1) }
@@ -379,7 +385,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             {
                 foreach ($privip in 1..$privateipcount)
                 {
-                    [string]$privateip = Read-Host "Private IP Address"
+                    [string]$privateip = ""
+                    While ($true)  { if ($privateip -eq "") { [string]$privateip = Read-Host "Private IP Address"} else { break } }
                     $privateipinfo = $privateipinfo + "," + $privateip
                 }
             }
