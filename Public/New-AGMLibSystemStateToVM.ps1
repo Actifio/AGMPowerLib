@@ -50,9 +50,52 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     # if the user gave us nothing to start work, then ask for a VMware VM name
     if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
     {
-        $guided = $true
+        $guided = $TRUE
         Clear-Host
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&managed=True" | sort-object appname
+
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+            $mountappliancename =  $appliancegrab.name
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+        }
+        
+
+        write-host "Fetching SystemState list from AGM for $mountappliancename"
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&managed=True&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "There are no Managed System State apps to list"
@@ -90,9 +133,9 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
                 {
                     break
                 }
-                $appname =  $vmgrab.appname[($vmselection - 1)]
-                $appid = $vmgrab.id[($vmselection - 1)]
             }
+            $appname = $vmgrab.appname[($vmselection - 1)]
+            $appid = $vmgrab.id[($vmselection - 1)]
         }
     }
 
@@ -113,7 +156,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -143,8 +186,8 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM for Appid $appid"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
-            if ($imagelist.count -eq 0)
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
                 return
@@ -321,7 +364,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
         $ostype = ($systemstateoptions| where-object {$_.name -eq "OSType"}).defaultvalue
         $nicinfo = ($systemstateoptions | where-object {$_.name -eq "NICInfo"}).structure 
-        $niclist = ($nicinfo | where-object {$_.name -eq "NICType"}).choices.name
+
         Write-Host ""
         # get CPU and memory
         [int]$cpu = read-host "CPU (vCPU) (default $cpudefault)"
@@ -404,7 +447,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -vmname $vmname -cpu $cpu -memory $memory -ostype `"$OSType`" -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
+        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($dhcpnetworks -ne "") { Write-Host " -dhcpnetworks `"$dhcpnetworks`"" }
         if ($fixedipnetworks -ne "") { Write-Host " -fixedipnetworks `"$fixedipnetworks`"" }
@@ -490,11 +533,6 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     $body += [ordered]@{ migratevm = "false" }
 
     $json = $body | ConvertTo-Json -depth 4
-
-    if ($monitor)
-    {
-        $wait = "y"
-    }
 
     if ($jsonprint -eq "yes")
     {

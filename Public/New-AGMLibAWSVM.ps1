@@ -85,8 +85,51 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     {
         $guided = $TRUE
         write-host "Running guided mode"
-        write-host "Fetching VM and SystemState list from AGM"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True" | sort-object appname
+
+
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+            $mountappliancename =  $appliancegrab.name
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+        }
+        
+
+        write-host "Fetching VM and SystemState list from AGM for $mountappliancename"
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "There are no Managed System State or VMBackup apps to list"
@@ -153,7 +196,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -177,8 +220,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
-            if ($imagelist.count -eq 0)
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
                 return
@@ -302,10 +345,14 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         }
         $regioncode = $regioncodelist.name[($userselection - 1)]
         #vpc ID, access ID and secretkey
-        [string]$vpcid = Read-Host "VPC ID"
-        [SecureString]$encaccesskeyid = Read-Host -AsSecureString "Access Key ID"
+        While ($true)  { if ($vpcid -eq "") { [string]$vpcid = Read-Host "VPC ID" } else { break } }
+
+        $accesskeyid = ""
+        While ($true)  { if ($encaccesskeyid.length -eq 0) {  $encaccesskeyid = Read-Host -AsSecureString "Access Key ID" } else { break } }
+        $secretkey = ""
+        While ($true)  { if ($encsecretkey.length -eq 0) {  $encsecretkey = Read-Host -AsSecureString "Secret Key"  } else { break } }
+
         $accesskeyid = ConvertFrom-SecureString -SecureString $encaccesskeyid -AsPlainText
-        [SecureString]$encsecretkey = Read-Host -AsSecureString "Secret Key"
         $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
         #networks
         [int]$networkcount = Read-Host "Number of networks (default is 1)"
@@ -315,7 +362,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             write-host ""
             Write-host "Network $net settings"
             Write-Host ""
-            [string]$subnetid = Read-Host "Subnet ID"
+            [string]$subnetid = ""
+            While ($true)  { if ($subnetid -eq "") { [string]$subnetid = Read-Host "Subnet ID"} else { break } }
             $networkinformation = $subnetid + ";"
 
             $secgroupinfo = ""
@@ -323,19 +371,24 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             if (!($securitygroupcount)) { $securitygroupcount = 1 }
             foreach ($secgroup in 1..$securitygroupcount)
             {
-                [string]$securitygroupid = Read-Host "Security Group ID"
+                [string]$securitygroupid = ""
+                While ($true)  { if ($securitygroupid -eq "") { [string]$securitygroupid = Read-Host "Security Group ID"} else { break } }
                 $secgroupinfo = $secgroupinfo + "," + $securitygroupid
             }
             if ($secgroupinfo -ne "") { $secgroupinfo = $secgroupinfo.substring(1) }
             $networkinformation = $networkinformation + $secgroupinfo + ";"
 
             $privateipinfo = ""
-            [int]$privateipcount = Read-Host "Number of Private IPs (default is 1)"
-            if (!($privateipcount)) { $privateipcount = 1 }
-            foreach ($privip in 1..$privateipcount)
+            [int]$privateipcount = Read-Host "Number of Private IPs (default is 0)"
+            if (!($privateipcount)) { $privateipcount = 0 }
+            if ($privateipcount -gt 0) 
             {
-                [string]$privateip = Read-Host "Private IP Address"
-                $privateipinfo = $privateipinfo + "," + $privateip
+                foreach ($privip in 1..$privateipcount)
+                {
+                    [string]$privateip = ""
+                    While ($true)  { if ($privateip -eq "") { [string]$privateip = Read-Host "Private IP Address"} else { break } }
+                    $privateipinfo = $privateipinfo + "," + $privateip
+                }
             }
             if ($privateipinfo -ne "") { $privateipinfo = $privateipinfo.substring(1) }
             $networkinformation = $networkinformation + $privateipinfo 
@@ -377,7 +430,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host -nonewline "New-AGMLibAWSVM -imageid $imageid -vmname `"$vmname`""
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`""}
-        Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyid ******* -secretkeyid *******"
+        Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyid ******* -secretkey *******"
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($network) { Write-Host -nonewline " -network1 `"$network`""}
         if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
@@ -456,7 +509,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             $networksplit2 = $netinfo.split(";")[2]
             foreach ($value in $networksplit2.split(","))
             {   
-                $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } )
+                if ($value -ne "" ) { $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } ) }
             }
 
             $systemstateoptions += @( 

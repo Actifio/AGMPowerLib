@@ -13,9 +13,22 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
 [string]$sharedvpcprojectid,
 [string]$regioncode,
 [string]$zone,
-[string]$networkid,
-[string]$subnetid,
-[string]$privateipaddresses,
+[string]$network,
+[string]$network1,
+[string]$network2,
+[string]$network3,
+[string]$network4,
+[string]$network5,
+[string]$network6,
+[string]$network7,
+[string]$network8,
+[string]$network9,
+[string]$network10,
+[string]$network11,
+[string]$network12,
+[string]$network13,
+[string]$network14,
+[string]$network15,
 [int]$bootdisksize,
 [switch]$migratevm,
 [switch][alias("g")]$guided) 
@@ -72,8 +85,50 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     {
         $guided = $TRUE
         write-host "Running guided mode"
-        write-host "Fetching VM and SystemState list from AGM"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True" | sort-object appname
+
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+            $mountappliancename =  $appliancegrab.name
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+        }
+        
+
+        write-host "Fetching VM and SystemState list from AGM for $mountappliancename"
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "There are no Managed System State or VMBackup apps to list"
@@ -140,7 +195,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     # learn name of new VM
     if (!($vmname))
     {
-        [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
+        While ($true)  { if ($vmname -eq "") { [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
     }
 
     # learn about the image
@@ -164,8 +219,8 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
-            if ($imagelist.count -eq 0)
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
                 return
@@ -251,14 +306,15 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host ""
         While ($true) 
         {
-            [string]$gcpkeyfile = read-host "Name of GCP key file"
-            if (Test-Path $gcpkeyfile)
+            [string]$gcpkeyfile = read-host "Name of GCP key file (with full path to file)"
+            # if (Test-Path $gcpkeyfile)     
+            if ([IO.File]::Exists($gcpkeyfile))
             {
                 break
             } 
             else
             {
-                Write-Host -Object "Could not locate $gcpkeyfile please check file name and location"
+                Write-Host -Object "Could not locate $gcpkeyfile.  Ensure full path to file name is supplied"
             }
         }
 
@@ -276,7 +332,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         $volumetype = $volumetypelist[($userselection - 1)]
         Write-Host ""
         [string]$tags = Read-Host "Tags (comma separated)"
-        [string]$projectid = Read-Host "Project ID (VPC)"
+        While ($true)  { if ($projectid -eq "") { [string]$projectid = Read-Host "Project ID (VPC)" } else { break } }
         [string]$sharedvpcprojectid = Read-Host "Shared VPC projectid (optional)"
 
         Write-Host "Region Code"
@@ -324,9 +380,39 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         }
         $zone = $zonelist[($userselection - 1)]
 
-        [string]$networkid = Read-Host "Network ID"
-        [string]$subnetid = Read-Host "Subnet ID"
-        [string]$privateipaddresses = Read-Host "Private IP Address (comma separated)"
+        #networks
+        [int]$networkcount = Read-Host "Number of networks (default is 1)"
+        if (!($networkcount)) { $networkcount = 1 }
+        foreach ($net in 1..$networkcount)
+        {
+            write-host ""
+            Write-host "Network $net settings"
+            Write-Host ""
+            $networkinformation = ""
+            $networkid = ""
+            While ($true)  { if ($networkid -eq "") { [string]$networkid = Read-Host "Network ID (mandatory)" } else { break } }
+            $networkinformation = $networkid + ";"
+            $subnetid = ""
+            While ($true)  { if ($subnetid -eq "") { [string]$subnetid = Read-Host "Subnet ID (mandatory)" } else { break } }
+            $networkinformation = $networkinformation + $subnetid + ";"
+            $privateipinfo = ""
+            [int]$privateipcount = Read-Host "Number of Private IPs (default is 0)"
+            if (!($privateipcount)) { $privateipcount = 0 }
+            if ($privateipcount -gt 0) 
+            {
+                foreach ($privip in 1..$privateipcount)
+                {
+                    [string]$privateip = ""
+                    While ($true)  { if ($privateip -eq "") { [string]$privateip = Read-Host "Private IP Address"} else { break } }
+                    $privateipinfo = $privateipinfo + "," + $privateip
+                }
+            }
+            if ($privateipinfo -ne "") { $privateipinfo = $privateipinfo.substring(1) }
+            $networkinformation = $networkinformation + $privateipinfo 
+            
+    
+            New-Variable -Name "network$net" -Value $networkinformation -force
+        }
 
         [int]$bootdisksize = read-host "Boot Disk Size(default $bootdiskdefault)"
 
@@ -361,8 +447,23 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host -nonewline "New-AGMLibGCPVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -gcpkeyfile `"$gcpkeyfile`" -volumetype `"$volumetype`" -projectid `"$projectid`""
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
-        Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`" -networkid `"$networkid`" -subnetid `"$subnetid`""
-        if ($privateipaddresses) { Write-Host -nonewline " -privateipaddresses `"$privateipaddresses`"" }
+        Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`""
+        if ($network) { Write-Host -nonewline " -network1 `"$network`""}
+        if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
+        if ($network2) { Write-Host -nonewline " -network2 `"$network2`""}
+        if ($network3) { Write-Host -nonewline " -network3 `"$network3`""}
+        if ($network4) { Write-Host -nonewline " -network4 `"$network4`""}
+        if ($network5) { Write-Host -nonewline " -network5 `"$network5`""}
+        if ($network6) { Write-Host -nonewline " -network6 `"$network6`""}
+        if ($network7) { Write-Host -nonewline " -network7 `"$network7`""}
+        if ($network8) { Write-Host -nonewline " -network8 `"$network8`""}
+        if ($network9) { Write-Host -nonewline " -network9 `"$network9`""}
+        if ($network10) { Write-Host -nonewline " -network10 `"$network10`""}
+        if ($network11) { Write-Host -nonewline " -network11 `"$network11`""}
+        if ($network12) { Write-Host -nonewline " -network12 `"$network12`""}
+        if ($network13) { Write-Host -nonewline " -network13 `"$network13`""}
+        if ($network14) { Write-Host -nonewline " -network14 `"$network14`""}
+        if ($network15) { Write-Host -nonewline " -network15 `"$network15`""}  
         Write-Host -nonewline " -bootdisksize $bootdisksize"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($migratevm) { Write-Host -nonewline " -migratevm" }
@@ -426,22 +527,26 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         [ordered]@{ name = 'RegionCode'; value = $regioncode } 
         [ordered]@{ name = 'Zone'; value = $zone } 
     )
-    $nicinfo = @()
-    $nicinfo += @(
-        [ordered]@{ name = 'NetworkId'; value = $networkid }
-        [ordered]@{ name = 'SubnetId'; value = $subnetid } 
-    )
-    if ($privateipaddresses)
+    # add all the networks!
+    foreach ($netinfo in $network,$network1,$network2,$network3,$network4,$network5,$network6,$network7,$network8,$network9,$network10,$network11,$network12,$network13,$network14,$network15)
     {
-        foreach ($privateip in $privateipaddresses.split(","))
+        if ($netinfo)
         {
-            $nicinfo += @(
-                [ordered]@{ name = 'privateIpAddresses'; value = $privateip } 
+            $nicinfo = @()
+            $nicinfo = @( @{ name = 'NetworkId' ; value = $netinfo.split(";")[0] } )
+            $nicinfo += @( @{ name = 'SubnetId' ; value = $netinfo.split(";")[1] } )
+            $networksplit2 = $netinfo.split(";")[2]
+            foreach ($value in $networksplit2.split(","))
+            {   
+                if ($value -ne "" ) { $nicinfo += @( @{ name = 'privateIpAddresses' ; value = $value } ) }
+            }
+
+            $systemstateoptions += @( 
+                [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
             )
         }
     }
     $systemstateoptions += @( 
-        [ordered]@{ name = 'NICInfo'; structurevalue = $nicinfo }
         [ordered]@{ name = 'BootDiskSize'; value = $bootdisksize }
     )
     $body += [ordered]@{ systemstateoptions = $systemstateoptions }
