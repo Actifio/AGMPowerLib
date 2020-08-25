@@ -132,7 +132,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.10] 2020-08-24
         Improved Get-AGMLibActiveImage
-        added appliance test to New-AGMLibAWSVM
+        added appliance test to System State mounts as well as enforce manadatory fields
 
         ## [0.0.0.9] 2020-08-23
         Added New-AGMLibAzureVM and New-AGMLibAWSVM
