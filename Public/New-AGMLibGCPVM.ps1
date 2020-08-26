@@ -54,7 +54,7 @@ Function New-AGMLibGCPVM ([int]$appid,[int]$mountapplianceid,
     New-AGMLibGCPVM -imageid 1234 -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
 
     This mounts the specified image.
-    The subnet ID is "default" and the network ID is "sa-1" and the 
+    The subnet ID is "default" and the network ID is "sa-1"
 
     .DESCRIPTION
     A function to create new GCP VMs using a mount job
@@ -285,7 +285,7 @@ Function New-AGMLibGCPVM ([int]$appid,[int]$mountapplianceid,
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot or StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
             return
         }
     }

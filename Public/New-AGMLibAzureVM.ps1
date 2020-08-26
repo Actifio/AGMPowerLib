@@ -273,7 +273,7 @@ Function New-AGMLibAzureVM ([int]$appid,[int]$mountapplianceid,[string]$appname,
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot or StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
             return
         }
     }
