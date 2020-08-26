@@ -1,4 +1,6 @@
-Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$imagename,
+Function New-AGMLibGCPVM ([int]$appid,[int]$mountapplianceid,
+[string]$appname,
+[int]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$poweroffvm,
 [string]$rehydrationmode,
@@ -42,9 +44,27 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
 
     Runs a guided menu to create a new GCP VM.  
 
+    .EXAMPLE
+    New-AGMLibGCPVM -appid 20933978 -mountapplianceid 1415033486 -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
+
+    This mounts the latest image for the specified appid using the specified cluster ID.
+    The subnet ID is "default" and the network ID is "sa-1" 
+
+    .EXAMPLE
+    New-AGMLibGCPVM -imageid 1234 -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
+
+    This mounts the specified image.
+    The subnet ID is "default" and the network ID is "sa-1" and the 
 
     .DESCRIPTION
     A function to create new GCP VMs using a mount job
+
+    Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the image ID and specify that as part of the command with -imageid
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
 
     poweroffvm - by default is not set and VM is left powered on
     rehydrationmode - OnVault only can be: StorageOptimized,Balanced, PerformanceOptimized or MaximumPerformance
@@ -219,7 +239,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -254,6 +274,23 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
     }
+
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot or StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
+        }
+    }
+
+
     $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
     $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
     $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
@@ -444,7 +481,7 @@ Function New-AGMLibGCPVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibGCPVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -gcpkeyfile `"$gcpkeyfile`" -volumetype `"$volumetype`" -projectid `"$projectid`""
+        Write-Host -nonewline "New-AGMLibGCPVM -imageid $imageid -appid $appid -mountapplianceid $mountapplianceid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -gcpkeyfile `"$gcpkeyfile`" -volumetype `"$volumetype`" -projectid `"$projectid`""
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
         Write-Host -nonewline " -regioncode `"$regioncode`" -zone `"$zone`""

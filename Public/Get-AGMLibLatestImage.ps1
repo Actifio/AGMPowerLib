@@ -1,4 +1,4 @@
-Function Get-AGMLibLatestImage([int]$id, [string]$jobclass) 
+Function Get-AGMLibLatestImage([int]$id, [int]$appid,[string]$jobclass) 
 {
     <#
     .SYNOPSIS
@@ -38,6 +38,11 @@ Function Get-AGMLibLatestImage([int]$id, [string]$jobclass)
         }
     }
     
+    if ($appid)
+    {
+        $id = $appid
+    }
+
     if (!($id))
     {
         [int]$id = Read-Host "ID"

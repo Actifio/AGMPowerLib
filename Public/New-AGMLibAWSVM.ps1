@@ -1,4 +1,4 @@
-Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$imagename,
+Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$mountapplianceid,[int]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$migratevm,
 [switch]$poweroffvm,
@@ -11,6 +11,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
 [string]$tags,
 [string]$regioncode,
 [string]$vpcid,
+[string]$accesskeyscsv,
 [string]$accesskeyid,
 [string]$secretkey,
 [string]$network,
@@ -40,9 +41,27 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
 
     Runs a guided menu to create a new AWS VM.  
 
+    .EXAMPLE
+    New-AGMLibAWSVM -vmname "avtest" -appid 46455214 -mountapplianceid 1415013462 -volumetype "General Purpose (SSD)" -regioncode "us-east-1" -vpcid "vpc-1234" -accesskeyscsv "/Users/anthony/Downloads/av_accessKeys.csv" -network1 "subnet-5678;sg-9012;"
+
+    This mounts the latest image for the specified appid using the specified cluster ID.
+    The subnet ID is "subnet-5678" and the security group ID is "sg-9012" 
+
+    .EXAMPLE
+    New-AGMLibAWSVM -imageid 1234 -volumetype "General Purpose (SSD)" -regioncode "us-east-1" -vpcid "vpc-1234" -accesskeyscsv "/Users/anthony/Downloads/av_accessKeys.csv" -network1 "subnet-5678;sg-9012;"
+
+    This mounts the specified imageid.
+    The subnet ID is "subnet-5678" and the security group ID is "sg-9012" 
 
     .DESCRIPTION
     A function to create new AWS VMs using a mount job
+
+    Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the image ID and specify that as part of the command with -imageid
+    3)  Learn the Appid and Cluster Id for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
 
     poweroffvm - by default is not set and VM is left powered on
     rehydrationmode - OnVault only can be: StorageOptimized,Balanced, PerformanceOptimized or MaximumPerformance
@@ -55,6 +74,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     regioncode - Get list by running:   Get-AGMImageSystemStateOptions -imageid $imageid -target AWS
     privateipaddresses - comma separate if you have multiple
     migratevm - by default is not set
+    
     networks - each network should have three semi-colon separated sections:
     subnet id ; SecurityGroupIds comma separated ; private IPs comma separate
     e.g.:     1234;5678,9012;10.1.1.1,10.1.1.1
@@ -62,6 +82,8 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
     bootdisksize - autolearned from the image so they should only be issued if you want to vary them from the per image default
 
     Note image defaults can be shown with:   Get-AGMImageSystemStateOptions -imageid $imageid -target AWS
+
+    If you have the access keys CSV file downloaded from the AWS IAM panel you can use that with -accesskeyscsv, else you will need to supply -accesskeyid and -secretkey
     
     #>
 
@@ -220,7 +242,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -255,6 +277,23 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
             $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
     }
+
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot or StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
+        }
+    }
+
+
     $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target AWS
     $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
     $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
@@ -347,13 +386,33 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         #vpc ID, access ID and secretkey
         While ($true)  { if ($vpcid -eq "") { [string]$vpcid = Read-Host "VPC ID" } else { break } }
 
-        $accesskeyid = ""
-        While ($true)  { if ($encaccesskeyid.length -eq 0) {  $encaccesskeyid = Read-Host -AsSecureString "Access Key ID" } else { break } }
-        $secretkey = ""
-        While ($true)  { if ($encsecretkey.length -eq 0) {  $encsecretkey = Read-Host -AsSecureString "Secret Key"  } else { break } }
+        Write-host "If you have an AWS Access key file in CSV format, you can use that.  Otherwise hit enter on the next prompt to type them in manually."
+        $accesskeyscsv = ""
+        $accesskeyscsv = read-host "Name of AWS Access keyfile (with full path to file)"
+        if ($accesskeyscsv) 
+        {
+            if ([IO.File]::Exists($accesskeyscsv))
+            {
+                $importedcsv = Import-Csv -Path $accesskeyscsv
+                if ($importedcsv.'Access key ID') { $accesskeyid = $importedcsv.'Access key ID' }
+                if ($importedcsv.'Secret access key') { $secretkey = $importedcsv.'Secret access key' }
+            }
+            else
+            {
+                Write-Host -Object "Could not locate $accesskeyscsv."
+                $accesskeyscsv = "" 
+            }
+        }
+        if ((!($accesskeyid)) -and (!($secretkey)))
+        {
+            $accesskeyid = ""
+            While ($true)  { if ($encaccesskeyid.length -eq 0) {  $encaccesskeyid = Read-Host -AsSecureString "Access Key ID" } else { break } }
+            $secretkey = ""
+            While ($true)  { if ($encsecretkey.length -eq 0) {  $encsecretkey = Read-Host -AsSecureString "Secret Key"  } else { break } }
 
-        $accesskeyid = ConvertFrom-SecureString -SecureString $encaccesskeyid -AsPlainText
-        $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
+            $accesskeyid = ConvertFrom-SecureString -SecureString $encaccesskeyid -AsPlainText
+            $secretkey = ConvertFrom-SecureString -SecureString $encsecretkey -AsPlainText
+        }
         #networks
         [int]$networkcount = Read-Host "Number of networks (default is 1)"
         if (!($networkcount)) { $networkcount = 1 }
@@ -427,10 +486,11 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibAWSVM -imageid $imageid -vmname `"$vmname`""
+        Write-Host -nonewline "New-AGMLibAWSVM -imageid $imageid -vmname `"$vmname`" -appid $appid -mountapplianceid $mountapplianceid"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`""}
-        Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyid ******* -secretkey *******"
+        if ($accesskeyscsv -eq "" ) { Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyid ******* -secretkey *******" } 
+        if ($accesskeyscsv -ne "" ) { Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyscsv `"$accesskeyscsv`"" }
         if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
         if ($network) { Write-Host -nonewline " -network1 `"$network`""}
         if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
@@ -451,19 +511,64 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$imageid,[string]$im
         Write-Host -nonewline " -bootdisksize $bootdisksize" 
         if ($migratevm) { Write-Host -nonewline " -migratevm" }
         Write-Host ""
-        Write-Host "1`: Run the command now (default) - NOTE the access ID and secret key ID are not shown here"
+        Write-Host "1`: Run the command now (default) - NOTE the access ID and secret key ID are not shown here but will be used"
         Write-Host "2`: Show the JSON used to run this command, but don't run it - NOTE the access ID and secret key ID will be shown here"
-        Write-Host "3`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-3)"
+        Write-host "3`: Show the command with secret key to run it later.  This will use the latest available image rather than image $imageid"
+        Write-Host "4`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-4)"
         if ($userchoice -eq 2)
         {
             $jsonprint = "yes"
         }
         if ($userchoice -eq 3)
         {
+            Write-Host -nonewline "New-AGMLibAWSVM -vmname `"$vmname`" -appid $appid -mountapplianceid $mountapplianceid"
+            if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
+            if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`""}
+            if ($accesskeyscsv -eq "" ) { Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyid `"$accesskeyid`" -secretkey `"$secretkey`"" } 
+            if ($accesskeyscsv -ne "" ) { Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -vpcid `"$vpcid`" -accesskeyscsv `"$accesskeyscsv`"" }
+            if ($tags) { Write-Host -nonewline " -tags `"$tags`"" }
+            if ($network) { Write-Host -nonewline " -network1 `"$network`""}
+            if ($network1) { Write-Host -nonewline " -network1 `"$network1`""}
+            if ($network2) { Write-Host -nonewline " -network2 `"$network2`""}
+            if ($network3) { Write-Host -nonewline " -network3 `"$network3`""}
+            if ($network4) { Write-Host -nonewline " -network4 `"$network4`""}
+            if ($network5) { Write-Host -nonewline " -network5 `"$network5`""}
+            if ($network6) { Write-Host -nonewline " -network6 `"$network6`""}
+            if ($network7) { Write-Host -nonewline " -network7 `"$network7`""}
+            if ($network8) { Write-Host -nonewline " -network8 `"$network8`""}
+            if ($network9) { Write-Host -nonewline " -network9 `"$network9`""}
+            if ($network10) { Write-Host -nonewline " -network10 `"$network10`""}
+            if ($network11) { Write-Host -nonewline " -network11 `"$network11`""}
+            if ($network12) { Write-Host -nonewline " -network12 `"$network12`""}
+            if ($network13) { Write-Host -nonewline " -network13 `"$network13`""}
+            if ($network14) { Write-Host -nonewline " -network14 `"$network14`""}
+            if ($network15) { Write-Host -nonewline " -network15 `"$network15`""}  
+            Write-Host -nonewline " -bootdisksize $bootdisksize" 
+            if ($migratevm) { Write-Host -nonewline " -migratevm" }
+            return
+        }
+        if ($userchoice -eq 4)
+        {
             return
         }
     }
+
+    if (($accesskeyscsv) -and (!($accesskeyid)))
+    {
+        if ([IO.File]::Exists($accesskeyscsv))
+        {
+            $importedcsv = Import-Csv -Path $accesskeyscsv
+            if ($importedcsv.'Access key ID') { $accesskeyid = $importedcsv.'Access key ID' }
+            if ($importedcsv.'Secret access key') { $secretkey = $importedcsv.'Secret access key' }
+        }
+        else
+        {
+            Get-AGMErrorMessage -messagetoprint "Could not locate $accesskeyscsv file.  Make sure file path is used"
+            return
+        }
+    }
+
 
     $body = [ordered]@{}
     $body += @{ hostname = $vmname }

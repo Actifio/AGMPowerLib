@@ -1,4 +1,4 @@
-Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[int]$esxhostid,[int]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
+Function New-AGMLibSystemStateToVM ([int]$appid,[int]$mountapplianceid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[int]$esxhostid,[int]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -9,8 +9,27 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
 
     Runs a guided menu to create a new VMware VM from a system state image. 
 
+    .EXAMPLE
+    New-AGMLibSystemStateToVM -imageid 56410933 -vmname "avtest21" -datastore "LSI_FC" -vcenterid 5552150 -esxhostid 5552164 -dhcpnetworks "VM Network,VMXNet3"
+
+    This mounts the specified imageid
+    The Network is "VM Network" and the interface type is VMXNet3
+
+    .EXAMPLE
+    New-AGMLibSystemStateToVM  -appid 32885776 -mountapplianceid 1415019931 -vmname "avtest21" -datastore "LSI_FC" -vcenterid 5552150 -esxhostid 5552164 -dhcpnetworks "VM Network,VMXNet3"
+
+    This mounts the latest image for the specified appid using the specified cluster ID.
+    The Network is "VM Network" and the interface type is VMXNet3
+
     .DESCRIPTION
     A function to create a new VMware VM from a System State Image
+
+    Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the image ID and specify that as part of the command with -imageid
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, streamsnap or OnVault image on that appliance
 
     poweroffvm - by default is not set and VM is left powered on
     selectedobjects - currently not cated for 
@@ -174,6 +193,20 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         }
     }
     
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot or StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
+        }
+    }
 
     $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target GCP
     $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
@@ -183,10 +216,10 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
     # this if for guided menu
     if ($guided)
     {
-        if (!($imagename))
+        if (!($imageid))
         {
             write-host "Fetching Image list from AGM for Appid $appid"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -447,7 +480,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[string]$appname,[int]$imageid,[
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
+        Write-Host -nonewline  "New-AGMLibSystemStateToVM -imageid $imageid -appid $appid -mountapplianceid $mountapplianceid -vmname `"$vmname`" -cpu $cpu -memory $memory -ostype `"$OSType`" -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($dhcpnetworks -ne "") { Write-Host " -dhcpnetworks `"$dhcpnetworks`"" }
         if ($fixedipnetworks -ne "") { Write-Host " -fixedipnetworks `"$fixedipnetworks`"" }
