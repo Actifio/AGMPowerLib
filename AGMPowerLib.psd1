@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.10'
+ModuleVersion = '0.0.0.11'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -130,6 +130,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.11] 2020-08-26
+        Improved Get-AGMLibActiveImage
+        System State recovery will now look for latest image if that is what is wanted
+
         ## [0.0.0.10] 2020-08-24
         Improved Get-AGMLibActiveImage
         added appliance test to System State mounts as well as enforce manadatory fields
