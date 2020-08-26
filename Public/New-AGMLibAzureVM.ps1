@@ -1,4 +1,4 @@
-Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$imagename,
+Function New-AGMLibAzureVM ([int]$appid,[int]$mountapplianceid,[string]$appname,[int]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$migratevm,
 [switch]$poweroffvm,
@@ -43,9 +43,15 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
 
     Runs a guided menu to create a new Azure VM.  
 
-
     .DESCRIPTION
     A function to create new Azure VMs using a mount job
+
+    Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the image ID and specify that as part of the command with -imageid
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, streamsnap or OnVault image on that appliance
 
     poweroffvm - by default is not set and VM is left powered on
     rehydrationmode - OnVault only can be: StorageOptimized,Balanced, PerformanceOptimized or MaximumPerformance
@@ -221,7 +227,7 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -256,6 +262,23 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
             $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
     }
+
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
+        }
+    }
+
+
     $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target Azure
     $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
     $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
@@ -433,7 +456,7 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibAzureVM -imageid $imageid -vmname `"$vmname`""
+        Write-Host -nonewline "New-AGMLibAzureVM -imageid $imageid -appid $appid -mountapplianceid $mountapplianceid -vmname `"$vmname`" -appid $appid -mountapplianceid $mountapplianceid"
         if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
         if ($rehydrationmode) { Write-Host -nonewline " -rehydrationmode `"$rehydrationmode`""}
         Write-Host -nonewline " -cpu $cpu -memory $memory -ostype `"$OSType`" -resourcegroupname `"$resourcegroupname`" -storageaccount `"$storageaccount`" -volumetype `"$volumetype`" -regioncode `"$regioncode`"  -networkid `"$networkid`" -clientid ******* -domain ******* -secretkey ******* -subscriptionid *******"
@@ -456,8 +479,8 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         Write-Host -nonewline " -bootdisksize $bootdisksize"
         if ($migratevm) { Write-Host -nonewline " -migratevm" }
         Write-Host ""
-        Write-Host "1`: Run the command now (default) - NOTE the access ID and secret key ID are not shown here"
-        Write-Host "2`: Show the JSON used to run this command, but don't run it - NOTE the access ID and secret key ID will be shown here"
+        Write-Host "1`: Run the command now (default) - NOTE the clientid, domain, secretkey and subscriptionid are not shown and will need to be added if you copy/paste this command to run later"
+        Write-Host "2`: Show the JSON used to run this command, but don't run it - NOTE the clientid, domain, secretkey and subscriptionid will be shown"
         Write-Host "3`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
@@ -482,7 +505,7 @@ Function New-AGMLibAzureVM ([int]$appid,[string]$appname,[int]$imageid,[string]$
         [ordered]@{ name = 'Memory'; value = $memory } 
         [ordered]@{ name = 'OSType'; value = $ostype } 
         [ordered]@{ name = 'CloudType'; value = "Azure" }  
-        [ordered]@{ name = 'resourcegroup'; value = $resourcegroup } 
+        [ordered]@{ name = 'resourcegroup'; value = $resourcegroupname } 
         [ordered]@{ name = 'storageaccount'; value = $storageaccount } 
         [ordered]@{ name = 'volumeType'; value = $volumetype } 
         [ordered]@{ name = 'RegionCode'; value = $regioncode } 
