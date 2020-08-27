@@ -16,11 +16,13 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
     Then set it:
     $vcenterid = 5552150
 
-    The ESXHostlist should be a list of ESX Host IDs.  For instance we could use this:
-    $esxhostlist = Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
+    The ESXHostlist should be a list of ESX Host IDs.   We need the srcid from the vCenter
+    If the vCenter srcid is 4460, we could use this:
+    $esxhostlist = Get-AGMHost -filtervalue "isesxhost=true&vcenterhostid=4460" | select id,hostname
 
     The Datastorelist should be a list of datastores.  Here is an example command:
     $datastorelist = ((Get-AGMHost -id 5552166).sources.datastorelist | select-object name| sort-object name | Get-Unique -asstring).name
+    One thing to be careful about is that the datastore list should be available to all the ESX hosts.
 
     The prefix is optional but recommended
     The suffix is optional but recommended
@@ -34,10 +36,12 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
     By default it will use a label of "MultiVM Recovery" to make the VMs easier to find 
 
     .EXAMPLE
-    New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhosttid $esxhostid -datastore $datastore -poweronvm false -prefix "recover-"
+    New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostid $esxhostid -datastore $datastore -poweronvm false -prefix "recover-"
     
     If you only have a single ESX host and Datastore you can specify them singly using -esxhostid and -datastore
     Clearly all your mounts will go to a single ESX Host and datastore
+
+    If you want the disks mapped to all ESX hosts then use the following:    -mapdiskstoallesxhosts true
 
     #>
 
