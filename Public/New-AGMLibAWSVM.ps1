@@ -242,7 +242,7 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$mountapplianceid,[i
         if (!($imagename))
         {
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -255,8 +255,16 @@ Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$mountapplianceid,[i
             foreach
             ($image in $imagelist)
             { 
-                $targetappliance = $image.cluster.name
-                Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) ($targetappliance)"
+                if ($image.jobclass -eq "OnVault")
+                {
+                    $target = $image.diskpool.name
+                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Diskpool: $target)"
+                }
+                else
+                {
+                    $target = $image.cluster.name
+                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Appliance: $target)"
+                }
                 $i++
             }
             While ($true) 
