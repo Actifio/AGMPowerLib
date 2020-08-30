@@ -308,6 +308,31 @@ There are three ways to use these functions:
     ```
     New-AGMLibGCPVM -appid 20933978 -mountapplianceid 1415033486 -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
     ```
+
+### Importing OnVault images
+
+Prior to running your scripts you may want to import the latest OnVault images into your appliance.  Doing this requires only one command with two parameters like this:
+```
+Import-AGMOnVault -diskpoolid 20060633 -applianceid 1415019931 
+```
+Learn Appliance ID with (use the cklusterid value):
+```
+Get-AGMAppliance | select name,clusterid | sort-object name
+```
+Learn Diskpool ID with (use the ID field): 
+```
+Get-AGMDiskPool | where-object {$_.pooltype -eq "vault" } | select id,name | sort-Object name
+```
+You can as an alternative import a specific appid by learning the appid with this command (using the appname, in the example here: *smalldb*):
+```
+Get-AGMLibApplicationID smalldb
+```
+Then run a command like this (using the id of the app as appid): 
+```
+ Import-AGMOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
+```
+Note you can also adds **-forget** to forget learned images, or **-owner** to take ownership of those images.
+
 ### Authentication details
 
 During guided mode you will notice that for functions that expect authentication details, these details are not mirrored to the screen as you type them.   However for stored scripts this presents a problem.   The good news is that for four out of five functions this is handled quite cleanly: 
@@ -319,5 +344,105 @@ During guided mode you will notice that for functions that expect authentication
 * New-AGMLibVM - This uses stored credentials on the appliance.
 
 
+# User Story - Ransomware recovery
 
+There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can start the recovery.
 
+First we build an object that contains a list of images.  For this we can use:
+```
+$imagelist = Get-AGMLibImageRange
+```
+In this example we get all images of VMs created in the last day:
+```
+Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 1
+```
+if we now that the last 24 hours is not going to be any good, we could use this (up to 3 days but not less than 1 day old):
+```
+Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 3 -newerlimit 1
+```
+Learn your vcenter host ID and set id:
+```
+PS /Users/anthony/git/AGMPowerLib> Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
+
+id      hostname                  srcid
+--      --------                  -----
+5552172 scvmm.sa.actifio.com      4661
+5552150 hq-vcenter.sa.actifio.com 4460
+5534713 vcenter-dr.sa.actifio.com 4371
+
+PS /Users/anthony/git/AGMPowerLib> $vcenterid = 5552150
+```
+Now learn your ESXHost IDs and make a simple array.  We need to choose ESX hosts thatr have datastores in common, because we are going to round robin across the ESX hosts and datastores.
+```
+PS /Users/anthony/git/AGMPowerLib> Get-AGMHost -filtervalue "isesxhost=true&vcenterhostid=4460" | select id,hostname
+
+id       hostname
+--       --------
+26534616 sa-esx8.sa.actifio.com
+5552168  sa-esx6.sa.actifio.com
+5552166  sa-esx5.sa.actifio.com
+5552164  sa-esx1.sa.actifio.com
+5552162  sa-esx2.sa.actifio.com
+5552160  sa-esx4.sa.actifio.com
+5552158  sa-esx7.sa.actifio.com
+
+PS /Users/anthony/git/AGMPowerLib> $esxhostlist = @(5552166,5552168)
+PS /Users/anthony/git/AGMPowerLib> $esxhostlist
+5552166
+5552168
+```
+Now make an array of datastores:
+```
+PS /Users/anthony/git/AGMPowerLib> $datastorelist = ((Get-AGMHost -id 5552166).sources.datastorelist | select-object name,freespace | sort-object name | Get-Unique -asstring | select name).name
+
+PS /Users/anthony/git/AGMPowerLib> $datastorelist
+IBM-FC-V3700
+Pure
+```
+We can now fire our new command:
+```
+New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist 
+```
+For uniqueness we have quite a few choices to generate VMs with useful names.   If you do nothing, then a numeric indicator will be added to each VM as a suffix.  Otherwise we can use:
+
+* -prefix xxxx           :   where xxxx is a prefix
+* -suffix yyyy           :   where yyyy is a suffix
+* -c or -condatesuffix   :  which will add the consistency date of the image as a suffix
+* -i  or -imagesuffix    :  which will add the image name of the image as a suffix
+
+This will mount all the images in the list and round robin through the ESX host list and data store list.
+
+If you don't specify a label, all the VMs will get the label **MultiVM Recovery**   This will let you easily spot your mounts by doing this:
+```
+$mountlist = Get-AGMLibActiveImage | where-object  {$_.label -eq "MultiVM Recovery"}
+```
+When you are ready to unmount them, run this script:
+```
+foreach ($mount in $mountlist.imagename)
+{
+Remove-AGMMount $mount -d
+}
+```
+
+### esxhostid vs esxhostlist
+
+You can just specify one esxhost ID with -esxhostid.   If you are using NFS datastore and you will let DRS rebalance laterm, this cna make things much faster
+
+## datastore vs datastorelist
+
+You can also specify a single datastore rather than a list.
+
+## Editing your $Imagelist 
+
+You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+In this example we grab 20 days of images:
+
+```
+Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+```
+
+We now edit the CSV to remove images we don't want.   We then import what is left into our $imagelist:
+```
+$imagelist = Import-Csv -Path .\images.csv
+```
