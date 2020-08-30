@@ -58,14 +58,20 @@ Then re-run the installer.  The installer will unblock all the files.
 The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard:
 
 ```
-New-AGMLibContainer
+New-AGMLibContainerMount
+New-AGMLibOracleMount
 New-AGMLibMSSQLMount
+
+New-AGMLibAWSVM
+New-AGMLibAzureVM
+New-AGMLibGCPVM
+New-AGMLibSystemStateToVM
 New-AGMLibVM 
 New-AGMLibVMExisting 
 ```
 
-## User Stories
-Here are some user stories.
+# User Story - Database Mounts
+Here are some user stories for Database mounts
 
 ### SQL Test and Dev Image usage
 
@@ -275,3 +281,43 @@ So now we know the names of the DBs inside our SQL instance, we just need to cho
 ```
 PS /Users/anthony>  New-AGMLibMSSQLMount -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "testdev_" -dbnamesuffix "_av"
 ```
+
+# User Story - Creating new VMs
+
+Actifio can store images of many kinds of virtual machines.  The two formats we are going to explore here are:
+
+* System State images - where the image used to generate a new VM is created by the Actifio Connector using a system state backup.  The source system could be amongst many things:  an AWS EC2 instance, a GCP GCE Instance an Azure VM, a VMware VM or a physical machine.
+* VMware VMs - where the image of the VMware VM is created by a VMware Snapshot.  We can use this image to make either a new VMware VM, or an image in other supported hypervisors, such as AWS, Azure and GCP.
+
+There are several guided functions you can use to run or build a working command to mount these images:
+
+* New-AGMLibAWSVM - to create a new AWS EC2 Instance
+* New-AGMLibAzureVM - to create a new Azure VM
+* New-AGMLibGCPVM - to create a new GCP Instance
+* New-AGMLibSystemStateToVM - to create a new VMware VM from a system state image
+* New-AGMLibVM - to create a new VMware VM from a VMware snapshot
+
+There are three ways to use these functions:
+
+1. Run the function in guided mode by just starting the function without options.   Use the function to build a typical mount.   The end result will be a command you can save to run later or one you can run right now.    Since the goal is to provide automation, the purpose of the guided mode is not for day to day use, but to help you learn the syntax of a working command.
+1.  Having created a guided output command, you will note the command contains an imageID.   The problem with this is that images are not persistent (unless they are set to never expire).  Typically you would need to use some logic to learn a current image ID.   In this case, we would specify the image ID as a variable that is poroduced by a different function.  The command would look like this:  
+    ```
+    New-AGMLibGCPVM -imageid $imageid -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
+    ```
+1.  The alternative to (2) above is to instead specify an appid and mountapplianceid.  The nice thing is that guided mode will supply these.   If you supply an imageid it is pointless supplying an appid and appliance ID since an image is always tied to an app and an appliance, but presuming we don't know the image ID at time of running the command and all we want is the more recent image on the specified appliance, then this command will work pefectecly.   The nice thing is you can now store this command to run later, knowing it will just use the latest available image at the time you run it.   Note that importing OnVault images before running it may be required.   Here is a typical command, notice the difference with (2) above:
+    ```
+    New-AGMLibGCPVM -appid 20933978 -mountapplianceid 1415033486 -vmname "avtest20" -gcpkeyfile "/Users/anthony/Downloads/actifio-sales-310-a95fd43f4d8b.json" -volumetype "SSD persistent disk" -projectid "project1" -regioncode "us-east4" -zone "us-east4-b" -network1 "default;sa-1;"
+    ```
+### Authentication details
+
+During guided mode you will notice that for functions that expect authentication details, these details are not mirrored to the screen as you type them.   However for stored scripts this presents a problem.   The good news is that for four out of five functions this is handled quite cleanly: 
+
+* New-AGMLibAWSVM - Rather than specify the account and secret key,  use the CSV file downloaded when you generate the key in the IAM panel.   You just need to specify the path and file name for that CSV.
+* New-AGMLibAzureVM - Guided mode will not print the access credentials.  You will need to type them in later and store them securely.
+* New-AGMLibGCPVM - This uses the JSON file downloaded from the GCP Cloud Console IAM panel.
+* New-AGMLibSystemStateToVM - This uses stored credentials on the appliance.
+* New-AGMLibVM - This uses stored credentials on the appliance.
+
+
+
+
