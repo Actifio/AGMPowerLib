@@ -57,11 +57,14 @@ Then re-run the installer.  The installer will unblock all the files.
 
 The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard:
 
+Database mounts:
 ```
 New-AGMLibContainerMount
 New-AGMLibOracleMount
 New-AGMLibMSSQLMount
-
+```
+New VM mounts:
+```
 New-AGMLibAWSVM
 New-AGMLibAzureVM
 New-AGMLibGCPVM
