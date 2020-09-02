@@ -130,8 +130,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.12] 2020-09-0
+        ## [0.0.0.12] 2020-09-02
         NewVM menus will show OnVault pool name during image selection
+        Ensure AGMPowerCLI is installed by making it a required module
 
         ## [0.0.0.11] 2020-08-26
         Improved Get-AGMLibActiveImage
