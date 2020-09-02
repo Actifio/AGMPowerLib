@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.11'
+ModuleVersion = '0.0.0.12'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -51,7 +51,7 @@ PowerShellVersion = '7.0'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @('AGMPowerCLI')
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -130,6 +130,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.12] 2020-09-0
+        NewVM menus will show OnVault pool name during image selection
+
         ## [0.0.0.11] 2020-08-26
         Improved Get-AGMLibActiveImage
         System State recovery will now look for latest image if that is what is wanted

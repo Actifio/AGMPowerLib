@@ -193,6 +193,58 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[int]$mountapplianceid,[string]$
         }
     }
     
+    
+
+    # this if for guided menu
+    if ($guided)
+    {
+        if (!($imageid))
+        {
+            write-host "Fetching Image list from AGM for Appid $appid"
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool | Sort-Object consistencydate
+            if ($imagelist.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                return
+            }
+
+            Clear-Host
+            Write-Host "Image list.  Choose based on the best consistency date, location and jobclass."
+            $i = 1
+            foreach
+            ($image in $imagelist)
+            { 
+                if ($image.jobclass -eq "OnVault")
+                {
+                    $target = $image.diskpool.name
+                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Diskpool: $target)"
+                }
+                else
+                {
+                    $target = $image.cluster.name
+                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Appliance: $target)"
+                }
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $imagelist.Length
+                [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $imageid =  $imagelist[($imageselection - 1)].id   
+            $jobclass = $imagelist[($imageselection - 1)].jobclass
+        }
+    }
+
     if (($appid) -and ($mountapplianceid) -and (!($imageid)))
     {
         # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
@@ -213,48 +265,8 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[int]$mountapplianceid,[string]$
     $memorydefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "Memory"}).defaultvalue
     $ostype = ($systemstateoptions| where-object {$_.name -eq "OSType"}).defaultvalue
 
-    # this if for guided menu
     if ($guided)
     {
-        if (!($imageid))
-        {
-            write-host "Fetching Image list from AGM for Appid $appid"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster | Sort-Object consistencydate
-            if ($imagelist.id.count -eq 0)
-            {
-                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
-                return
-            }
-
-            Clear-Host
-            Write-Host "Image list.  Choose based on the best consistency date, location and jobclass."
-            $i = 1
-            foreach
-            ($image in $imagelist)
-            { 
-                $targetappliance = $image.cluster.name
-                Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) ($targetappliance)"
-                $i++
-            }
-            While ($true) 
-            {
-                Write-host ""
-                $listmax = $imagelist.Length
-                [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
-                } 
-                else
-                {
-                    break
-                }
-            }
-            $imageid =  $imagelist[($imageselection - 1)].id   
-            $jobclass = $imagelist[($imageselection - 1)].jobclass
-        }
-
-
         Clear-Host
         #using the image we learn which appliance it is on.  We need this so we can list only the vCenters known to that appliance
         $clusterid = (Get-AGMImage -id $imageid).clusterid
