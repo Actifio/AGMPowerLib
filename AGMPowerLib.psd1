@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.12'
+ModuleVersion = '0.0.0.13'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -91,6 +91,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibMSSQLMigrate',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
+'Restore-AGMLibMount',
 'Set-AGMLibMSSQLMigrate')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
@@ -130,6 +131,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.13] 2020-09-04
+        Added Restore-AGMLibMount to rewind child apps
+        Improved New-AGMLibOracleMount and New-AGMLibMSSQLMount to check for mount appliance and offer management of child app
+
         ## [0.0.0.12] 2020-09-02
         NewVM menus will show OnVault pool name during image selection
         Ensure AGMPowerCLI is installed by making it a required module

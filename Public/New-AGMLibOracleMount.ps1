@@ -1,6 +1,7 @@
-Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$username,[string]$orahome,[string]$recoverypoint,[string]$label,[string]$mountmode,[string]$mapdiskstoallesxhosts,
+Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[int]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$dbname,[string]$username,[string]$orahome,[string]$recoverypoint,[int]$sltid,[int]$slpid,[string]$label,[string]$mountmode,[string]$mapdiskstoallesxhosts,
 [switch]$nonid,[switch]$noarchivemode,[switch]$clearlog,[switch]$notnsupdate,[switch]$nooratabupdate,[switch]$CLEAR_OS_AUTHENT_PREFIX,[switch]$norrecovery,[switch]$useexistingorapw,[string]$tnsadmindir, 
 [string]$password,
+[string]$base64password,
 [int]$totalmemory,
 [int]$sgapct,
 [int]$redosize,
@@ -39,9 +40,40 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
     .DESCRIPTION
     A function to mount Oracle Images
 
+    * Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the imagename and specify that as part of the command with -imagename
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
+
+    Note default values don't need to specified.  So for instance these are both unnecessary:   -recoverdb true -userlogins false
+
+    * label
+    -label   Label for mount, recommended
+
     There are a great many variables that can be set.  To get help, use guided mode.
-    Note the password field expects a password already base64 encoded.
-    Note that if specify -norrecovery then your moounted DB will not be brought online.   This switch has a different name to the setting, because the default is for rrecovery to be true (set on)
+    
+    * Username and password:
+    
+    -username  This is the username (mandatory).  Normally a password is not needed.
+    -password  This is the password in plain text (not a good idea)
+    -base64password   This is the password in base 64 encoding
+    To create this:
+    $password = 'passw0rd'
+    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
+    $base64password =[Convert]::ToBase64String($Bytes)
+
+    * VMware specific options
+    -mountmode    use either   nfs, vrdm or prdm
+    -mapdiskstoallesxhosts   Either true to do this or false to not do this.  Default is false.  
+
+    * Reprotection:
+
+    -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
+    -slpid yyyy (short for Service Level Profile ID) - if specified along with an sltid, will reprotect the mounted child app with the specified template and profile
+    
+    Note that if specify -norrecovery then your mounted DB will not be brought online.   
 
     #>
 
@@ -65,6 +97,43 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
     if (( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) ) -or ($guided))
     {
         Clear-Host
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+        }
         write-host "Oracle App Selection menu"
         Write-host ""
         $guided = $true
@@ -255,10 +324,6 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
         }
     }
 
-    if ($norrecovery)
-    {
-        {  $rrecovery = $FALSE  } 
-    }
 
     # by this point we should have a target host ID and a source appID, either by user prompts or entry.
     # this if for guided menu
@@ -298,30 +363,32 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
             }
             else
             {
-                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot"  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
-                if ($imagelist1.count -eq 0)
+                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass | Sort-Object consistencydate,jobclass
+                if ($imagelist1.id.count -eq 0)
                 {
-                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any snapshot Images for appid $appid"
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
                     return
                 }
-                $imagelist = $imagelist1  | select-object -Property backupname,consistencydate,endpit,id | Sort-Object consistencydate
-                if ($imagelist1.count -eq 1)
+                $imagelist = $imagelist1  | Sort-Object consistencydate
+                if ($imagelist1.id.count -eq 1)
                 {
                     $imagegrab = Get-AGMImage -id $($imagelist).id
                     $imagename = $imagegrab.backupname                
                     $consistencydate = $imagegrab.consistencydate
                     $endpit = $imagegrab.endpit
                     $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id    
+                    $appid = $imagegrab.application.id     
+                    $jobclass = $imagegrab.jobclass
+                    write-host "Found one $jobclass image $imagename, consistency date $consistencydate "
                 } 
                 else
                 {
                     Clear-Host
-                    Write-Host "Snapshot list.  Choose the best consistency date."
+                    Write-Host "Image list.  Choose the best jobclass and consistency date."
                     $i = 1
                     foreach
-                    ($image in $imagelist.consistencydate)
-                        { Write-Host -Object "$i`:  $image"
+                    ($image in $imagelist)
+                        { Write-Host -Object "$i`:  $($image.consistencydate) ($($image.jobclass))"
                         $i++
                     }
                     While ($true) 
@@ -344,8 +411,7 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
                     $consistencydate = $imagegrab.consistencydate
                     $endpit = $imagegrab.endpit
                     $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id
-    
+                    $appid = $imagegrab.application.id   
                 }
             }
         }
@@ -419,7 +485,68 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
                 }
             }
         }
+        # reprotection
+        Clear-Host
+        Write-Host "Reprotection"
+        Write-Host "1`: Don't manage new application (default)"
+        Write-Host "2`: Manage new application"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq "") { $userselection = 1 }
+        if ($userselection -eq 2) 
+        {   
+            # slt selection
+            Clear-Host
+            Write-Host "SLT list"
+            $objectgrab = Get-AGMSLT | sort-object name
+            $i = 1
+            foreach
+            ($object in $objectgrab)
+                { Write-Host -Object "$i`:  $($object.name) ($($object.id))"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $objectgrab.Length
+                [int]$objectselection = Read-Host "Please select from this list (1-$listmax)"
+                if ($objectselection -lt 1 -or $objectselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $sltid =  $objectgrab[($objectselection - 1)].id
 
+            #slp selection
+            Clear-Host
+            Write-Host "SLP list"
+            $objectgrab = Get-AGMSLP -filtervalue clusterid=$mountapplianceid | sort-object name
+            $i = 1
+            foreach
+            ($object in $objectgrab)
+                { Write-Host -Object "$i`:  $($object.name) ($($object.id))"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $objectgrab.Length
+                [int]$objectselection = Read-Host "Please select from this list (1-$listmax)"
+                if ($objectselection -lt 1 -or $objectselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $slpid =  $objectgrab[($objectselection - 1)].id
+        }
         # switch section
         Clear-Host
         Write-Host "Do you want to set any Advanced Options?"
@@ -429,10 +556,12 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
         [int]$userselection = Read-Host "Please select from this list (1-2)"
         if ($userselection -eq 2) 
         { 
-            [SecureString]$passwordenc = Read-Host -AsSecureString "Password"
-            $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
-            $password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
-
+            $passwordenc = Read-Host -AsSecureString "Password"
+            if ($passwordenc.length -ne 0)
+            {
+                $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
+                $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
+            }
             [string]$tnsadmindir = Read-Host "TNS ADMIN DIRECTORY PATH" 
             [int]$totalmemory = Read-Host "DATABASE MEMORY SIZE IN MB" 
             [int]$sgapct = Read-Host "SGA %" 
@@ -489,8 +618,8 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
             Write-Host ""
             [int]$userselection = Read-Host "Please select from this list (1-2)"
             if ($userselection -eq "") { $userselection = 1 }
-            if ($userselection -eq 1) {  $rrecovery = $TRUE  }
-            if ($userselection -eq 2) {  $rrecovery = $FALSE  }      
+            if ($userselection -eq 1) {  $norrecovery = $FALSE  }
+            if ($userselection -eq 2) {  $norrecovery = $TRUE  }      
             Write-Host "1`: DO NOT USE EXISTING ORACLE PASSWORD FILE(default)"
             Write-Host "2`: USE EXISTING ORACLE PASSWORD FILE"
             Write-Host ""
@@ -501,7 +630,7 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
          }
         else 
         {
-            $rrecovery = $TRUE
+            $norrecovery = $FALSE
         }   
         
         
@@ -557,7 +686,7 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibOracleMount -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`"  -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`"  -recoverypoint `"$recoverypoint`""
                 if ($mountmode)
                 {
                     Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
@@ -565,7 +694,11 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibOracleMount -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`""
+                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`""
+                if ($sltid)
+                {
+                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
+                }
                 if ($mountmode)
                 {
                     Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
@@ -577,9 +710,9 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
             if ($notnsupdate) {Write-Host -nonewline " -notnsupdate"}
             if ($nooratabupdate) {Write-Host -nonewline " -nooratabupdate"}
             if ($CLEAR_OS_AUTHENT_PREFIX) {Write-Host -nonewline " -CLEAR_OS_AUTHENT_PREFIX"}
-            if ($rrecovery) {Write-Host -nonewline " -rrecovery"}
+            if ($norrecovery) {Write-Host -nonewline " -norrecovery"}
             if ($useexistingorapw) {Write-Host -nonewline " -useexistingorapw"}
-            if ($password) {Write-Host -nonewline " -password `"$password`""}
+            if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
             if ($tnsadmindir) {Write-Host -nonewline " -tnsadmindir `"$tnsadmindir`""}
             if ($totalmemory) {Write-Host -nonewline " -totalmemory $totalmemory"}
             if ($sgapct) {Write-Host -nonewline " -sgapct $sgapct"}
@@ -613,19 +746,27 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
 
     }
 
-    
-    # learn about the image
-    if ((!($imagename)) -and (!($backupid)))
+    #handle unsecure password (why oh why)
+    if ($password)
     {
-        $imagegrab = Get-AGMLibLatestImage $appid
-        if (!($imagegrab.backupname))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
-            return
-        }   
-        else {
-            $imagename = $imagegrab.backupname
+        $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
+        $base64password =[Convert]::ToBase64String($Bytes)
+    }
+    
+
+    if (($appid) -and ($mountapplianceid) -and (!($backupid)))
+    {
+        # if we are not running guided mode but we have an appid without backupid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
             $backupid = $imagegrab.id
+            $imagename = $imagegrab.backupname
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
         }
     }
 
@@ -682,6 +823,16 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
         )
     }
 
+    if ( ($sltid) -and (!($slpid)) )
+    {
+        Get-AGMErrorMessage -messagetoprint "An sltid $sltid was specified without an slpid with -slpid yyyy.   Please specify both"
+        return
+    }
+    if ( (!($sltid)) -and ($slpid) )
+    {
+        Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx.    Please specify both"
+        return
+    }
     
     
     if ($dbname) 
@@ -696,16 +847,32 @@ Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[string]$imagenam
         $provisioningoptions += @( @{ name = 'databasesid'; value = $dbname } )
         $provisioningoptions += @( @{ name = 'username'; value = $username } )
         $provisioningoptions += @( @{ name = 'orahome'; value = $orahome } )
+        # reprotect
+        if ($sltid)
+        {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'reprotect'
+                value = "true"
+            }
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'slt'
+                value = $sltid
+            }
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'slp'
+                value = $slpid
+            }
+        }
         # all the switches 
         if ($nonid) { $provisioningoptions += @( @{ name = 'nonid'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'nonid'; value = "false" } ) }
         if ($noarchivemode) { $provisioningoptions += @( @{ name = 'noarchivemode'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'noarchivemode'; value = "false" } ) }
         if ($clearlog) { $provisioningoptions += @( @{ name = 'clearlog'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'clearlog'; value = "false" } ) }
         if ($notnsupdate) { $provisioningoptions += @( @{ name = 'notnsupdate'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'notnsupdate'; value = "false" } ) }
         if ($CLEAR_OS_AUTHENT_PREFIX) { $provisioningoptions += @( @{ name = 'CLEAR_OS_AUTHENT_PREFIX'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'CLEAR_OS_AUTHENT_PREFIX'; value = "false" } ) }
-        if ($rrecovery) { $provisioningoptions += @( @{ name = 'rrecovery'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'rrecovery'; value = "false" } ) }
+        if ($norrecovery) { $provisioningoptions += @( @{ name = 'rrecovery'; value = "false" } ) } else { $provisioningoptions += @( @{ name = 'rrecovery'; value = "true" } ) }
         if ($useexistingorapw) { $provisioningoptions += @( @{ name = 'useexistingorapw'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'useexistingorapw'; value = "false" } ) }
         # all the options
-        if ($password) { $provisioningoptions += @( @{ name = 'password'; value = $password } ) } 
+        if ($password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
         if ($tnsadmindir) { $provisioningoptions += @( @{ name = 'tnsadmindir'; value = $tnsadmindir } ) } 
         if ($sgapct) { $provisioningoptions += @( @{ name = 'sgapct'; value = $sgapct } ) } 
         if ($redosize) { $provisioningoptions += @( @{ name = 'redosize'; value = $redosize } ) } 
