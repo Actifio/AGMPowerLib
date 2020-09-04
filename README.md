@@ -1,6 +1,12 @@
 # AGMPowerLib
 A Library of PowerShell Scripts to interact with AGM
 
+## Prerequisite
+
+This module requires AGMPowerCLI to already be installed.
+Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI-Beta
+
+
 ### Install or Upgrade AGMPowerLib
 
 Install from PowerShell Gallery:
@@ -263,7 +269,7 @@ eligiblelist    : {@{id=5552340; appname=ReportServer; apptype=SqlServerWriter; 
                   @{id=50805022; appname=model; apptype=SqlServerWriter; srcid=23401122; sensitivity=0; systemdb=False; ispartofmemberrule=False; appstate=0}…}               
 ```
 
-However the eligible list is not easy to read, so lets exand it and put it into a table.  This is much easier to read:
+However the eligible list is not easy to read, so lets expand it and put it into a table.  This is much easier to read:
 
 ```
 PS /Users/anthony> Get-AGMApplicationInstanceMember 5534398 | Select-Object -ExpandProperty eligiblelist | ft
