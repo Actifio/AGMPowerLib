@@ -1,4 +1,4 @@
-Function New-AGMLibAWSVM ([int]$appid,[string]$appname,[int]$mountapplianceid,[int]$imageid,[string]$imagename,
+Function New-AGMLibAWSVM ([string]$appid,[string]$appname,[string]$mountapplianceid,[string]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$migratevm,
 [switch]$poweroffvm,

@@ -1,4 +1,4 @@
-Function New-AGMLibImage ([int]$appid,[int]$policyid,[string]$capturetype,[switch][alias("m")]$monitor) 
+Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[switch][alias("m")]$monitor) 
 {
     <#
     .SYNOPSIS
@@ -57,7 +57,7 @@ Function New-AGMLibImage ([int]$appid,[int]$policyid,[string]$capturetype,[switc
 
     if (!($appid))
     {
-        [int]$appid = Read-Host "AppID"
+        [string]$appid = Read-Host "AppID"
     }
     if (!($policyid))
     {     

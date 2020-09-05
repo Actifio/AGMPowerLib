@@ -1,4 +1,4 @@
-Function New-AGMLibOracleMount ([int]$appid,[int]$targethostid,[int]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$dbname,[string]$username,[string]$orahome,[string]$recoverypoint,[int]$sltid,[int]$slpid,[string]$label,[string]$mountmode,[string]$mapdiskstoallesxhosts,
+Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$dbname,[string]$username,[string]$orahome,[string]$recoverypoint,[string]$sltid,[string]$slpid,[string]$label,[string]$mountmode,[string]$mapdiskstoallesxhosts,
 [switch]$nonid,[switch]$noarchivemode,[switch]$clearlog,[switch]$notnsupdate,[switch]$nooratabupdate,[switch]$CLEAR_OS_AUTHENT_PREFIX,[switch]$norrecovery,[switch]$useexistingorapw,[string]$tnsadmindir, 
 [string]$password,
 [string]$base64password,

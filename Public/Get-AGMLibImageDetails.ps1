@@ -1,4 +1,4 @@
-Function Get-AGMLibImageDetails ([int]$appid) 
+Function Get-AGMLibImageDetails ([string]$appid) 
 {
     <#
     .SYNOPSIS
@@ -35,7 +35,7 @@ Function Get-AGMLibImageDetails ([int]$appid)
     
     if (!($appid))
     {
-        [int]$appid = Read-Host "AppID"
+        [string]$appid = Read-Host "AppID"
     }
          
     $output = Get-AGMImage -filtervalue appid=$appid -sort "jobclasscode:asc,consistencydate:asc"

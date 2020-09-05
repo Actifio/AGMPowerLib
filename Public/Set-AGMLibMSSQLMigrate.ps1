@@ -1,4 +1,4 @@
-Function Set-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[int]$srcid,[switch]$jsonprint) 
+Function Set-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[string]$srcid,[switch]$jsonprint) 
 {
     <#
     .SYNOPSIS

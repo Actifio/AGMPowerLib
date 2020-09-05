@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([int]$appid,[string]$jobclass,[string]$appname,[int]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
+Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS

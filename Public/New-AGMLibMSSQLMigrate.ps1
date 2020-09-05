@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[int]$srcid,[switch]$jsonprint,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[switch]$usesourcelocation,[string]$restorelist,[switch][alias("g")]$guided) 
+Function New-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[string]$srcid,[switch]$jsonprint,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[switch]$usesourcelocation,[string]$restorelist,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS

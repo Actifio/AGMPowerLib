@@ -1,4 +1,4 @@
-Function Restore-AGMLibMount ([int]$imageid,[string]$imagename,[string]$appname,[int]$appid,[string]$username,[string]$password,[string]$mountmode,[string]$recoverdb,[string]$recoverypoint,[string]$disableschedule,[string]$markdependent,[switch][alias("g")]$guided) 
+Function Restore-AGMLibMount ([string]$imageid,[string]$imagename,[string]$appname,[string]$appid,[string]$username,[string]$password,[string]$mountmode,[string]$recoverdb,[string]$recoverypoint,[string]$disableschedule,[string]$markdependent,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -417,7 +417,7 @@ Function Restore-AGMLibMount ([int]$imageid,[string]$imagename,[string]$appname,
 
     if (!($imageid))
     {
-        [int]$imageid = Read-Host "ImageID to restore"
+        [string]$imageid = Read-Host "ImageID to restore"
     }
 
     if (!($mountmode))

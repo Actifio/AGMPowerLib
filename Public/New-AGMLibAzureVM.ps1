@@ -1,4 +1,4 @@
-Function New-AGMLibAzureVM ([int]$appid,[int]$mountapplianceid,[string]$appname,[int]$imageid,[string]$imagename,
+Function New-AGMLibAzureVM ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$migratevm,
 [switch]$poweroffvm,

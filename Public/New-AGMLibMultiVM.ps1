@@ -1,4 +1,4 @@
-Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[int]$esxhostid,[string]$prefix,[string]$suffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[array]$datastorelist,[string]$datastore,[string]$esxhostid,[string]$prefix,[string]$suffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$mountmode,[string]$poweronvm,[string]$mapdiskstoallesxhosts,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS

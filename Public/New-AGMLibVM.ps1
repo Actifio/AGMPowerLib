@@ -1,4 +1,4 @@
-Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[int]$esxhostid,[int]$vcenterid,[string]$mapdiskstoallesxhosts,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -463,7 +463,7 @@ Function New-AGMLibVM ([int]$appid,[string]$appname,[int]$imageid,[string]$vmnam
     
     if (!($imageid))
     {
-        [int]$imageid = Read-Host "ImageID to mount"
+        [string]$imageid = Read-Host "ImageID to mount"
     }
 
     if (!($mountmode))

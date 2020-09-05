@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.13'
+ModuleVersion = '0.0.0.14'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -131,6 +131,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.14] 2020-09-05
+        Changed most variables from int to string as some appliances have numbers that exceed int32 boundaries
+
         ## [0.0.0.13] 2020-09-04
         Added Restore-AGMLibMount to rewind child apps
         Improved New-AGMLibOracleMount and New-AGMLibMSSQLMount to check for mount appliance and offer management of child app

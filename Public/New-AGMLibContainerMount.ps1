@@ -1,4 +1,4 @@
-Function New-AGMLibContainerMount ([int]$appid,[string]$appname,[string]$allowedips,[int]$imageid,[string]$imagename,[string]$label,[string]$volumes,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allowedips,[string]$imageid,[string]$imagename,[string]$label,[string]$volumes,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -188,7 +188,7 @@ Function New-AGMLibContainerMount ([int]$appid,[string]$appname,[string]$allowed
     
     if (!($imageid))
     {
-        [int]$imageid = Read-Host "ImageID to mount"
+        [string]$imageid = Read-Host "ImageID to mount"
     }
 
 

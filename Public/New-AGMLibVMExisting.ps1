@@ -1,4 +1,4 @@
-Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostname,[int]$targethostid,[int]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -351,7 +351,7 @@ Function New-AGMLibVMExisting ([int]$appid,[string]$appname,[string]$targethostn
     
     if (!($imageid))
     {
-        [int]$imageid = Read-Host "ImageID to mount"
+        [string]$imageid = Read-Host "ImageID to mount"
     }
 
     if (!($imagename))

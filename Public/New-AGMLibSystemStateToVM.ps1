@@ -1,4 +1,4 @@
-Function New-AGMLibSystemStateToVM ([int]$appid,[int]$mountapplianceid,[string]$appname,[int]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[int]$esxhostid,[int]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
+Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[string]$esxhostid,[string]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -513,7 +513,7 @@ Function New-AGMLibSystemStateToVM ([int]$appid,[int]$mountapplianceid,[string]$
     
     if (!($imageid))
     {
-        [int]$imageid = Read-Host "ImageID to mount"
+        [string]$imageid = Read-Host "ImageID to mount"
     }
 
     if ( (!($datastore)) -or (!($esxhostid)) -or (!($vcenterid)) )

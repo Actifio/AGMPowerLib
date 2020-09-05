@@ -1,6 +1,6 @@
-Function New-AGMLibGCPVM ([int]$appid,[int]$mountapplianceid,
+Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
 [string]$appname,
-[int]$imageid,[string]$imagename,
+[string]$imageid,[string]$imagename,
 [string]$vmname,
 [switch]$poweroffvm,
 [string]$rehydrationmode,
