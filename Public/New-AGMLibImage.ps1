@@ -1,4 +1,4 @@
-Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[switch][alias("m")]$monitor) 
+Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[string]$label,[switch][alias("m")]$monitor) 
 {
     <#
     .SYNOPSIS
@@ -88,17 +88,11 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
         }
         $policy = @{id=$policyid}
         $body = @{policy=$policy;backuptype=$capturetype}
+        if ($label)
+        {
+            $body += @{label=$label}
+        }
         $json = $body | ConvertTo-Json
         Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
-        Start-Sleep -s 5
-        $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=1&isscheduled=false" -sort queuedate:desc -limit 1 | select-object jobname,status,queuedate,startdate
-        if (($jobgrab) -and ($monitor))
-        {
-            Get-AGMFollowJobStatus $jobgrab.jobname
-        }
-        else 
-        {
-            $jobgrab 
-        }
     }
 }
