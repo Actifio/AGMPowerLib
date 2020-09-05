@@ -18,7 +18,7 @@ Function Get-AGMLibApplicationID ([string]$appname,[string]$friendlytype,[string
     There are seven extra search options apart from appname, which is mandatory
     Type of App:
     -apptype xxxx  To also search by apptype such as -apptype SqlInstance
-    -friendlytype xxxx  To also search by apptype such as -friendlytype SqlInstance
+    -friendlytype xxxx  To also search by friendlytype such as -friendlytype SqlInstance
 
     Appliance:
     -applianceid  xxxx  To also search by applianceID such as -applianceid 1415071155
