@@ -99,7 +99,8 @@ function Install-AGMPowerLib ( [string]$Software )
     else 
     {
         Write-Host "`nUpgrading AGMPowerLib"
-        Remove-Module -Name AGMPowerLib
+        Uninstall-Module -Name AGMPowerLib -ErrorAction SilentlyContinue
+        Remove-Module -Name AGMPowerLib -ErrorAction SilentlyContinue
     }
 
     $download_path = "$TmpDir" + "/" + $branch + ".zip" 
