@@ -1,4 +1,4 @@
-Function Get-AGMLibAppPolicies ([string]$appid,[string]$slaid) 
+Function Get-AGMLibAppPolicies ([string]$appid) 
 {
     <#
     .SYNOPSIS
@@ -36,19 +36,12 @@ Function Get-AGMLibAppPolicies ([string]$appid,[string]$slaid)
         }
     }
 
-    if  ( (!($appid)) -or (!($slaid)) )
+    if  (!($appid))
     {
         [string]$appid = Read-Host "AppID"
-    }   
+    }  
 
-    if ($appid)
-    {
-        $appgrab = Get-AGMApplication -filtervalue appid=$appid 
-    }
-    else 
-    {
-        $appgrab = Get-AGMApplication -filtervalue slaid=$slaid 
-    }
+    $appgrab = Get-AGMApplication -filtervalue appid=$appid 
     
     $sltid = $appgrab.sla.slt.id
     if (!($sltid))

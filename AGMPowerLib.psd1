@@ -93,7 +93,8 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
 'Restore-AGMLibMount',
-'Set-AGMLibMSSQLMigrate')
+'Set-AGMLibMSSQLMigrate',
+'Start-AGMLibWorkflow')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -134,7 +135,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.15] 2020-09-
         Add label to New-AGMLibImage
-        Add Get-AGMLibAppPolicies
+        Add Get-AGMLibAppPolicies, Start-AGMLibWorkflow
 
         ## [0.0.0.14] 2020-09-05
         Changed most variables from int to string as some appliances have numbers that exceed int32 boundaries
