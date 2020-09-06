@@ -13,6 +13,10 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
     Create a new snapshot for AppID 2133445
 
     .EXAMPLE
+    New-AGMLibImage  -appid 2133445 -label "Dev image after upgrade"
+    Create a new snapshot for AppID 2133445 with a label.
+
+    .EXAMPLE
     New-AGMLibImage  -appid 2133445 -capturetype log
     Create a new log snapshot for AppID 2133445
 
@@ -87,11 +91,7 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
             }
         }
         $policy = @{id=$policyid}
-        $body = @{policy=$policy;backuptype=$capturetype}
-        if ($label)
-        {
-            $body += @{label=$label}
-        }
+        $body = @{label=$label;policy=$policy;backuptype=$capturetype}
         $json = $body | ConvertTo-Json
         Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
     }
