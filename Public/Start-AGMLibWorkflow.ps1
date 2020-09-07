@@ -57,7 +57,8 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
 
     if ($refresh)
     {
-        $flowitemgrab = Get-AGMAPIData -endpoint /application/$appid/workflow/$workflowid -itemoverride
+        $flowitemgrab = Get-AGMApplicationWorkflowStatus -id $appid -workflowid $workflowid 
+        # $flowitemgrab = Get-AGMAPIData -endpoint /application/$appid/workflow/$workflowid -itemoverride
         if ($flowitemgrab.id.count -eq 1)
         {
             $flowitemid = $flowitemgrab.id
