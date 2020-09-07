@@ -57,17 +57,21 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
 
     if ($refresh)
     {
-        $flowitemgrab = Get-AGMAPIData -endpoint /application/$appid/workflow/$workflowid
+        $flowitemgrab = Get-AGMAPIData -endpoint /application/$appid/workflow/$workflowid -itemoveride
         if ($flowitemgrab.id.count -eq 1)
         {
             $flowitemid = $flowitemgrab.id
+            $cluster = $flowitemgrab.cluster
         }
         $frommoutgrab = Get-AGMAPIData -endpoint /application/$appid/workflow/$workflowid/frommount
         if ($frommoutgrab)
         {
             $mountedappid = $frommoutgrab.id
         }
+        $imageid = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot" -sort id:desc -limit 1 | select-object srcid
+
     }
+    write-host "cluster" $cluster
 
     $body = [ordered]@{}
     $body += @{ operation = "run"}
@@ -77,11 +81,14 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
         $items1 = @( $mountedapp )
         $items2 = @( [ordered]@{ name = "reprovision" ; items = $items1 } )
         $items3 = @( [ordered]@{ id = $flowitemid ; name = "mount" ; items = $items2 } )
-        $update = [ordered]@{ id = $workflowid ; items = $items3 }
+        $props = @( )
+        $props += @( [ordered]@{ key = "image" ; value = $imageid.srcid } )
+        $props += @( [ordered]@{ key = "policy" ; value = "ondemand" } )
+        $update = [ordered]@{ id = $workflowid ; name = "" ; props = $props ; items = $items3 ; cluster = $cluster }
         $body += [ordered]@{ update = $update }
     }
 
-    $json = $body | ConvertTo-Json -depth 8
+    $json = $body | ConvertTo-Json -depth 10
 
     Post-AGMAPIData  -endpoint /application/$appid/workflow/$workflowid -body $json
 
