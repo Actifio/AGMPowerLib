@@ -1,5 +1,22 @@
 Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refresh,[switch][alias("g")]$guided)
 {
+    # its pointless procededing without a connection.
+    if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
+    {
+        Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+        return
+    }
+    else 
+    {
+        $sessiontest = (Get-AGMSession).session_id
+        if ($sessiontest -ne $AGMSESSIONID)
+        {
+            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
+
+
     # if we don't get an appid, then lets presume we are going to build a command
     if ( (!($appid)) -or (!($workflowid)) )
     {
@@ -41,15 +58,15 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
 
         write-host "Selected $workflowid $workflowname for Appid $appid"
         Write-Host ""
-        Write-Host "1`: Provision new virtual application (Default)"
-        Write-Host "2`: Refresh existing application"
+        Write-Host "1`: Provision new virtual application (Default).     This command will be run:  Start-AGMLibWorkflow -workflowid $workflowid -appid $appid"
+        Write-Host "2`: Refresh existing application.     This command will be run:  Start-AGMLibWorkflow -workflowid $workflowid -appid $appid -refresh"
         Write-Host "3`: Exit without running the command"
         $userselection = Read-Host "Please select from this list (1-3)"
         if ($userselection -eq 2)
         {
             $refresh = $true
         }
-        if ($userchoice -eq 3)
+        if ($userselection -eq 3)
         {
             return
         }
