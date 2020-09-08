@@ -171,7 +171,7 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
     Post-AGMAPIData  -endpoint /application/$appid/workflow/$workflowid -body $json
     if ($monitor)
     {
-        Get-AGMLibWorkflowStatus -workflowid $workflowid -refresh
+        Get-AGMLibWorkflowStatus -workflowid $workflowid -monitor
     }
 
 }

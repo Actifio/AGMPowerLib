@@ -1,4 +1,4 @@
-Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$refresh,[switch][alias("p")]$previous)
+Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][alias("m")]$monitor,[switch][alias("p")]$previous)
 {
     <#
     .SYNOPSIS
@@ -41,7 +41,10 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$r
             return
         }
     }
+    # set datefields for later
     $datefields = "startdate,enddate"
+
+    # without a workflow ID there is nothing to do, so lets ask.   if user supplied appid we get shorter list
     if (!($workflowid))
     {
         Clear-Host
@@ -104,6 +107,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$r
 
     }
 
+    # if user asked for previous run the lets give that
     if ($previous)
     {
         $jobgrab = (Get-AGMWorkFlow -filtervalue id=$workflowid).status.prev
@@ -114,15 +118,27 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$r
                 $jobgrab.$field = Convert-FromUnixDate $jobgrab.$field
             }
         }
-        $jobgrab
+        $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end $jobgrab.enddate | select-object TotalMilliseconds
+        $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
+        $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
+        $jobgrab | select-object status,startdate,enddate,duration,result
+        # $jobgrab
         return
     }
 
 
-
-    if (!($refresh))
+    #if you user didn't ask to monitor then run once and exit
+    if (!($monitor))
     {
-        (Get-AGMWorkFlow -filtervalue id=$workflowid).status.current
+        $jobgrab = (Get-AGMWorkFlow -filtervalue id=$workflowid).status.current
+        foreach ($field in $datefields.Split(","))
+        {
+            if ($jobgrab.$field)
+            {
+                $jobgrab.$field = Convert-FromUnixDate $jobgrab.$field
+            }
+        }
+        $jobgrab | select-object status,startdate,enddate,duration,result
     }
     else 
     {
@@ -145,7 +161,18 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$r
                         }
                     }
                 }
-                $jobgrab
+                if ($jobgrab.enddate.length -gt 0)
+                {
+                    $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end $jobgrab.enddate | select-object TotalMilliseconds
+                }
+                else 
+                {
+                    $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end (Get-date) | select-object TotalMilliseconds
+                }
+                
+                $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
+                $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
+                $jobgrab | select-object status,startdate,enddate,duration,result
             }    
             else
             {
@@ -160,7 +187,10 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch]$r
                         }
                     }
                 }
-                $jobgrab
+                $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end (Get-date) | select-object TotalMilliseconds
+                $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
+                $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
+                $jobgrab | select-object status,startdate,enddate,duration,result
                 Start-Sleep -s 5  
             }
         } 
