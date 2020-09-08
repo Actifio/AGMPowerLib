@@ -44,6 +44,7 @@ Function Get-AGMLibAppPolicies ([string]$appid)
     $appgrab = Get-AGMApplication -filtervalue appid=$appid 
     
     $sltid = $appgrab.sla.slt.id
+    
     if (!($sltid))
     {
         Get-AGMErrorMessage -messagetoprint "Failed to learn SLT ID for specified ID"
@@ -60,6 +61,27 @@ Function Get-AGMLibAppPolicies ([string]$appid)
     }
     else 
     {
-        $policygrab
+        foreach ($policy in $policygrab)
+        {
+            if ($policy.retention)
+            {
+                $policy.retention = $policy.retention + " " + $policy.retentionm
+            }
+            if ($policy.rpo)
+            {
+                $policy.rpo = $policy.rpo + " " + $policy.rpom
+            }
+            if ($policy.starttime)
+            {
+                $st = [timespan]::fromseconds($poliy.starttime)
+                $policy.starttime = $st.ToString("hh\:mm")
+            }
+            if ($policy.endtime)
+            {
+                $et = [timespan]::fromseconds($policy.endtime)
+                $policy.endtime = $et.ToString("hh\:mm")
+            }
+        }
+        $policygrab | select-object id,name,op,priority,retention,starttime,endtime,rpo
     }    
 }
