@@ -17,8 +17,8 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
     Gets the previous status of workflow 1234
 
     .EXAMPLE
-    Get-AGMLibWorkflowStatus -workflowid 1234 -refresh
-    Gets the current status of workflow 1234 and monitors it till completion
+    Get-AGMLibWorkflowStatus -workflowid 1234 -monitor
+    Monitors the status of workflow 1234 till completion
 
     .DESCRIPTION
     A function to monitor workflows
