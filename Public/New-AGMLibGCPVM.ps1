@@ -557,11 +557,13 @@ Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
             )
         }
     }
-    $systemstateoptions += @( 
-        [ordered]@{ name = 'alternateProjectId'; value = $projectid } 
-    )
+    if ($projectid)
+    {
+        $systemstateoptions += @( 
+            [ordered]@{ name = 'alternateProjectId'; value = $projectid } 
+        )
+    }
     
-
     if ($sharedvpcprojectid)
     {
         $systemstateoptions += @(   
