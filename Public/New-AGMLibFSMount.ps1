@@ -1,4 +1,4 @@
-Function New-AGMLibFSMount ([string]$appid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -7,7 +7,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$appname,[string]$targethostn
     .EXAMPLE
     New-AGMLibFSMount 
 
-    Runs a guided menu to mount an image of an image to a host
+    Runs a guided menu to mount an image of a file system to a host
 
     .DESCRIPTION
     A function to mount file system images to an existing host
@@ -30,18 +30,32 @@ Function New-AGMLibFSMount ([string]$appid,[string]$appname,[string]$targethostn
     }
 
     # if the user gave an AppID lets check it and grab an image, need to expand outside snapshots
-    if ($appid)
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
     {
-        $imagegrab = Get-AGMLibLatestImage $appid
-        if (!($imagegrab.backupname))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLatestImage $appid"
-            return
-        }   
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+            $imagename = $imagegrab.backupname
+        }
         else 
         {
-            $imagename = $imagegrab.backupname
-            $imageid = $imagegrab.id
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            return
+        }
+    }
+
+    if (($appname) -and (!($appid)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue appname=$appname
+        if ($appgrab.id.count -ne 1)
+        { 
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a single App ID.  Use Get-AGMLibApplicationID and try again specifying -appid."
+            return
+        }
+        else {
+            $appid = $appgrab.id
         }
     }
 
@@ -148,21 +162,6 @@ Function New-AGMLibFSMount ([string]$appid,[string]$appname,[string]$targethostn
         }
     }
 
-
-    # if we got a VMware appname lets check it right now
-    if ( ($appname) -and (!($appid)) )
-    {
-        $appgrab = Get-AGMApplication -filtervalue "appname=$appname&apptype=VMBackup"
-        if ($appgrab.id.count -ne 1)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid VMBackup app.  Use Get-AGMLibApplicationID and try again specifying -appid."
-            return
-        }
-        else {
-            $appid = $appgrab.id
-        }
-    }
-
     if ($targethostname)
     {
         $hostcheck = Get-AGMHost -filtervalue hostname=$targethostname
@@ -214,7 +213,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$appname,[string]$targethostn
 
  
 
-    # this if for guided menu
+    # Guided menu for target selection and moint points and restore points and VMware options
     if ($guided)
     {
         if (!($label))
