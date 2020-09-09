@@ -85,6 +85,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
+'New-AGMLibFSMount',
 'New-AGMLibGCPVM',
 'New-AGMLibImage',
 'New-AGMLibMSSQLMount',
@@ -137,7 +138,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.15] 2020-09-
         Add label to New-AGMLibImage
-        Add Get-AGMLibAppPolicies, Start-AGMLibWorkflow,  Get-AGMLibWorkflowStatus, Get-AGMLibPolicies
+        Add Get-AGMLibAppPolicies, Start-AGMLibWorkflow,  Get-AGMLibWorkflowStatus, Get-AGMLibPolicies, New-AGMLibFSMount
 
         ## [0.0.0.14] 2020-09-05
         Changed most variables from int to string as some appliances have numbers that exceed int32 boundaries
