@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -102,49 +102,85 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
     }
 
+    if (($appname) -and (!($appid)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue appname=$appname
+        if ($appgrab.id.count -ne 1)
+        { 
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a single App ID.  Use Get-AGMLibApplicationID and try again specifying -appid."
+            return
+        }
+        else {
+            $appid = $appgrab.id
+            $apptype = $appgrab.apptype
+        }
+    }
+
+    if ( ($appid) -and (!($appname)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue id=$appid
+        if(!($appgrab))
+        {
+            Get-AGMErrorMessage -messagetoprint "Cannot find appid $appid"
+            return
+        }
+        else 
+        {
+            $appname = ($appgrab).appname
+            $apptype = $appgrab.apptype
+        }
+    }
+
+    # learn about the image if supplied a name
+    if ( ($imagename) -and (!($imageid)) )
+    {
+        $imagecheck = Get-AGMImage -filtervalue backupname=$imagename
+        if (!($imagecheck))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
+            return
+        }
+        else 
+        {
+            $imagegrab = Get-AGMImage -id $imagecheck.id
+            $imageid = $imagegrab.id
+            $consistencydate = $imagegrab.consistencydate
+            $endpit = $imagegrab.endpit
+            $appname = $imagegrab.appname
+            $appid = $imagegrab.application.id
+            $apptype = $imagegrab.apptype      
+            $restorableobjects = $imagegrab.restorableobjects
+            $mountapplianceid = $imagegrab.cluster.clusterid
+        }
+    }
+
+    # learn about the image if supplied an ID
+    if ( ($imageid) -and (!($imagename)) )
+    {
+        $imagegrab = Get-AGMImage -filtervalue id=$imageid
+        if (!($imagegrab))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find Image ID $imageid using:  Get-AGMImage -filtervalue id=$imageid"
+            return
+        }
+        else 
+        {
+            $consistencydate = $imagegrab.consistencydate
+            $endpit = $imagegrab.endpit
+            $appname = $imagegrab.appname
+            $appid = $imagegrab.application.id
+            $apptype = $imagegrab.apptype      
+            $restorableobjects = $imagegrab.restorableobjects
+            $mountapplianceid = $imagegrab.cluster.clusterid
+        }
+    }
+
+
+
     # if the user gave us nothing to start work, then enter guided mode
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
         $guided = $true
-        Clear-Host
-        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
-        if ($appliancegrab.count -eq 0)
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
-            return
-        }
-        if ($appliancegrab.count -eq 1)
-        {
-            $mountapplianceid = $appliancegrab.clusterid
-        }
-        else
-        {
-            Clear-Host
-            write-host "Appliance selection menu - which Appliance will run this mount"
-            Write-host ""
-            $i = 1
-            foreach ($appliance in $appliancegrab)
-            { 
-                Write-Host -Object "$i`: $($appliance.name)"
-                $i++
-            }
-            While ($true) 
-            {
-                Write-host ""
-                $listmax = $appliancegrab.name.count
-                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
-                if ($appselection -lt 1 -or $appselection -gt $listmax)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                } 
-                else
-                {
-                    break
-                }
-            }
-            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
-        }
-
         Clear-Host
         Write-Host "What App Type do you want to work with:"
         Write-Host "1`: SQL Server (default)"
@@ -200,72 +236,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     }
 
-
-    if (($appname) -and (!($appid)) )
-    {
-        $appgrab = Get-AGMApplication -filtervalue appname=$appname
-        if ($appgrab.id.count -ne 1)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a single App ID.  Use Get-AGMLibApplicationID and try again specifying -appid."
-            return
-        }
-        else {
-            $appid = $appgrab.id
-            $apptype = $appgrab.apptype
-        }
-    }
-
-    if ( ($appid) -and (!($appname)) )
-    {
-        $appgrab = Get-AGMApplication -filtervalue id=$appid
-        if(!($appgrab))
-        {
-            Get-AGMErrorMessage -messagetoprint "Cannot find appid $appid"
-            return
-        }
-        else 
-        {
-            $appname = ($appgrab).appname
-            $apptype = $appgrab.apptype
-        }
-    }
-
-    if ( (!($targethostname)) -and (!($targethostid)))
-    {
-        $hostgrab1 = Get-AGMApplication -filtervalue "apptype=SqlInstance&sourcecluster=$mountapplianceid"
-        $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name | sort-object name 
-        if ($hostgrab -eq "" )
-        {
-            Get-AGMErrorMessage -messagetoprint "Cannot find any hosts with SQLInstances"
-            return
-        }
-        Clear-Host
-        Write-Host "Target host selection menu"
-        $i = 1
-        foreach ($name in $hostgrab.name)
-        { 
-            Write-Host -Object "$i`: $name"
-            $i++
-        }
-        While ($true) 
-        {
-            $listmax = $hostgrab.name.count
-            [int]$hostselection = Read-Host "Please select a host (1-$listmax)"
-            if ($hostselection -lt 1 -or $hostselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
-            }
-        }
-        $targethostname =  $hostgrab.name[($hostselection - 1)]
-        $targethostid = $hostgrab.id[($hostselection - 1)]
-    }
-
-
-    if ($targethostname)
+    if ( ($targethostname) -and (!($targethostid)) )
     {
         $hostcheck = Get-AGMHost -filtervalue hostname=$targethostname
         if ($hostcheck.id.count -ne 1)
@@ -275,7 +246,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         else {
             $hostgrab = Get-AGMHost -id $hostcheck.id
-            $hostid = $hostgrab.id
+            $targethostid = $hostgrab.id
             $vmtype = $hostgrab.vmtype
             $transport = $hostgrab.transport
             $diskpref = $hostgrab.diskpref
@@ -289,7 +260,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
     }
 
-    if ($targethostid)
+    if ( ($targethostid) -and (!($targethostname)) )
     {
         $hostgrab = Get-AGMHost -filtervalue id=$targethostid
         if (!($hostgrab))
@@ -297,7 +268,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             Get-AGMErrorMessage -messagetoprint "Failed to resolve $targethostid to a single host ID.  Use Get-AGMLibHostID and try again specifying -targethostid"
             return
         }
-        $hostid = $targethostid
+        $targethostid = $targethostid
         $targethostname=$hostgrab.hostname
         $vmtype = $hostgrab.vmtype
         $transport = $hostgrab.transport
@@ -310,35 +281,6 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
     }
     
-    if ($hostid -eq "")
-    {
-        Get-AGMErrorMessage -messagetoprint "Cannot proceed without a target host name"
-        return
-    }
-
-    # learn about the image
-    if ($imagename)
-    {
-        $imagecheck = Get-AGMImage -filtervalue backupname=$imagename
-        if (!($imagecheck))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
-            return
-        }
-        else 
-        {
-            $imagegrab = Get-AGMImage -id $imagecheck.id
-            $backupid = $imagegrab.id
-            $consistencydate = $imagegrab.consistencydate
-            $endpit = $imagegrab.endpit
-            $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
-            $restorableobjects = $imagegrab.restorableobjects
-        }
-    }
-
-    # by this point we should have a target host ID and a source appID, either by user prompts or entry.
     # this if for guided menu
     if ($guided)
     {
@@ -350,7 +292,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         
         if (!($imagename))
         {  
-            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass | Sort-Object consistencydate,jobclass
+            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
             if ($imagelist1.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -368,18 +310,25 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $apptype = $imagegrab.apptype      
                 $restorableobjects = $imagegrab.restorableobjects
                 $jobclass = $imagegrab.jobclass
-                write-host "Found one $jobclass image $imagename, consistency date $consistencydate "
+                $mountapplianceid = $imagegrab.cluster.clusterid
+                $mountappliancename = $imagegrab.cluster.name
+                write-host "Found one $jobclass image $imagename, consistency date $consistencydate on $mountappliancename"
             } 
             else
             {
                 Clear-Host
-                Write-Host "Image list.  Choose the best jobclass and consistency date."
+                Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
+                write-host ""
                 $i = 1
-                foreach
-                ($image in $imagelist)
-                    { Write-Host -Object "$i`:  $($image.consistencydate) ($($image.jobclass))"
+                foreach ($image in $imagelist)
+                { 
+                    $image | Add-Member -NotePropertyName select -NotePropertyValue $i
+                    $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
                     $i++
                 }
+                #print the list
+                $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+                # ask the user to choose
                 While ($true) 
                 {
                     Write-host ""
@@ -394,8 +343,8 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                         break
                     }
                 }
-                $backupid =  $imagelist[($imageselection - 1)].id
-                $imagegrab = Get-AGMImage -id $backupid
+                $imageid =  $imagelist[($imageselection - 1)].id
+                $imagegrab = Get-AGMImage -id $imageid
                 $imagename = $imagegrab.backupname                
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
@@ -403,6 +352,8 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $appid = $imagegrab.application.id
                 $apptype = $imagegrab.apptype      
                 $restorableobjects = $imagegrab.restorableobjects
+                $mountapplianceid = $imagegrab.cluster.clusterid
+                $mountappliancename = $imagegrab.cluster.name
             }
             
         }
@@ -426,9 +377,43 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 }
             }
         }
+    
+        if ( (!($targethostname)) -and (!($targethostid)))
+        {
+            $hostgrab1 = Get-AGMApplication -filtervalue "apptype=SqlInstance&sourcecluster=$mountapplianceid"
+            $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name | sort-object name 
+            if ($hostgrab -eq "" )
+            {
+                Get-AGMErrorMessage -messagetoprint "Cannot find any hosts with SQLInstances"
+                return
+            }
+            Clear-Host
+            Write-Host "Target host selection menu"
+            $i = 1
+            foreach ($name in $hostgrab.name)
+            { 
+                Write-Host -Object "$i`: $name"
+                $i++
+            }
+            While ($true) 
+            {
+                $listmax = $hostgrab.name.count
+                [int]$hostselection = Read-Host "Please select a host (1-$listmax)"
+                if ($hostselection -lt 1 -or $hostselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $targethostname =  $hostgrab.name[($hostselection - 1)]
+            $targethostid = $hostgrab.id[($hostselection - 1)]
+        }
 
         # now we determine the instance to mount to
-        $instancelist = Get-AGMApplication -filtervalue "hostid=$hostid&apptype=SqlInstance"
+        $instancelist = Get-AGMApplication -filtervalue "hostid=$targethostid&apptype=SqlInstance"
         if ( (!($instancelist)) -or ($instancelist.count -eq 0) )
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any SQL Instances on $targethostname.  Specify a target host with discovered SQL Instances"
@@ -756,8 +741,6 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
         }
 
-
-
         # we are done
        Clear-Host  
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
@@ -766,7 +749,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -790,7 +773,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -817,7 +800,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -840,7 +823,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -867,7 +850,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -899,7 +882,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $hostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -946,13 +929,20 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     }
 
-    if (($appid) -and ($mountapplianceid) -and (!($backupid)))
+        
+    if ($targethostid -eq "")
     {
-        # if we are not running guided mode but we have an appid without backupid, then lets get the latest image on the mountappliance ID
+        Get-AGMErrorMessage -messagetoprint "Cannot proceed without a targethostid or targethostname"
+        return
+    }
+
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
         $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
         if ($imagegrab.count -eq 1)
         {   
-            $backupid = $imagegrab.id
+            $imageid = $imagegrab.id
             $imagename = $imagegrab.backupname
         }
         else 
@@ -1176,7 +1166,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $body = [ordered]@{
             label = $label;
             image = $imagename;
-            host = @{id=$hostid}
+            host = @{id=$targethostid}
             provisioningoptions = $provisioningoptions
             appaware = "true";
             migratevm = "false";
@@ -1268,7 +1258,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $body = [ordered]@{
             label = $label;
             image = $imagename;
-            host = @{id=$hostid};
+            host = @{id=$targethostid};
             selectedobjects = $selectedobjects
             provisioningoptions = $provisioningoptions
             appaware = "true";
@@ -1292,7 +1282,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $body = @{
             label = $label;
             image = $imagename;
-            host = @{id=$hostid}
+            host = @{id=$targethostid}
         }
     }
 
@@ -1310,11 +1300,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $compressedjson = $body | ConvertTo-Json -compress
         Write-host "This is the final command:"
         Write-host ""
-        Write-host "Post-AGMAPIData  -endpoint /backup/$backupid/mount -body `'$compressedjson`'"
+        Write-host "Post-AGMAPIData  -endpoint /backup/$imageid/mount -body `'$compressedjson`'"
         return
     }
 
-    Post-AGMAPIData  -endpoint /backup/$backupid/mount -body $json
+    Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 
     if ($wait)
     {

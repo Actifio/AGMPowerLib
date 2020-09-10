@@ -203,7 +203,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         }
     }
 
-    if ($targethostname)
+    if ( ($targethostname) -and (!($targethostid)) )
     {
         $hostcheck = Get-AGMHost -filtervalue hostname=$targethostname
         if ($hostcheck.id.count -ne 1)
@@ -229,7 +229,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
     }
 
     # if we got a target ID lets check it
-    if ($targethostid)
+    if ( ($targethostid) -and (!($targethostname)) )
     {
         $hostgrab = Get-AGMHost -filtervalue id=$targethostid
         if ($hostgrab.id.count -eq -0)
