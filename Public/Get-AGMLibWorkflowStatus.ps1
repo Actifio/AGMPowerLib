@@ -47,8 +47,6 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
     # without a workflow ID there is nothing to do, so lets ask.   if user supplied appid we get shorter list
     if (!($workflowid))
     {
-        Clear-Host
-        Write-Host "Workflow selection menu"
         if ($appid)
         {
             $workflowgrab = Get-AGMWorkFlow -filtervalue appid=$appid  | sort-object name
@@ -77,8 +75,6 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
         $i++
         }
         Clear-Host
-        write-host "Workflow selection menu - which Workflow will be run"
-        Write-host ""
         $workflowgrab | select-object select,name,workflowid,appname,appid,appliancename,frequency | Format-table *
         While ($true) 
         {
