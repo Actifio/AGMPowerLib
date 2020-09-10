@@ -14,11 +14,16 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
 
     Mounts imageid 6458934 to targethost id 655169
 
-
     .EXAMPLE
     New-AGMLibFSMount -appid 925267 -targethostid 655169  -volumes "E:\" -mountapplianceid 1415071155 -mountdriveperimage "r:\"
 
     Mounts the latest image for appid 925267 on appliance 1415071155 to target host id 655169, mounting only the E:\ volume as the r:\
+
+    .EXAMPLE
+
+    New-AGMLibFSMount -targethostid 655169 -imageid 6458934  -volumes "D:\,E:\" -volumemappings "dasvol:D:\,mountpoint,d:\avtest1;dasvol:E:\,mountpoint,d:\avtest2"
+
+    Mount the specified image to the specified host using specified moint points.   Note that to get the dasvol namings you will need to check the restorableobjects portion of the image
 
     .DESCRIPTION
     A function to mount file system images to an existing host
