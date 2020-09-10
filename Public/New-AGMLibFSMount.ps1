@@ -1,4 +1,4 @@
-Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$volumemappings,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -9,8 +9,26 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
 
     Runs a guided menu to mount an image of a file system to a host
 
+    .EXAMPLE
+    New-AGMLibFSMount -targethostid 655169 -imageid 6458934
+
+    Mounts imageid 6458934 to targethost id 655169
+
+
+    .EXAMPLE
+    New-AGMLibFSMount -appid 925267 -targethostid 655169  -volumes "E:\" -mountapplianceid 1415071155 -mountdriveperimage "r:\"
+
+    Mounts the latest image for appid 925267 on appliance 1415071155 to target host id 655169, mounting only the E:\ volume as the r:\
+
     .DESCRIPTION
     A function to mount file system images to an existing host
+
+    * Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the imagename and specify that as part of the command with -imagename
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
 
     #>
 
@@ -56,6 +74,24 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         }
         else {
             $appid = $appgrab.id
+        }
+    }
+
+    # learn about the image
+    if ($imagename)
+    {
+        $imagecheck = Get-AGMImage -filtervalue backupname=$imagename
+        if (!($imagecheck))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
+            return
+        }
+        else 
+        {
+            $imagegrab = Get-AGMImage -id $imagecheck.id
+            $imageid = $imagegrab.id
+            $appname = $imagegrab.appname
+            $appid = $imagegrab.application.id
         }
     }
 
@@ -208,11 +244,6 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         }
     }
     
-
-
-
- 
-
     # Guided menu for target selection and moint points and restore points and VMware options
     if ($guided)
     {
@@ -332,14 +363,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         # now see if user wants mount points or drives per volume
         $vollist = $restorableobjects | select-object name | sort-object name
     
-        if ($vollist.count -eq 1) 
-        {
-            $selectedobjects = @(
-                    [pscustomobject]@{restorableobject=$vollist.name}
-            )
-            $uservolumelistfinal = $vollist.name
-        }
-        else
+        if ($vollist.count -gt 1) 
         {
             Clear-Host
             Write-Host "Volume list (either enter 0 or a comma separated list e.g.   1,2)"
@@ -380,12 +404,51 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
                 }
                 $uservolumelistfinal = $uservolumelist.substring(1)
             }
+            # if the user asked for per image mount then dont start otherwise ask per drive
+            if ( (!($mountdriveperimage)) -and (!($mountpointperimage)) )
+            {
+                $volumemappings = ""
+                write-host ""
+                write-host "Volume mounts (optional)"
+                foreach ($object in $uservolumelistfinal.Split(","))
+                {
+                    $uniqueid = ($restorableobjects | where-object {$_.name -eq $object } | select-object volumeinfo).volumeinfo.uniqueid
+                    $mountdriveperobject = ""
+                    $mountpointperobject = ""
+                    $mountdriveperobject = Read-Host "Mount Drive for $object (Windows only, optional)"
+                    if ($mountdriveperobject -eq "")
+                    {
+                        $mountpointperobject = ""
+                        $mountpointperobject = Read-Host "Mount Point for $object (optional)"
+                    }
+                    if ($mountdriveperobject -ne "")
+                    {
+                        $volumemappings += ";" + "$uniqueid" + "," + "mountdrive" + "," + $mountdriveperobject
+                    }
+                    if ($mountpointperobject -ne "")
+                    {
+                        $volumemappings += ";" + "$uniqueid" + "," + "mountpoint" + "," + $mountpointperobject
+                    }
+                }
+                if ($volumemappings -ne "")
+                {
+                    $volumemappings=$volumemappings.substring(1) 
+                }
+            }
         }
 
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibFSMount -targethostid $targethostid -imageid $imageid  -volumes `"$uservolumelistfinal`""
+        Write-Host -nonewline "New-AGMLibFSMount -appid $appid -targethostid $targethostid -imageid $imageid  -volumes `"$uservolumelistfinal`""
+        if ($mountapplianceid)
+        {
+            Write-Host -nonewline " -mountapplianceid $mountapplianceid"
+        }
+        if ($volumemappings)
+        {
+            Write-Host -nonewline " -volumemappings `"$volumemappings`""
+        }
         if ($mountmode)
         {
             Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
@@ -423,6 +486,22 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
             }   
         )
     }
+
+    if ($volumemappings)
+    {
+        $volumemappingsobject= @()
+        foreach ($object in $volumemappings.Split(";"))
+        {
+            foreach ($part in $object)
+            {
+                $volumemappingsobject += [ordered]@{
+                    restoreobject = $part.Split(",")[0]
+                    $part.Split(",")[1] = $part.Split(",")[2]
+                }
+            }
+        }   
+    }
+
     
     if (!($imageid))
     {
@@ -535,14 +614,18 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
     {
         $body = $body + [ordered]@{ selectedobjects = $selectedobjects }
     }
+    if ($restoreobjectmappings)
+    {
+        $body = $body + [ordered]@{ restoreobjectmappings = $restoreobjectmappings }
+    }
     if ($mountmode)
     {
         $body = $body + @{ physicalrdm = $physicalrdm }
         $body = $body + @{ rdmmode = $rdmmode }
     }
-    if ($restoreobjectmappings)
+    if ($volumemappingsobject)
     {
-        $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
+        $body = $body + @{ restoreobjectmappings = $volumemappingsobject }
     }
 
 
