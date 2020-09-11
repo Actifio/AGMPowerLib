@@ -74,6 +74,7 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
         { 
         $flow | Add-Member -NotePropertyName select -NotePropertyValue $i
         $flow | Add-Member -NotePropertyName workflowid -NotePropertyValue $flow.id
+        $flow | Add-Member -NotePropertyName friendlytype -NotePropertyValue $flow.application.friendlytype
         $flow | Add-Member -NotePropertyName appname -NotePropertyValue $flow.application.appname
         $flow | Add-Member -NotePropertyName appid -NotePropertyValue $flow.application.id
         $flow | Add-Member -NotePropertyName appliancename -NotePropertyValue $flow.cluster.name
@@ -83,7 +84,7 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
         Clear-Host
         write-host "Workflow selection menu - which Workflow will be run"
         Write-host ""
-        $workflowgrab | select-object select,name,workflowid,appname,appid,appliancename,frequency | Format-table *
+        $workflowgrab | select-object select,name,workflowid,friendlytype,appname,appid,appliancename,frequency | Format-table *
         While ($true) 
         {
             Write-host ""

@@ -68,6 +68,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
         { 
         $flow | Add-Member -NotePropertyName select -NotePropertyValue $i
         $flow | Add-Member -NotePropertyName workflowid -NotePropertyValue $flow.id
+        $flow | Add-Member -NotePropertyName friendlytype -NotePropertyValue $flow.application.friendlytype
         $flow | Add-Member -NotePropertyName appname -NotePropertyValue $flow.application.appname
         $flow | Add-Member -NotePropertyName appid -NotePropertyValue $flow.application.id
         $flow | Add-Member -NotePropertyName appliancename -NotePropertyValue $flow.cluster.name
@@ -75,7 +76,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
         $i++
         }
         Clear-Host
-        $workflowgrab | select-object select,name,workflowid,appname,appid,appliancename,frequency | Format-table *
+        $workflowgrab | select-object select,name,workflowid,friendlytype,appname,appid,appliancename,frequency | Format-table *
         While ($true) 
         {
             Write-host ""
