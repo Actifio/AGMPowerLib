@@ -370,7 +370,7 @@ We can then continue to work with our child app, creating new snapshots or even 
 
 # User Story - run a workflow
 
-Note there is no function to create Workflows, continue to use AGM for this.   
+Note there is no function to create Workflows, so continue to use AGM for this.   
 There are two functions for workflows:
 
 * Get-AGMLibWorkflowStatus
@@ -378,26 +378,20 @@ There are two functions for workflows:
 
 For both commands, you don't need any details, just run the command and a wizard will run.   You can use this to learn things like workflow IDs and App IDs so that you can then use these commands as part of automation.
 
-We can start a workflow with command like this:
+We can start a workflow with a command like this:
 ```
 Start-AGMLibWorkflow -workflowid 9932352
 ```
-We can then run a refresh of this workflow with:
+We can then run a refresh of this workflow with this command:
 ```
 Start-AGMLibWorkflow -workflowid 9932352 -refresh
 ```
-To find out the status of the workflow, we can use this command.   The -m (for monitor mode) it will follow the jobs progress till it stops running:
+To find out the status of the workflow and follow the progress, use -m (for monitor mode) as it will follow the workflows progress till it stops running:
 ```
 Get-AGMLibWorkflowStatus -workflowid 9932352 -m
 ```
 We shoud see something like this:
 ```
-status    : RUNNING
-startdate : 2020-09-11 14:39:03
-enddate   :
-duration  : 00:01:29
-result    :
-
 status    : RUNNING
 startdate : 2020-09-11 14:39:03
 enddate   :
