@@ -136,9 +136,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.15] 2020-09-
+        ## [0.0.0.15] 2020-09-11
         Add label to New-AGMLibImage
         Add Get-AGMLibAppPolicies, Start-AGMLibWorkflow,  Get-AGMLibWorkflowStatus, Get-AGMLibPolicies, New-AGMLibFSMount
+        Change New-AGMLibOracleMount and New-AGMLibMSSQLMount so you do not need to select mount appliance.
 
         ## [0.0.0.14] 2020-09-05
         Changed most variables from int to string as some appliances have numbers that exceed int32 boundaries
