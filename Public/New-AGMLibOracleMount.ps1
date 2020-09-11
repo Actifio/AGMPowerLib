@@ -307,7 +307,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         if ( (!($targethostname)) -and (!($targethostid)))
         {
             Clear-Host
-            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost" | sort-object vmtype,hostname
+            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon" | sort-object vmtype,hostname
             if ($hostgrab.id.count -eq -0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to find any hosts on $mountappliancename"
@@ -326,12 +326,12 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
                 $i++
             }
 
-            $hostgrab | select-object select,vmtype,hostname,id | Format-table *
+            $hostgrab | select-object select,vmtype,hostname,ostype,id | Format-table *
             While ($true) 
             {
                 Write-host ""
                 $listmax = $hostgrab.count
-                [int]$userselection = Read-Host "Please select an image (1-$listmax)"
+                [int]$userselection = Read-Host "Please select a host (1-$listmax)"
                 if ($userselection -lt 1 -or $userselection -gt $hostgrab.Length)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($hostgrab.count)]"

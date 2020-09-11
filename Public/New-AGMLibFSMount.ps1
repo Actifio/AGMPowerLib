@@ -155,7 +155,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         
         #image selection time
         Clear-Host
-        $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | Sort-Object consistencydate,jobclasscode | select-object -Property backupname,consistencydate,id,jobclass,cluster
+        $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | Sort-Object consistencydate,jobclasscode | select-object -Property backupname,consistencydate,id,jobclass,cluster,transport
         if ($imagelist.backupname.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any snapshot, streamsnap, onvault or dedupasync Images for appid $appid"
@@ -179,7 +179,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
                 $i++
             }
 
-            $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+            $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id,transport | Format-table *
             While ($true) 
             {
                 Write-host ""
@@ -261,7 +261,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         # mountedhost menu
         if (!($targethostid))
         {
-            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost" | sort-object vmtype,hostname
+            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon" | sort-object vmtype,hostname
             if ($hostgrab.id.count -eq -0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to find any hosts on $mountappliancename"
@@ -287,12 +287,12 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
                     $i++
                 }
 
-                $hostgrab | select-object select,vmtype,hostname,id | Format-table *
+                $hostgrab | select-object select,vmtype,hostname,ostype,id | Format-table *
                 While ($true) 
                 {
                     Write-host ""
                     $listmax = $hostgrab.count
-                    [int]$userselection = Read-Host "Please select an image (1-$listmax)"
+                    [int]$userselection = Read-Host "Please select a host (1-$listmax)"
                     if ($userselection -lt 1 -or $userselection -gt $hostgrab.Length)
                     {
                         Write-Host -Object "Invalid selection. Please enter a number in range [1-$($hostgrab.count)]"
@@ -445,7 +445,11 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibFSMount -appid $appid -targethostid $targethostid -imageid $imageid  -volumes `"$uservolumelistfinal`""
+        Write-Host -nonewline "New-AGMLibFSMount -appid $appid -targethostid $targethostid -imageid $imageid" 
+        if ($uservolumelistfinal)
+        {
+            Write-Host -nonewline " -volumes `"$uservolumelistfinal`""
+        }
         if ($mountapplianceid)
         {
             Write-Host -nonewline " -mountapplianceid $mountapplianceid"
