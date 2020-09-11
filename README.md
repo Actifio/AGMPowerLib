@@ -15,8 +15,6 @@ Install from PowerShell Gallery:
 Install-Module -Name AGMPowerLib
 ```
 
-If the install worked, you can now move on.
-
 #### Upgrades using PowerShell Gallery
 
 Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
@@ -37,27 +35,27 @@ $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllV
 
 Serious corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we have the following process:
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.
 1.  Copy the Zip file to the server where you want to install it
-1.  For Windows, Right select on the zip file, choose  Properties and then use the Unblock button next to the message:  "This file came from another computer and might be blocked to help protect  your computer."
-1.  For Windows, now right select and use Extract All to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder.
-1.  Now start PWSH and change directory to the  AGMPowerLib-main directory that should contain our module files.   
-1.  There is an installer, Install-AGMPowerLib.ps1 so run that with ./Install-AGMPowerLib.ps1
-If you find multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
+1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
+1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder.
+1.  Now start PWSH and change directory to the AGMPowerLib-main directory that should contain our module files.   
+1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
+If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
 
-If the install fails with:
+If the install fails with this (which occurs if you didn't unblock the zip file):
 ```
 PS C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main> .\Install-AGMPowerLib.ps1
 .\Install-AGMPowerLib.ps1: File C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 cannot be loaded. 
 The file C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 is not digitally signed. 
 You cannot run this script on the current system. For more information about running scripts and setting execution policy, see about_Execution_Policies at https://go.microsoft.com/fwlink/?LinkID=135170.
 ```
-Then  run this command:
+Then run this command:
 ```
 Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
-Then re-run the installer.  The installer will unblock all the files.
+Then re-run the installer.  The installer will unblock the remaining files.
 
 ## Guided Wizards
 
@@ -69,6 +67,10 @@ New-AGMLibContainerMount
 New-AGMLibOracleMount
 New-AGMLibMSSQLMount
 ```
+FileSystem Mounts:
+```
+New-AGMLibFSMount
+```
 New VM mounts:
 ```
 New-AGMLibAWSVM
@@ -77,6 +79,11 @@ New-AGMLibGCPVM
 New-AGMLibSystemStateToVM
 New-AGMLibVM 
 New-AGMLibVMExisting 
+```
+To start and monitor workflows use these functions:
+```
+Get-AGMLibWorkflowStatus
+Start-AGMLibWorkflow
 ```
 
 # User Story - Database Mounts
@@ -361,6 +368,46 @@ duration  : 00:01:20
 ```
 We can then continue to work with our child app, creating new snapshots or even new child apps using those snapshots.
 
+# User Story - run a workflow
+
+Note there is no function to create Workflows, so continue to use AGM for this.   
+There are two functions for workflows:
+
+* Get-AGMLibWorkflowStatus
+* Start-AGMLibWorkflow 
+
+For both commands, you don't need any details, just run the command and a wizard will run.   You can use this to learn things like workflow IDs and App IDs so that you can then use these commands as part of automation.
+
+We can start a workflow with a command like this:
+```
+Start-AGMLibWorkflow -workflowid 9932352
+```
+We can then run a refresh of this workflow with this command:
+```
+Start-AGMLibWorkflow -workflowid 9932352 -refresh
+```
+To find out the status of the workflow and follow the progress, use -m (for monitor mode) as it will follow the workflows progress till it stops running:
+```
+Get-AGMLibWorkflowStatus -workflowid 9932352 -m
+```
+We shoud see something like this:
+```
+status    : RUNNING
+startdate : 2020-09-11 14:39:03
+enddate   :
+duration  : 00:01:35
+result    :
+
+status    : SUCCESS
+startdate : 2020-09-11 14:39:03
+enddate   : 2020-09-11 14:40:33
+duration  : 00:01:30
+result    :
+```
+If we want to see the results from the previous run, we can use -p (for previous) like this:
+```
+Get-AGMLibWorkflowStatus -workflowid 9932352 -p
+````
 
 # User Story - Creating new VMs
 

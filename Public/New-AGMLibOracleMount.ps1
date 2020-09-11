@@ -93,100 +93,6 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         }
     }
 
-    # if the user gave us nothing to start work, then enter guided mode
-    if (( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) ) -or ($guided))
-    {
-        Clear-Host
-        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
-        if ($appliancegrab.count -eq 0)
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
-            return
-        }
-        if ($appliancegrab.count -eq 1)
-        {
-            $mountapplianceid = $appliancegrab.clusterid
-        }
-        else
-        {
-            Clear-Host
-            write-host "Appliance selection menu - which Appliance will run this mount"
-            Write-host ""
-            $i = 1
-            foreach ($appliance in $appliancegrab)
-            { 
-                Write-Host -Object "$i`: $($appliance.name)"
-                $i++
-            }
-            While ($true) 
-            {
-                Write-host ""
-                $listmax = $appliancegrab.name.count
-                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
-                if ($appselection -lt 1 -or $appselection -gt $listmax)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                } 
-                else
-                {
-                    break
-                }
-            }
-            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
-        }
-        write-host "Oracle App Selection menu"
-        Write-host ""
-        $guided = $true
-        $applist = Get-AGMApplication -filtervalue "apptype=Oracle&managed=True" | sort-object appname
-        if ($applist.count -eq 0)
-        {
-            Get-AGMErrorMessage -messagetoprint "There are no Managed Oracle apps to list"
-            return
-        }
-        if ($applist.count -eq 1)
-        {
-            $appname =  $applist.appname
-            $appid = $applist.id
-            write-host "Found one Oracle app $appname"
-            write-host ""
-        }
-        else 
-        {
-            $i = 1
-            foreach ($app in $applist)
-            { 
-                $applistname = $app.appname
-                $appliance = $app.cluster.name 
-                if ($userselection -eq 1)
-                {
-                    Write-Host -Object "$i`: $applistname ($appliance)"
-                }
-                else {
-                    Write-Host -Object "$i`: $applistname ($appliance)"
-                }
-                
-                $i++
-            }
-            While ($true) 
-            {
-                Write-host ""
-                $listmax = $applist.appname.count
-                [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
-                if ($appselection -lt 1 -or $appselection -gt $listmax)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                } 
-                else
-                {
-                    break
-                }
-            }
-            $appname =  $applist.appname[($appselection - 1)]
-            $appid = $applist.id[($appselection - 1)]
-        }
-    }
-
-
     if (($appname) -and (!($appid)) )
     {
         $appgrab = Get-AGMApplication -filtervalue appname=$appname
@@ -214,41 +120,6 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         }
     }
 
-    if ( (!($targethostname)) -and (!($targethostid)))
-    {
-        $hostgrab1 = Get-AGMApplication -filtervalue apptype=Oracle
-        $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name | sort-object name 
-        if ($hostgrab -eq "" )
-        {
-            Get-AGMErrorMessage -messagetoprint "Cannot find any hosts with Oracle DBs"
-            return
-        }
-        Clear-Host
-        Write-Host "Target host selection menu"
-        $i = 1
-        foreach ($name in $hostgrab.name)
-        { 
-            Write-Host -Object "$i`: $name"
-            $i++
-        }
-        While ($true) 
-        {
-            $listmax = $hostgrab.name.count
-            [int]$hostselection = Read-Host "Please select a host (1-$listmax)"
-            if ($hostselection -lt 1 -or $hostselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
-            }
-        }
-        $targethostname =  $hostgrab.name[($hostselection - 1)]
-        $targethostid = $hostgrab.id[($hostselection - 1)]
-    }
-
-
     if (($targethostname) -and (!($targethostid)))
     {
         $hostcheck = Get-AGMHost -filtervalue hostname=$targethostname
@@ -259,7 +130,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         }
         else {
             $hostgrab = Get-AGMHost -id $hostcheck.id
-            $hostid = $hostgrab.id
+            $targethostid = $hostgrab.id
             $vmtype = $hostgrab.vmtype
             $transport = $hostgrab.transport
             $diskpref = $hostgrab.diskpref
@@ -273,7 +144,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         }
     }
 
-    if ($targethostid)
+    if ( ($targethostid) -and (!($targethostname)) )
     {
         $hostgrab = Get-AGMHost -filtervalue id=$targethostid
         if (!($hostgrab))
@@ -281,7 +152,6 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
             Get-AGMErrorMessage -messagetoprint "Failed to resolve $targethostid to a single host ID.  Use Get-AGMLibHostID and try again specifying -targethostid"
             return
         }
-        $hostid = $targethostid
         $targethostname=$hostgrab.hostname
         $vmtype = $hostgrab.vmtype
         $transport = $hostgrab.transport
@@ -293,19 +163,9 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
             $transport = $vcgrab.transport
         }
     }
-    
-    if ($hostid -eq "")
-    {
-        Get-AGMErrorMessage -messagetoprint "Cannot proceed without a target host name"
-        return
-    }
 
-    # learn about the image
-    if ($imageid)
-    {
-        $backupid = $imageid
-    }
-    elseif ($imagename)
+    # learn about the image if supplied a name
+    if ( ($imagename) -and (!($imageid)) )
     {
         $imagecheck = Get-AGMImage -filtervalue backupname=$imagename
         if (!($imagecheck))
@@ -316,103 +176,181 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         else 
         {
             $imagegrab = Get-AGMImage -id $imagecheck.id
-            $backupid = $imagegrab.id
+            $imageid = $imagegrab.id
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id  
+            $appid = $imagegrab.application.id
+            $mountapplianceid = $imagegrab.cluster.clusterid
         }
     }
 
-
-    # by this point we should have a target host ID and a source appID, either by user prompts or entry.
-    # this if for guided menu
-    if ($guided)
+    # learn about the image if supplied an ID
+    if ( ($imageid) -and (!($imagename)) )
     {
-       if (!($label))
-       {
-           Clear-Host
-           [string]$label = Read-host "Label"
-       }
-        
-        if (!($imagename))
+        $imagegrab = Get-AGMImage -filtervalue id=$imageid
+        if (!($imagegrab))
         {
-            Clear-Host
-            Write-Host "Image selection"
-            Write-Host "1`: Use the latest snapshot(default)"
-            Write-Host "2`: Select an image"
-            Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if (($userselection -eq "") -or ($userselection -eq 1))
-            {
-                $imagecheck = Get-AGMLibLatestImage $appid
-                if (!($imagecheck.backupname))
-                {
-                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
-                    return
-                }   
-                else {
-                    $imagegrab = Get-AGMImage -id $imagecheck.id
-                    $imagename = $imagegrab.backupname                
-                    $backupid = $imagegrab.id
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id    
-                }
+            Get-AGMErrorMessage -messagetoprint "Failed to find Image ID $imageid using:  Get-AGMImage -filtervalue id=$imageid"
+            return
+        }
+        else 
+        {
+            $consistencydate = $imagegrab.consistencydate
+            $endpit = $imagegrab.endpit
+            $appname = $imagegrab.appname
+            $appid = $imagegrab.application.id
+            $mountapplianceid = $imagegrab.cluster.clusterid
+        }
+    }
+
+    # if the user gave us nothing to start work, then enter guided mode
+    if (( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) ) -or ($guided))
+    {
+        clear
+        write-host "Oracle App Selection menu"
+        Write-host ""
+        $guided = $true
+        $applist = Get-AGMApplication -filtervalue "apptype=Oracle&managed=True" | sort-object appname
+        if ($applist.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "There are no Managed Oracle apps to list"
+            return
+        }
+        if ($applist.count -eq 1)
+        {
+            $appname =  $applist.appname
+            $appid = $applist.id
+            write-host "Found one Oracle app $appname"
+            write-host ""
+        }
+        else 
+        {
+            $i = 1
+            foreach ($app in $applist)
+            { 
+                Write-Host -Object "$i`: $($app.appname)"
+                $i++
             }
-            else
+            While ($true) 
             {
-                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass | Sort-Object consistencydate,jobclass
-                if ($imagelist1.id.count -eq 0)
+                Write-host ""
+                $listmax = $applist.appname.count
+                [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
                 {
-                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
-                    return
-                }
-                $imagelist = $imagelist1  | Sort-Object consistencydate
-                if ($imagelist1.id.count -eq 1)
-                {
-                    $imagegrab = Get-AGMImage -id $($imagelist).id
-                    $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id     
-                    $jobclass = $imagegrab.jobclass
-                    write-host "Found one $jobclass image $imagename, consistency date $consistencydate "
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                 } 
                 else
                 {
-                    Clear-Host
-                    Write-Host "Image list.  Choose the best jobclass and consistency date."
-                    $i = 1
-                    foreach
-                    ($image in $imagelist)
-                        { Write-Host -Object "$i`:  $($image.consistencydate) ($($image.jobclass))"
-                        $i++
-                    }
-                    While ($true) 
-                    {
-                        Write-host ""
-                        $listmax = $imagelist.Length
-                        [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                        if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
-                        {
-                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
-                        } 
-                        else
-                        {
-                            break
-                        }
-                    }
-                    $backupid =  $imagelist[($imageselection - 1)].id
-                    $imagegrab = Get-AGMImage -id $backupid
-                    $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id   
+                    break
                 }
+            }
+            $appname =  $applist.appname[($appselection - 1)]
+            $appid = $applist.id[($appselection - 1)]
+        }
+    }
+    
+
+    # this if for guided menu
+    if ($guided)
+    {
+        if (!($label))
+        {
+            Clear-Host
+            [string]$label = Read-host "Label"
+        }
+        Clear-Host
+        Write-Host "Image selection"
+        $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+        if ($imagelist.id.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+            return
+        }   
+        Clear-Host
+        Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
+        write-host ""
+        $i = 1
+        foreach ($image in $imagelist)
+        { 
+            $image | Add-Member -NotePropertyName select -NotePropertyValue $i
+            $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
+            $i++
+        }
+        #print the list
+        $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+        While ($true) 
+        {
+            Write-host ""
+            $listmax = $imagelist.Length
+            [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+            if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+            } 
+            else
+            {
+                break
+            }
+        }
+        $imageid =  $imagelist[($imageselection - 1)].id
+        $imagegrab = Get-AGMImage -id $imageid
+        $imagename = $imagegrab.backupname                
+        $consistencydate = $imagegrab.consistencydate
+        $endpit = $imagegrab.endpit
+        $appname = $imagegrab.appname
+        $appid = $imagegrab.application.id   
+        $mountapplianceid = $imagegrab.cluster.clusterid
+        $mountappliancename = $imagegrab.cluster.name
+
+        if ( (!($targethostname)) -and (!($targethostid)))
+        {
+            Clear-Host
+            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon" | sort-object vmtype,hostname
+            if ($hostgrab.id.count -eq -0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find any hosts on $mountappliancename"
+                return
+            }
+            Clear-Host
+            Write-Host "Host List."
+            $i = 1
+            foreach ($hostid in $hostgrab)
+            { 
+                $hostid | Add-Member -NotePropertyName select -NotePropertyValue $i
+                if (!($hostid.vmtype))
+                {
+                    $hostid | Add-Member -NotePropertyName vmtype -NotePropertyValue "Physical"
+                }
+                $i++
+            }
+
+            $hostgrab | select-object select,vmtype,hostname,ostype,id | Format-table *
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $hostgrab.count
+                [int]$userselection = Read-Host "Please select a host (1-$listmax)"
+                if ($userselection -lt 1 -or $userselection -gt $hostgrab.Length)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($hostgrab.count)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $targethostid = $hostgrab.id[($userselection - 1)]
+            $targethostname = $hostgrab.hostname[($userselection - 1)]
+            $vmtype = $hostgrab.vmtype[($userselection - 1)]
+            $transport = $hostgrab.transport[($userselection - 1)]
+            $diskpref = $hostgrab.diskpref[($userselection - 1)]
+            $vcenterid = $hostgrab.vcenterhostid[($userselection - 1)]
+            if ( ($vmtype -eq "vmware") -and (!($transport)) )
+            {
+                $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
+                $transport = $vcgrab.transport
             }
         }
         
@@ -679,14 +617,14 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
 
 
         # we are done
-       Clear-Host  
+        Clear-Host  
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
         if ($dbname)
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`"  -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $imageid -label `"$label`" -targethostid $targethostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`"  -recoverypoint `"$recoverypoint`""
                 if ($mountmode)
                 {
                     Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
@@ -694,7 +632,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $backupid -label `"$label`" -targethostid $hostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`""
+                Write-Host -nonewline "New-AGMLibOracleMount -appid $appid -mountapplianceid $mountapplianceid -appname $appname -imageid $imageid -label `"$label`" -targethostid $targethostid -dbname `"$dbname`" -username `"$username`" -orahome `"$orahome`""
                 if ($sltid)
                 {
                     Write-Host -nonewline " -sltid $sltid -slpid $slpid"
@@ -754,13 +692,13 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
     }
     
 
-    if (($appid) -and ($mountapplianceid) -and (!($backupid)))
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
     {
-        # if we are not running guided mode but we have an appid without backupid, then lets get the latest image on the mountappliance ID
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
         $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
         if ($imagegrab.count -eq 1)
         {   
-            $backupid = $imagegrab.id
+            $imageid = $imagegrab.id
             $imagename = $imagegrab.backupname
         }
         else 
@@ -772,7 +710,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
 
     if (!($appname))
     {
-        $appname = (Get-AGMImage -id $backupid).appname
+        $appname = (Get-AGMImage -id $imageid).appname
     }
 
     # recovery point handling
@@ -833,13 +771,19 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx.    Please specify both"
         return
     }
+
+    if ($targethostid -eq "")
+    {
+        Get-AGMErrorMessage -messagetoprint "Cannot proceed without a targethostid or targethostname"
+        return
+    }
     
     
     if ($dbname) 
     {
         # the defaults we have to have
         $body = [ordered]@{}
-        $body += @{ host = @{ id = $hostid }}
+        $body += @{ host = @{ id = $targethostid }}
         $body += @{ selectedobjects = @( @{ restorableobject = $appname })}
         if ($recoverytime) {  $body += @{ recoverytime = [string]$recoverytime }  }
         $body += @{ appaware = "true" }
@@ -899,7 +843,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
     else 
     {
         $hostobject = New-Object -TypeName psobject
-        $hostobject | Add-Member -MemberType NoteProperty -Name id -Value $hostid
+        $hostobject | Add-Member -MemberType NoteProperty -Name id -Value $targethostid
         $body = New-Object -TypeName psobject
         $body | Add-Member -MemberType NoteProperty -name label -Value $label
         $body | Add-Member -MemberType NoteProperty -name image -Value $imagename
@@ -918,11 +862,11 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         $compressedjson = $body | ConvertTo-Json -compress
         Write-host "This is the final command:"
         Write-host ""
-        Write-host "Post-AGMAPIData  -endpoint /backup/$backupid/mount -body `'$compressedjson`'"
+        Write-host "Post-AGMAPIData  -endpoint /backup/$imageid/mount -body `'$compressedjson`'"
         return
     }
 
-    Post-AGMAPIData  -endpoint /backup/$backupid/mount -body $json
+    Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 
     if ($wait)
     {

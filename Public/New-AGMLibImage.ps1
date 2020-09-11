@@ -1,4 +1,4 @@
-Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[switch][alias("m")]$monitor) 
+Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[string]$label,[switch][alias("m")]$monitor) 
 {
     <#
     .SYNOPSIS
@@ -11,6 +11,10 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
     .EXAMPLE
     New-AGMLibImage  2133445
     Create a new snapshot for AppID 2133445
+
+    .EXAMPLE
+    New-AGMLibImage  -appid 2133445 -label "Dev image after upgrade"
+    Create a new snapshot for AppID 2133445 with a label.
 
     .EXAMPLE
     New-AGMLibImage  -appid 2133445 -capturetype log
@@ -87,18 +91,8 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
             }
         }
         $policy = @{id=$policyid}
-        $body = @{policy=$policy;backuptype=$capturetype}
+        $body = @{label=$label;policy=$policy;backuptype=$capturetype}
         $json = $body | ConvertTo-Json
         Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
-        Start-Sleep -s 5
-        $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=1&isscheduled=false" -sort queuedate:desc -limit 1 | select-object jobname,status,queuedate,startdate
-        if (($jobgrab) -and ($monitor))
-        {
-            Get-AGMFollowJobStatus $jobgrab.jobname
-        }
-        else 
-        {
-            $jobgrab 
-        }
     }
 }
