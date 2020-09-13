@@ -33,7 +33,7 @@ $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllV
 
 #### Manual install
 
-Serious corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we have the following process:
+Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
 
 1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.
 1.  Copy the Zip file to the server where you want to install it
@@ -44,7 +44,7 @@ Serious corporate servers will not allow downloads from PowerShell gallery or ev
 If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
 
-If the install fails with this (which occurs if you didn't unblock the zip file):
+If the install fails with this (which usually occurs if you didn't unblock the zip file):
 ```
 PS C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main> .\Install-AGMPowerLib.ps1
 .\Install-AGMPowerLib.ps1: File C:\Users\av\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 cannot be loaded. 
@@ -59,19 +59,24 @@ Then re-run the installer.  The installer will unblock the remaining files.
 
 ## Guided Wizards
 
-The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard:
+The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard.   Once you have created a typical command, you can use it build more commands or automation.
 
-Database mounts:
+#### Database mounts:
 ```
 New-AGMLibContainerMount
 New-AGMLibOracleMount
 New-AGMLibMSSQLMount
 ```
-FileSystem Mounts:
+##### Workflow mounts
+```
+Get-AGMLibWorkflowStatus
+Start-AGMLibWorkflow
+```
+#### FileSystem Mounts:
 ```
 New-AGMLibFSMount
 ```
-New VM mounts:
+#### New VM mounts:
 ```
 New-AGMLibAWSVM
 New-AGMLibAzureVM
@@ -80,13 +85,9 @@ New-AGMLibSystemStateToVM
 New-AGMLibVM 
 New-AGMLibVMExisting 
 ```
-To start and monitor workflows use these functions:
-```
-Get-AGMLibWorkflowStatus
-Start-AGMLibWorkflow
-```
 
-# User Story - Database Mounts
+
+# User Stories: Database Mounts
 Here are some user stories for Database mounts
 
 ### SQL Test and Dev Image usage
@@ -140,12 +141,15 @@ pathname
 --------
 DEMO-SQL-4
 ```
+Because applications can have images on multiple appliances, if we don't specify an Image name or Image ID, we need to tell AGM which appliance to use for the source image.   We do this specifying the clusterid of the relevant appliance with -mountapplianceid.   To learn the clusterids we run this command:
+```
+Get-AGMAppliance | select-object name,clusterid
+```
 
-
-The user runs a mount command specifying the source appid, target host and SQL Instance and DB name on the target:
+The user then runs a mount command specifying the source appid, mountapplianceid, target host and SQL Instance and DB name on the target:
 
 ```
-PS /Users/anthony> New-AGMLibMSSQLMount -appid 5552336 -targethostname demo-sql-4 -label "test and dev made easy" -sqlinstance DEMO-SQL-4 -dbname avtest
+PS /Users/anthony> New-AGMLibMSSQLMount -appid 5552336 -mountapplianceid 1415071155 -targethostname demo-sql-4 -label "test and dev made easy" -sqlinstance DEMO-SQL-4 -dbname avtest
 
 ```
 
@@ -292,7 +296,7 @@ id       appname            apptype         srcid    sensitivity systemdb ispart
 5552332  smalldb2           SqlServerWriter 4804               0    False              False        0
 5552330  smalldb3           SqlServerWriter 4803               0    False              False        0
 ```
-So now we know the names of the DBs inside our SQL instance, we just need to chose a Consistency group name  to hold them and any prefixe and sufffixes we want to use.  We then run our mount command like this:
+So now we know the names of the DBs inside our SQL instance, we just need to chose a Consistency group name  to hold them and any prefixes and suffixes we want to use.  We then run our mount command like this:
 
 ```
 PS /Users/anthony>  New-AGMLibMSSQLMount -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "testdev_" -dbnamesuffix "_av"
@@ -300,7 +304,7 @@ PS /Users/anthony>  New-AGMLibMSSQLMount -appid 5534398 -targethostname demo-sql
 
 ## Protecting and re-winding child-apps
 
-In this story, the we create a child app of a SQL DB that is protected by an on-demand template.
+In this story, we create a child app of a SQL DB that is protected by an on-demand template.
 
 First we create the child app.   There are several things about this command.   Firstly it does not specify an image ID, it will just use the latest snapshot.   It specifies the SLTID and SLPID to manage the child app.  This command was generated by running **New-AGMLibMSSQLMount** in guided mode.  
 ```
@@ -407,7 +411,7 @@ result    :
 If we want to see the results from the previous run, we can use -p (for previous) like this:
 ```
 Get-AGMLibWorkflowStatus -workflowid 9932352 -p
-````
+```
 
 # User Story - Creating new VMs
 
