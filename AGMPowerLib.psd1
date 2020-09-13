@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.15'
+ModuleVersion = '0.0.0.16'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -136,6 +136,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.16] 2020-
+        Get-AGMLibApplicationID now offers -f for fuzzy search on appname
+
         ## [0.0.0.15] 2020-09-11
         Add label to New-AGMLibImage
         Add Get-AGMLibAppPolicies, Start-AGMLibWorkflow,  Get-AGMLibWorkflowStatus, Get-AGMLibPolicies, New-AGMLibFSMount
