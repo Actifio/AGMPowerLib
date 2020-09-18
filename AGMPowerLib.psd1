@@ -136,7 +136,7 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.16] 2020-
+        ## [0.0.0.16] 2020-09-18
         Get-AGMLibApplicationID now offers -f for fuzzy search on appname
         PS5 compatability
 
