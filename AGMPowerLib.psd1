@@ -33,7 +33,7 @@ Copyright = '(c) 2020 Actifio, Inc. All rights reserved'
 Description = 'This is a community generated powershell module for AGM that  contains composite functions rather than endpoints'
 
 # Minimum version of the PowerShell engine required by this module
-PowerShellVersion = '7.0'
+PowerShellVersion = '5.0'
 
 # Name of the PowerShell host required by this module
 # PowerShellHostName = ''
