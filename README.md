@@ -190,7 +190,7 @@ Image_24358189 SqlServerWriter hq-sql          smalldb 5552336  demo-sql-4      
 
 The user works with the DB until it is no longer needed.
 
-The user then unmounts the DB, specifying -d to delete the mount:
+The user then un-mounts the DB, specifying -d to delete the mount:
 
 ```
 PS /Users/anthony> Remove-AGMMount Image_24358189 -d

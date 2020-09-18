@@ -1,4 +1,4 @@
-Function Get-AGMLibApplicationID ([string]$appname,[string]$friendlytype,[string]$apptype,[string]$appliancename,[string]$applianceid,[string]$filtervalue,[string]$hostname,[string]$hostid) 
+Function Get-AGMLibApplicationID ([string]$appname,[switch][alias("f")]$fuzzy,[string]$friendlytype,[string]$apptype,[string]$appliancename,[string]$applianceid,[string]$filtervalue,[string]$hostname,[string]$hostid) 
 {
     <#
     .SYNOPSIS
@@ -11,6 +11,10 @@ Function Get-AGMLibApplicationID ([string]$appname,[string]$friendlytype,[string
     .EXAMPLE
     Get-AGMLibApplicationID smalldb
     To search for the AppID of any apps called smalldb
+
+    .EXAMPLE
+    Get-AGMLibApplicationID smalldb -f
+    To search for the AppID of any apps with a name like smalldb.   The -f is for fuzzy search
 
     .DESCRIPTION
     A function to find any Apps with nominated name
@@ -54,9 +58,14 @@ Function Get-AGMLibApplicationID ([string]$appname,[string]$friendlytype,[string
     {
         $appname = Read-Host "AppName"
     }
-    # fv starts with appname
+    # fv always starts with appname
     $fv = "appname=$appname"
-    # if user specified filtervalue lets use it
+     # if they asked for fuzzy
+     if ($fuzzy)
+     {
+        $fv = "appname~$appname"
+     }
+     # if user specified filtervalue lets use it
     if ($filtervalue)
     {
         $fv = $fv + "&" + "$filtervalue"
