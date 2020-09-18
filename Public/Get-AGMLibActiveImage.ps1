@@ -65,7 +65,7 @@ Function Get-AGMLibActiveImage([string]$appid, [string]$jobclass,[switch][alias(
             $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
             $startdate=[datetime]$id.modifydate
             $enddate=(GET-DATE)
-            $age = NEW-TIMESPAN –Start $StartDate –End $EndDate
+            $age = NEW-TIMESPAN -Start $StartDate -End $EndDate
             $id | Add-Member -NotePropertyName daysold -NotePropertyValue $age.days 
             if ($id.characteristic -eq "Mount")
             {

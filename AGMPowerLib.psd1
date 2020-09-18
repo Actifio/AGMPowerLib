@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.16'
+ModuleVersion = '0.0.0.17'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -136,6 +136,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.17] 2020-09-18
+        Fixed bad character issue with getactiveimages
+
         ## [0.0.0.16] 2020-09-18
         Get-AGMLibApplicationID now offers -f for fuzzy search on appname
         PS5 compatability
