@@ -15,7 +15,15 @@ function GetPSModulePath
     }
     else 
     {
+      $hostVersionInfo = (get-host).Version.Major
+      if ( $hostVersionInfo -lt "6" )
+      {
+        return $env:PSModulePath.Split(';') 
+      }
+      else 
+      {
         return $env:PSModulePath.Split(';') -notmatch "WindowsPowerShell"
+      }
     }
 
 }
@@ -93,10 +101,10 @@ function ReportAGMPowerLib
 Clear-Host
 
 $hostVersionInfo = (get-host).Version.Major
-if ( $hostVersionInfo -lt "7" )
+if ( $hostVersionInfo -lt "5" )
 {
-    Write-Host "This module only works with PowerShell Version 7.  You are running version $hostVersionInfo."
-    Write-Host "You will need to install PowerShell Version 7 and try again"
+    Write-Host "This module only works with PowerShell Version 5.  You are running version $hostVersionInfo."
+    Write-Host "You will need to install PowerShell Version 5 or higher and try again"
     break
 }
 
