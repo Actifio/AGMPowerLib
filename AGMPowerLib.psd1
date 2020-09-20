@@ -33,7 +33,7 @@ Copyright = '(c) 2020 Actifio, Inc. All rights reserved'
 # Description of the functionality provided by this module
 Description = 'This is a community generated PowerShell Module for Actifio Global Manager (AGM).  
 It provides composite functions that combine commands to various AGM API endpoints, to achieve specific outcomes. 
-Examples include like mounting a database, creating a new VM or running a workflow.
+Examples include mounting a database, creating a new VM or running a workflow.
 More information about this module can be found here:   https://github.com/Actifio/AGMPowerLib'
 
 # Minimum version of the PowerShell engine required by this module
