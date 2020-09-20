@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.19'
+ModuleVersion = '0.0.0.20'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -34,7 +34,6 @@ Copyright = '(c) 2020 Actifio, Inc. All rights reserved'
 Description = 'This is a community generated PowerShell Module for Actifio Global Manager (AGM).  
 It provides composite functions that combine commands to various AGM API endpoints, to achieve specific outcomes. 
 Examples include like mounting a database, creating a new VM or running a workflow.
-It requires that AGMPowerCLI already be installed.
 More information about this module can be found here:   https://github.com/Actifio/AGMPowerLib'
 
 # Minimum version of the PowerShell engine required by this module
@@ -141,7 +140,7 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.19] 2020-09-20
+        ## [0.0.0.20] 2020-09-20
         Improved module description for PowerShell Gallery users
 
         ## [0.0.0.17] 2020-09-18
