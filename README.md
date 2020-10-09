@@ -592,13 +592,21 @@ New-AGMLibMSSQLMount -appid 884945 -mountapplianceid 1415071155 -label "test1" -
 ```
 
 Rather than learn the image ID, we can store the appid and mount appliance ID and then let AGM find the latest snapshot:
-* -appid 884945 -mountapplianceid 1415071155
+```
+-appid 884945 -mountapplianceid 1415071155
+```
 We set a label.  This is optional but a very good idea on every mount:
-* -label "test1"
+```
+-label "test1"
+```
 We set the target host ID and target SQL instance on that host:
-* -targethostid 655169 -sqlinstance "SYDWINSQL5"
+```
+-targethostid 655169 -sqlinstance "SYDWINSQL5"
+```
 We set the DB name for the mounted DB.
-* -dbname "avtest77"
+```
+-dbname "avtest77"
+```
 
 ### Check the mount
 Once the mount has been created, we are ready to start the migrate.   We can check our mount with:  **Get-AGMLibActiveImage**
