@@ -42,44 +42,46 @@ Function Set-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copyt
 
     if (!($imageid))
     {
-        $imageid = Read-host "Image ID (press enter for a list)"
-    }
-
-    if (!($imageid))
-    {
         $backup = Get-AGMImage -filtervalue "characteristic=MOUNT&apptype=SqlInstance&apptype=SqlServerWriter" 
-        if ($backup.id)
+        if ($backup.id.count -gt 0)
         {
             $AGMArray = @()
-
+            $i = 1
             Foreach ($id in $backup)
             { 
-                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
-                $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
-                $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
-                $id | Add-Member -NotePropertyName mountedhostname -NotePropertyValue $id.mountedhost.hostname
-                $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
-                
-                $AGMArray += [pscustomobject]@{
-                    id = $id.id
-                    apptype = $id.apptype
-                    appliancename = $id.appliancename
-                    hostname = $id.hostname
-                    appname = $id.appname
-                    mountedhost = $id.mountedhostname
-                    childappname = $id.childappname
-                    label = $id.label
+                if ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+                {
+                    $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
+                    $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
+                    $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+                    $id | Add-Member -NotePropertyName mountedhostname -NotePropertyValue $id.mountedhost.hostname
+                    $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+                    
+                    $AGMArray += [pscustomobject]@{
+                        select = $i
+                        imageid = $id.id
+                        imagename = $id.backupname
+                        apptype = $id.apptype
+                        appliancename = $id.appliancename
+                        hostname = $id.hostname
+                        appname = $id.appname
+                        mountedhost = $id.mountedhostname
+                        childappname = $id.childappname
+                        label = $id.label
 
+                    }
+                    $i++
                 }
+            }
+            if ($AGMArray.imageid.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "There are no migrating SQL App Type apps to list"
+                return
             }
             Clear-Host
             Write-Host "Image list.  Choose your image."
             $i = 1
-            foreach ($image in $AGMArray)
-            { 
-                Write-Host -Object "$i`:  $($image.id) ($($image.childappname) mounted on $($image.mountedhost))"
-                $i++
-            }
+            $AGMArray | select-object select,apptype,hostname,appname,mountedhost,childappname,imageid,imagename  | Format-Table *
             While ($true) 
             {
                 Write-host ""
@@ -94,7 +96,7 @@ Function Set-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copyt
                     break
                 }
             }
-            $imageid =  $AGMArray[($imageselection - 1)].id
+            $imageid =  $AGMArray[($imageselection - 1)].imageid
             $srcid = $AGMArray[($imageselection - 1)].application.srcid
         }
         else 

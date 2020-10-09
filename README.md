@@ -577,3 +577,111 @@ We now edit the CSV to remove images we don't want.   We then import what is lef
 ```
 $imagelist = Import-Csv -Path .\images.csv
 ```
+
+
+# User Story - Microsoft SQL Mount and Migrate
+
+In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk
+
+### Create the mount
+
+First we create the mount.  In this example we ran **New-AGMLibMSSQLMount** to build a command.
+The final command looks like this:
+```
+New-AGMLibMSSQLMount -appid 884945 -mountapplianceid 1415071155 -label "test1" -targethostid 655169 -sqlinstance "SYDWINSQL5" -dbname "avtest77"
+```
+
+Rather than learn the image ID, we can store the appid and mount appliance ID and then let AGM find the latest snapshot:
+* -appid 884945 -mountapplianceid 1415071155
+We set a label.  This is optional but a very good idea on every mount:
+* -label "test1"
+We set the target host ID and target SQL instance on that host:
+* -targethostid 655169 -sqlinstance "SYDWINSQL5"
+We set the DB name for the mounted DB.
+* -dbname "avtest77"
+
+### Check the mount
+Once the mount has been created, we are ready to start the migrate.   We can check our mount with:  **Get-AGMLibActiveImage**
+
+### Start the migrate
+
+We run **New-AGMLibMSSQLMigrate** to build our migrate command.   The final command looks like this:
+
+```
+New-AGMLibMSSQLMigrate -imageid 6859821 -files -restorelist "SQL_smalldb.mdf,D:\Data,d:\avtest1;SQL_smalldb_log.ldf,E:\Logs,e:\avtest1"
+```
+To break down this command:
+* This starts a migrate with default copy thread of 4 and default frequency set to 24 hours for ImageID 6859821.   We could have set thread count and frequency with syntax like:  **-copythreadcount 2 -frequency 2**
+* Files will be renamed to match the new database name because we didn't specify:  **-dontrenamedatabasefiles**
+* Because "-files" was specified, the -restorelist must contain the file name, the source location and the targetlocation.
+* Each file is separated by a semicolon,  the three fields for each file are comma separated.
+* In this example, the file SQL_smalldb.mdf found in D:\Data will be migrated to d:\avtest1
+* In this example, the file SQL_smalldb_log found in E:\Logs will be migrated to e:\avtest1
+* The order of the fields must be "filename,sourcefolder,targetfolder" so for two files "filename1,source1,target1;filename2,source2,target2"
+
+We could have specified volume migration rather than file migration, or we could have not specified either and let the files go back to their original locations (provided those locations exist).
+
+### Change migrate settings
+
+To change migrate settings we can run:  **Set-AGMLibMSSQLMigrate** and follow the prompts.  Or we can use syntax like this:
+```
+Set-AGMLibMSSQLMigrate -imageid 6860452 -copythreadcount 2 -frequency 2
+```
+This syntax sets the copy threads to 2 and the frequency to 2 hours for Image ID 6860452.   You can learn the image ID with **Get-AGMLibActiveImage -i** or **Set-AGMLibMSSQLMigrate**
+This command is the same as using *Update Migration Frequency* in the Active Mounts panel of AGM.
+You can check the migration settings with a command like this:
+```
+PS /Users/anthonyv/Documents/github/AGMPowerLib> Get-AGMImage -id 6859821 | select-object migrate-frequency,migrate-copythreadcount,migrate-configured
+
+migrate-frequency migrate-copythreadcount migrate-configured
+----------------- ----------------------- ------------------
+               24                       4               True
+```
+
+### Cancel the migrate 
+
+If we decide to cancel the migrate we can run this command:
+```
+Remove-AGMMigrate -imageid 6860452
+```
+You can learn the image ID with **Get-AGMLibActiveImage -i** or **Set-AGMLibMSSQLMigrate**
+This command is the same as using *Cancel Migration* in the Active Mounts panel of AGM.
+
+### Run an on-demand migration job
+
+The frequency you set will determine how often migrate jobs are run.   You can run on-demand migrations with:
+```
+Start-AGMMigrate -imageid 56072427 
+```
+This runs a migration job for Image ID 56072427.  You can learn the image ID with **Get-AGMLibActiveImage -i** or **Set-AGMLibMSSQLMigrate**
+This command is the same as using *Run Migration Job Now* in the Active Mounts panel of AGM.
+
+You can monitor this job with this command.  We need to know the App ID of the source application.  It will show both running and completed jobs
+```
+/Users/anthonyv/Documents/github/AGMPowerLib> get-agmjobstatus -filtervalue "jobclass=Migrate&appid=884945" | select-object status,startdate,enddate | sort-object startdate
+
+status    startdate           enddate
+------    ---------           -------
+succeeded 2020-10-09 14:41:55 2020-10-09 14:42:15
+succeeded 2020-10-09 14:51:58 2020-10-09 14:52:19
+running   2020-10-09 14:54:55
+```
+
+### Run a finalize job
+When you are ready to switch over, we need to run a finalize with this job:    
+```
+Start-AGMMigrate -imageid 56072427 -finalize
+```
+This command runs a Finalize job for Image ID 56072427. You can learn the image ID with **Get-AGMLibActiveImage -i** or **Set-AGMLibMSSQLMigrate**
+This command is the same as using *Finalize Migration* in the Active Mounts panel of AGM.
+
+You can monitor this job with this command.  We need to know the App ID of the source application.  It will show both running and completed jobs
+```
+/Users/anthonyv/Documents/github/AGMPowerLib> get-agmjobstatus -filtervalue "jobclass=Finalize&appid=884945" | select-object status,startdate,enddate | sort-object startdate
+
+status    startdate           enddate
+------    ---------           -------
+succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
+```
+
+

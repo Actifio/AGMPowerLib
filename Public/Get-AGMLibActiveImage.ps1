@@ -75,6 +75,14 @@ Function Get-AGMLibActiveImage([string]$appid, [string]$jobclass,[switch][alias(
             {
                 $imagestate = "Unmounted"
             }
+            if ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+            {
+                $imagestate = "Migrating"
+            }
+            if (( $id.flags_text -contains "JOBFLAGS_CONTAINER_MOUNT") -and ($id.characteristic -eq "Mount"))
+            {
+                $imagestate = "mapped"
+            }
             if ($imageidprint)
             {
                 $AGMArray += [pscustomobject]@{
