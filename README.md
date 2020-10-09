@@ -621,11 +621,11 @@ New-AGMLibMSSQLMigrate -imageid 6859821 -files -restorelist "SQL_smalldb.mdf,D:\
 To break down this command:
 * This starts a migrate with default copy thread of 4 and default frequency set to 24 hours for ImageID 6859821.   We could have set thread count and frequency with syntax like:  **-copythreadcount 2 -frequency 2**
 * Files will be renamed to match the new database name because we didn't specify:  **-dontrenamedatabasefiles**
-* Because "-files" was specified, the -restorelist must contain the file name, the source location and the targetlocation.
+* Because **-files** was specified, the **-restorelist** must contain the file name, the source location and the targetlocation.
 * Each file is separated by a semicolon,  the three fields for each file are comma separated.
-* In this example, the file SQL_smalldb.mdf found in D:\Data will be migrated to d:\avtest1
-* In this example, the file SQL_smalldb_log found in E:\Logs will be migrated to e:\avtest1
-* The order of the fields must be "filename,sourcefolder,targetfolder" so for two files "filename1,source1,target1;filename2,source2,target2"
+* In this example, the file **SQL_smalldb.mdf** found in **D:\Data** will be migrated to **d:\avtest1**
+* In this example, the file **SQL_smalldb_log** found in **E:\Logs** will be migrated to **e:\avtest1**
+* The order of the fields must be **filename,sourcefolder,targetfolder** so for two files **filename1,source1,target1;filename2,source2,target2**
 
 We could have specified volume migration rather than file migration, or we could have not specified either and let the files go back to their original locations (provided those locations exist).
 
@@ -639,7 +639,7 @@ This syntax sets the copy threads to 2 and the frequency to 2 hours for Image ID
 This command is the same as using *Update Migration Frequency* in the Active Mounts panel of AGM.
 You can check the migration settings with a command like this:
 ```
-PS /Users/anthonyv/Documents/github/AGMPowerLib> Get-AGMImage -id 6859821 | select-object migrate-frequency,migrate-copythreadcount,migrate-configured
+PS /AGMPowerLib> Get-AGMImage -id 6859821 | select-object migrate-frequency,migrate-copythreadcount,migrate-configured
 
 migrate-frequency migrate-copythreadcount migrate-configured
 ----------------- ----------------------- ------------------
