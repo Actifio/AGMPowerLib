@@ -118,7 +118,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
         $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end $jobgrab.enddate | select-object TotalMilliseconds
         $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
         $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
-        $jobgrab | select-object status,startdate,enddate,duration,result
+        $jobgrab | select-object status,startdate,enddate,duration,result,jobtag
         # $jobgrab
         return
     }
@@ -135,7 +135,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
                 $jobgrab.$field = Convert-FromUnixDate $jobgrab.$field
             }
         }
-        $jobgrab | select-object status,startdate,enddate,duration,result
+        $jobgrab | select-object status,startdate,enddate,duration,result,jobtag
     }
     else 
     {
@@ -169,7 +169,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
                 
                 $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
                 $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
-                $jobgrab | select-object status,startdate,enddate,duration,result
+                $jobgrab | select-object status,startdate,enddate,duration,result,jobtag
             }    
             else
             {
@@ -187,7 +187,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
                 $durationgrab = NEW-TIMESPAN -start $jobgrab.startdate -end (Get-date) | select-object TotalMilliseconds
                 $duration = Convert-AGMDuration ($durationgrab.TotalMilliseconds * 1000)
                 $jobgrab | Add-Member -NotePropertyName duration  -NotePropertyValue $duration
-                $jobgrab | select-object status,startdate,enddate,duration,result
+                $jobgrab | select-object status,startdate,enddate,duration,result,jobtag
                 Start-Sleep -s 5  
             }
         } 
