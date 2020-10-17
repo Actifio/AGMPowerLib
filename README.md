@@ -397,20 +397,40 @@ Get-AGMLibWorkflowStatus -workflowid 9932352 -m
 We shoud see something like this:
 ```
 status    : RUNNING
-startdate : 2020-09-11 14:39:03
+startdate : 2020-10-17 11:52:55
 enddate   :
-duration  : 00:01:35
+duration  : 00:00:03
 result    :
+jobtag    : avtestwf_momuser_1404389_9932352_10715728
 
 status    : SUCCESS
-startdate : 2020-09-11 14:39:03
-enddate   : 2020-09-11 14:40:33
-duration  : 00:01:30
+startdate : 2020-10-17 11:52:55
+enddate   : 2020-10-17 11:55:26
+duration  : 00:02:31
 result    :
+jobtag    : avtestwf_momuser_1404389_9932352_10715728
 ```
 If we want to see the results from the previous run, we can use -p (for previous) like this:
 ```
 Get-AGMLibWorkflowStatus -workflowid 9932352 -p
+```
+If you want to find any jobs that were ran (or are running) by that workflow, use the job_tag like this:
+```
+Get-AGMJobStatus -filtervalue jobtag=avtestwf_momuser_1404389_9932352_10715570
+```
+For example:
+```
+PS /Users/anthonyv/Downloads> Get-AGMJobStatus -filtervalue jobtag=avtestwf_momuser_1404389_9932352_10715728 | select-object jobclass,status,startdate,enddate
+
+jobclass    status    startdate           enddate
+--------    ------    ---------           -------
+reprovision running   2020-10-17 11:52:57  
+
+PS /Users/anthonyv/Downloads> Get-AGMJobStatus -filtervalue jobtag=avtestwf_momuser_1404389_9932352_10715728 | select-object jobclass,status,startdate,enddate
+
+jobclass    status    startdate           enddate
+--------    ------    ---------           -------
+reprovision succeeded 2020-10-17 11:52:57 2020-10-17 11:55:08
 ```
 
 # User Story - Creating new VMs
