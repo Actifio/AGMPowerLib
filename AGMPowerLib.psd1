@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.21'
+ModuleVersion = '0.0.0.22'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -140,6 +140,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.22] 2020-10-17
+        AGMPowerCLI 0.0.0.17 added duration conversion, which clashed with functions already using Convert-AGMDuration to do this.   Corrected Get-AGMLibRunningJobs,Get-AGMLibFollowJobStatus.
+
         ## [0.0.0.21] 2020-10-09
         Revamped New-AGMLibMSSQLMigrate and Set-AGMLibMSSQLMigrate with improved menus and help.  Enhanced imagestate column in Get-AGMLibActiveImage. Added migrate user story
 

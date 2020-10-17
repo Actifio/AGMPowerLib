@@ -49,7 +49,7 @@ Function Get-AGMLibRunningJobs
                 startdate = $id.startdate
                 progress = $id.progress
                 targethost = $id.targethost
-                duration = Convert-AGMDuration $id.duration
+                duration = $id.duration
             }
         }
         $AGMArray 

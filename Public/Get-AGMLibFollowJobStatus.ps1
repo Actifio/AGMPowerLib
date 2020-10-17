@@ -60,19 +60,11 @@ Function Get-AGMLibFollowJobStatus ([string]$jobname)
         }
         elseif ($jobgrab.status -eq "running") 
         {
-            if ($jobgrab.duration)
-            {
-                $jobgrab.duration = Convert-AGMDuration $jobgrab.duration
-            }
             $jobgrab | select-object jobname, status, progress, queuedate, startdate, duration | Format-Table
             Start-Sleep -s 5
         }
         else 
         {
-            if ($jobgrab.duration)
-            {
-                $jobgrab.duration = Convert-AGMDuration $jobgrab.duration
-            }
             $jobgrab | select-object jobname, status, message, startdate, enddate, duration 
             $done = 1    
         }
