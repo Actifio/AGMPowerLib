@@ -131,6 +131,17 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
     }
 
+    # if recovery point specified without imagename or ID
+    if ( ($recoverypoint) -and (!($imagename)) -and (!($imageid)) -and ($appid) )
+    {
+        $imagecheck = Get-AGMImage -filtervalue "appid=$appid&consistencydate<$recoverypoint&endpit>$recoverypoint" -sort id:desc -limit 1
+        if (!($imagecheck))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find an image for appid $appid with a recovery point suitable for required ENDPit $recoverypoint "
+            return
+        }
+    }
+
     # learn about the image if supplied a name
     if ( ($imagename) -and (!($imageid)) )
     {
@@ -1292,7 +1303,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     if ($monitor)
     {
-        $wait = "y"
+        $wait = $true
     }
 
     if ($jsonprint -eq "yes")
@@ -1326,7 +1337,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
-            Get-AGMFollowJobStatus $jobgrab.jobname
+            Get-AGMLibFollowJobStatus $jobgrab.jobname
         }
     }
 }

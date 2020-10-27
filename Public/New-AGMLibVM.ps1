@@ -571,7 +571,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
     if ($monitor)
     {
-        $wait = "y"
+        $wait = $true
     }
 
     if ($jsonprint -eq "yes")
@@ -604,7 +604,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
-            Get-AGMFollowJobStatus $jobgrab.jobname
+            Get-AGMLibFollowJobStatus $jobgrab.jobname
         }
     }
 }

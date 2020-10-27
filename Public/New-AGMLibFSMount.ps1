@@ -642,7 +642,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
 
     if ($monitor)
     {
-        $wait = "y"
+        $wait = $true
     }
 
     if ($jsonprint -eq "yes")
@@ -675,7 +675,7 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
-            Get-AGMFollowJobStatus $jobgrab.jobname
+            Get-AGMLibFollowJobStatus $jobgrab.jobname
         }
     }
 }

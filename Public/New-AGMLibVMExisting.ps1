@@ -475,7 +475,7 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
 
     if ($monitor)
     {
-        $wait = "y"
+        $wait = $true
     }
 
     if ($jsonprint -eq "yes")
@@ -508,7 +508,7 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
-            Get-AGMFollowJobStatus $jobgrab.jobname
+            Get-AGMLibFollowJobStatus $jobgrab.jobname
         }
     }
 }

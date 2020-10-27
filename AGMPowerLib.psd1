@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.23'
+ModuleVersion = '0.0.0.24'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -140,6 +140,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.24] 2020-10-28
+        Wait option was not working in all the functions that create new objects
+
         ## [0.0.0.23] 2020-10-17
         Added jobtag to Get-AGMLibWorkflowStatus
 

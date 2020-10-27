@@ -854,7 +854,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
 
     if ($monitor)
     {
-        $wait = "y"
+        $wait = $true
     }
 
     if ($jsonprint -eq "yes")
@@ -888,7 +888,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
-            Get-AGMFollowJobStatus $jobgrab.jobname
+            Get-AGMLibFollowJobStatus $jobgrab.jobname
         }
     }
 }
