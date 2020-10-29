@@ -55,17 +55,17 @@ Function Get-AGMLibFollowJobStatus ([string]$jobname)
         }
         elseif ($jobgrab.status -eq "queued")
         {
-            $jobgrab | select-object jobname, status, queuedate | Format-Table
+            $jobgrab | select-object jobname, status, queuedate, targethost | Format-Table
             Start-Sleep -s 5
         }
         elseif ($jobgrab.status -eq "running") 
         {
-            $jobgrab | select-object jobname, status, progress, queuedate, startdate, duration | Format-Table
+            $jobgrab | select-object jobname, status, progress, queuedate, startdate, duration, targethost | Format-Table
             Start-Sleep -s 5
         }
         else 
         {
-            $jobgrab | select-object jobname, status, message, startdate, enddate, duration 
+            $jobgrab | select-object jobname, status, message, startdate, enddate, duration, targethost
             $done = 1    
         }
     } until ($done -eq 1)

@@ -1,4 +1,4 @@
-Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allowedips,[string]$imageid,[string]$imagename,[string]$label,[string]$volumes,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allowedips,[string]$imageid,[string]$imagename,[string]$label,[string]$volumes,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -236,11 +236,6 @@ Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allo
 
     $json = $body | ConvertTo-Json
 
-    if ($monitor)
-    {
-        $wait = $true
-    }
-
     if ($jsonprint -eq "yes")
     {
         $compressedjson = $body | ConvertTo-Json -compress
@@ -251,27 +246,4 @@ Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allo
     }
 
     Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
-    if ($wait)
-    {
-        Start-Sleep -s 15
-        $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
-        if (!($jobgrab.jobname))
-        {
-            Start-Sleep -s 15
-            $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
-            if (!($jobgrab.jobname))
-            {
-                return
-            }
-        }
-        else
-        {   
-            $jobgrab| select-object jobname,status,queuedate,startdate,targethost
-            
-        }
-        if (($jobgrab.jobname) -and ($monitor))
-        {
-            Get-AGMLibFollowJobStatus $jobgrab.jobname
-        }
-    }
 }

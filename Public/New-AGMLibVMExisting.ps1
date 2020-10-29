@@ -1,4 +1,4 @@
-Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targethostname,[string]$targethostid,[string]$mountapplianceid,[string]$imageid,[string]$imagename,[string]$label,[string]$mountmode,[string]$volumes,[string]$mapdiskstoallesxhosts,[string]$mountdriveperimage,[string]$mountpointperimage,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -20,6 +20,23 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
     .DESCRIPTION
     A function to mount VMware VM images to an existing host
 
+    * Image selection can be done three ways:
+
+    1)  Run this command in guided mode to learn the available images and select one
+    2)  Learn the imagename or imageid and specify that as part of the command with -imagename or -imageid
+    3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
+    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
+
+
+    * VMware specific options
+    -mountmode    use either   nfs, vrdm or prdm
+    -mapdiskstoallesxhosts   Either true to do this or false to not do this.  Default is false.   
+    
+    * Monitoring options:
+
+    -wait     This will wait up to 2 minutes for the job to start, checking every 15 seconds to show you the job name
+    -monitor  Same as -wait but will also run Get-AGMLibFollowJobStatus to monitor the job to completion 
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -34,6 +51,33 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         {
             Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
             return
+        }
+    }
+
+    if (($appname) -and (!($appid)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue appname=$appname
+        if ($appgrab.id.count -ne 1)
+        { 
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a single App ID.  Use Get-AGMLibApplicationID and try again specifying -appid."
+            return
+        }
+        else {
+            $appid = $appgrab.id
+        }
+    }
+
+    if ( ($appid) -and (!($appname)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue id=$appid
+        if(!($appgrab))
+        {
+            Get-AGMErrorMessage -messagetoprint "Cannot find appid $appid"
+            return
+        }
+        else 
+        {
+            $appname = ($appgrab).appname
         }
     }
 
@@ -88,25 +132,7 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
     }
 
 
-    # if we got a VMware appname lets check it right now
-    if ( ($appname) -and (!($appid)) )
-    {
-        $appgrab = Get-AGMApplication -filtervalue "appname=$appname&apptype=VMBackup"
-        if ($appgrab.id.count -ne 1)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid VMBackup app.  Use Get-AGMLibApplicationID and try again specifying -appid."
-            return
-        }
-        else {
-            $appid = $appgrab.id
-        }
-    }
 
-    # if the user didn't specify a target we need to ask for one now
-    if ( (!($targethostname)) -and (!($targethostid)))
-    {
-        [string]$targethostname = Read-Host "What is the name of the host you want to mount to?"
-    }
 
     # if we got a target name lets check it
     if ($targethostname)
@@ -172,25 +198,107 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         }
     }
 
-    # finally if the user gave an AppID lets check it
-    if ($appid)
-    {
-        $imagegrab = Get-AGMLibLatestImage $appid
-        if (!($imagegrab.backupname))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLatestImage $appid"
-            return
-        }   
-        else 
-        {
-            $imagename = $imagegrab.backupname
-            $imageid = $imagegrab.id
-        }
-    }
+    
 
     # this if for guided menu
     if ($guided)
     {
+        if (!($imageid))
+        {
+            Clear-Host
+            Write-Host "Image selection"
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+            if ($imagelist.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                return
+            }   
+            Clear-Host
+            Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
+            write-host ""
+            $i = 1
+            foreach ($image in $imagelist)
+            { 
+                $image | Add-Member -NotePropertyName select -NotePropertyValue $i
+                $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
+                $i++
+            }
+            #print the list
+            $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $imagelist.Length
+                [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $imageid =  $imagelist[($imageselection - 1)].id
+            $imagegrab = Get-AGMImage -id $imageid
+            $imagename = $imagegrab.backupname               
+            $appname = $imagegrab.appname
+            $appid = $imagegrab.application.id   
+            $mountapplianceid = $imagegrab.cluster.clusterid
+            $mountappliancename = $imagegrab.cluster.name
+        }
+
+
+        if ( (!($targethostname)) -and (!($targethostid)))
+        {
+            Clear-Host
+            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&sourcecluster=$mountapplianceid&originalhostid=0&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon" | sort-object vmtype,hostname
+            if ($hostgrab.id.count -eq -0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find any hosts on $mountappliancename"
+                return
+            }
+            Clear-Host
+            Write-Host "Host List."
+            $i = 1
+            foreach ($hostid in $hostgrab)
+            { 
+                $hostid | Add-Member -NotePropertyName select -NotePropertyValue $i
+                if (!($hostid.vmtype))
+                {
+                    $hostid | Add-Member -NotePropertyName vmtype -NotePropertyValue "Physical"
+                }
+                $i++
+            }
+
+            $hostgrab | select-object select,vmtype,hostname,ostype,id | Format-table *
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $hostgrab.count
+                [int]$userselection = Read-Host "Please select a host (1-$listmax)"
+                if ($userselection -lt 1 -or $userselection -gt $hostgrab.Length)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($hostgrab.count)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $hostid = $hostgrab.id[($userselection - 1)]
+            $targethostname = $hostgrab.hostname[($userselection - 1)]
+            $vmtype = $hostgrab.vmtype[($userselection - 1)]
+            $transport = $hostgrab.transport[($userselection - 1)]
+            $diskpref = $hostgrab.diskpref[($userselection - 1)]
+            $vcenterid = $hostgrab.vcenterhostid[($userselection - 1)]
+            if ( ($vmtype -eq "vmware") -and (!($transport)) )
+            {
+                $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
+                $transport = $vcgrab.transport
+            }
+        }
+
         if (!($label))
         {
             Clear-Host
@@ -310,7 +418,7 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibVMExisting -targethostid $hostid -imageid $imageid  -volumes `"$uservolumelistfinal`""
+        Write-Host -nonewline "New-AGMLibVMExisting -targethostid $hostid -appid $appid -imageid $imageid -mountapplianceid $mountapplianceid -volumes `"$uservolumelistfinal`""
         if ($mountmode)
         {
             Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
@@ -334,6 +442,23 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         }
         if ($userchoice -eq 3)
         {
+            return
+        }
+    }
+
+
+    if (($appid) -and ($mountapplianceid) -and (!($imageid)))
+    {
+        # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        if ($imagegrab.count -eq 1)
+        {   
+            $imageid = $imagegrab.id
+            $imagename = $imagegrab.backupname
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
             return
         }
     }
@@ -491,20 +616,28 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
     if ($wait)
     {
         Start-Sleep -s 15
-        $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
-        if (!($jobgrab.jobname))
+        $i=0
+        while ($i -lt 8)
         {
-            Start-Sleep -s 15
-            $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
+            Clear-Host
+            write-host "Checking for a running job for appid $appid against targethostname $targethostname"
+            $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$targethostname" -sort queuedate:desc -limit 1 
             if (!($jobgrab.jobname))
             {
-                return
+                write-host "Job not running yet, will wait 15 seconds and check again"
+                Start-Sleep -s 15
+                $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$targethostname" -sort queuedate:desc -limit 1 
+                if (!($jobgrab.jobname))
+                {
+                    $1++
+                }
             }
-        }
-        else
-        {   
-            $jobgrab| select-object jobname,status,queuedate,startdate,targethost
-            
+            else
+            {   
+                $i=8
+                $jobgrab| select-object jobname,status,progress,queuedate,startdate,targethost
+                
+            }
         }
         if (($jobgrab.jobname) -and ($monitor))
         {

@@ -35,6 +35,10 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
     3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
     This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
 
+    There are two monitoring options:
+
+    -wait     This will wait up to 2 minutes for the job to start, checking every 15 seconds to show you the job name
+    -monitor  Same as -wait but will also run Get-AGMLibFollowJobStatus to monitor the job to completion
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -658,20 +662,28 @@ Function New-AGMLibFSMount ([string]$appid,[string]$mountapplianceid,[string]$ap
     if ($wait)
     {
         Start-Sleep -s 15
-        $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
-        if (!($jobgrab.jobname))
+        $i=0
+        while ($i -lt 8)
         {
-            Start-Sleep -s 15
-            $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=false&targethost=$targethostname" -sort queuedate:desc -limit 1 
+            Clear-Host
+            write-host "Checking for a running job for appid $appid against targethostname $targethostname"
+            $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$targethostname" -sort queuedate:desc -limit 1 
             if (!($jobgrab.jobname))
             {
-                return
+                write-host "Job not running yet, will wait 15 seconds and check again"
+                Start-Sleep -s 15
+                $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$targethostname" -sort queuedate:desc -limit 1 
+                if (!($jobgrab.jobname))
+                {
+                    $1++
+                }
             }
-        }
-        else
-        {   
-            $jobgrab| select-object jobname,status,queuedate,startdate,targethost
-            
+            else
+            {   
+                $i=8
+                $jobgrab| select-object jobname,status,progress,queuedate,startdate,targethost
+                
+            }
         }
         if (($jobgrab.jobname) -and ($monitor))
         {
