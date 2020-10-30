@@ -210,6 +210,48 @@ The user deletes the child app:
 PS /Users/anthony> Remove-AGMApplication 52410625
 ```
 
+### SQL DB mount of an Orphan image
+
+Presuming we know the name of our orphan app and the host it once lived on.  Choose the backupname of the image you want by searching for the appname:
+
+```
+PS > get-agmimage -filtervalue appname=avdb1 | select id,host,consistencydate,backupname,jobclass | ft *
+
+id      host                   consistencydate     backupname     jobclass
+--      ----                   ---------------     ----------     --------
+7397674 @{hostname=sydwinsql5} 2020-10-30 13:55:26 Image_10979893 snapshot
+7397570 @{hostname=sydwinsql5} 2020-10-30 13:54:16 Image_10979874 snapshot
+```
+
+Now learn the host ID of the host we want to mount to using the hostname.  In this example we use a fuzzy search.
+
+```
+PS > get-agmhost -filtervalue hostname~sql5 | select hostname,id
+
+hostname   id
+--------   --
+sydwinsql5 655169
+```
+
+Now if you don't know the instance names on that host, learn that:
+
+```
+PS > Get-AGMApplication -filtervalue "hostid=655169&apptype=SqlInstance" | select appname,apptype
+
+appname             apptype
+-------             -------
+SYDWINSQL5\SYDWIN5C SqlInstance
+SYDWINSQL5          SqlInstance
+```
+
+Now we build our mount command using the imagename, host ID of the target host, the SQL Instance name and the intended name on the target server.
+```
+New-AGMLibMSSQLMount -imagename Image_10979893 -targethostid 655169 -sqlinstance "SYDWINSQL5" -dbname "avtest9" -recoverdb true -userlogins false -recoverymodel "Same as source" -overwrite "no" -monitor
+```
+You will then get a job monitor because we specified -monitor.
+
+
+
 ### SQL Test and Dev Image usage with point in time recovery
 
 In this 'story' a user wants to mount a specific snapshot of a SQL DB to a host rolled to a specific point in time.   We start with an appname:
