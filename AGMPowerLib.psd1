@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.25'
+ModuleVersion = '0.0.0.26'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -140,6 +140,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.26] 2020-11-01
+        Allow New-AGMLibMSSQLMount to remount a mount
+
         ## [0.0.0.25] 2020-10-29
         Improve the follow logic for monitor function in all functions that use it.   Improve maturity of New-AGMLibVMExisting
 

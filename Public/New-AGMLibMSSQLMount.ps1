@@ -166,6 +166,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $apptype = $imagegrab.apptype      
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
+            $imagejobclass = $imagegrab.jobclass    
         }
     }
 
@@ -187,6 +188,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $apptype = $imagegrab.apptype      
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
+            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -369,6 +371,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $restorableobjects = $imagegrab.restorableobjects
                 $mountapplianceid = $imagegrab.cluster.clusterid
                 $mountappliancename = $imagegrab.cluster.name
+                $imagejobclass = $imagegrab.jobclass   
             }
             
         }
@@ -1038,7 +1041,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         )
     }
-    else 
+    elseif ($imagejobclass -ne "mount") 
     {
         $selectedobjects = @(
             @{
