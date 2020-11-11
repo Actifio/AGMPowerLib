@@ -53,12 +53,17 @@ Function Get-AGMLibFollowJobStatus ([string]$jobname)
             Get-AGMErrorMessage -messagetoprint "Failed to find $jobname"
             $done = 1
         }
-        elseif ($jobgrab.status -eq "queued")
+        elseif ($jobgrab.status -like "queued")
         {
             $jobgrab | select-object jobname, status, queuedate, targethost | Format-Table
             Start-Sleep -s 5
         }
-        elseif ($jobgrab.status -eq "running") 
+        elseif ($jobgrab.status -like "initializing")
+        {
+            $jobgrab | select-object jobname, status, queuedate, targethost | Format-Table
+            Start-Sleep -s 5
+        }
+        elseif ($jobgrab.status -like "running") 
         {
             $jobgrab | select-object jobname, status, progress, queuedate, startdate, duration, targethost | Format-Table
             Start-Sleep -s 5

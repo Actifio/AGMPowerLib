@@ -1,4 +1,4 @@
-Function Get-AGMLibRunningJobs 
+Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]$queue)
 {
     <#
     .SYNOPSIS
@@ -7,6 +7,14 @@ Function Get-AGMLibRunningJobs
     .EXAMPLE
     Get-AGMLibRunningJobs
     Displays all running jobs
+
+    .EXAMPLE
+    Get-AGMLibRunningJobs -e
+    Displays all queued or running jobs
+
+    .EXAMPLE
+    Get-AGMLibRunningJobs -q
+    Displays all queued jobs
 
     .DESCRIPTION
     A function to find running jobs
@@ -29,8 +37,18 @@ Function Get-AGMLibRunningJobs
     }
 
     $fv = "status=running"
-       
-    $outputgrab = Get-AGMJob -filtervalue "$fv" 
+    if ($queue)
+    {
+        $outputgrab = Get-AGMJob | where-object { $_.status -like "queued" } 
+    }       
+    elseif ($every)
+    {
+        $outputgrab = Get-AGMJob 
+    }
+    else 
+    {
+        $outputgrab = Get-AGMJob -filtervalue "status=running" 
+    }
     if ($outputgrab.id)
     {
         $AGMArray = @()
@@ -39,6 +57,7 @@ Function Get-AGMLibRunningJobs
         { 
             $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.appliance.name
             $AGMArray += [pscustomobject]@{
+
                 jobname = $id.jobname
                 jobclass = $id.jobclass
                 apptype = $id.apptype
@@ -46,6 +65,8 @@ Function Get-AGMLibRunningJobs
                 appname = $id.appname
                 appid = $id.appid
                 appliancename = $id.appliancename
+                status = $id.status
+                queuedate = $id.queuedate
                 startdate = $id.startdate
                 progress = $id.progress
                 targethost = $id.targethost

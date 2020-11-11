@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.26'
+ModuleVersion = '0.0.0.27'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -140,6 +140,13 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.27] 2020-11-11
+        Improved monitor logic in reports that offer it
+        Get-AGMLibApplicationID will ignore orphan apps
+        Enhanced New-AGMLibImage by adding wait process and improving monitor process
+        Enhanced Get-AGMLibFollowJobStatus to handle queued (readiness) and initializing job statuses.
+        Enhanced Get-AGMLibRunningJobs with -q and -e options to track queued jobs and all dogs 
+
         ## [0.0.0.26] 2020-11-01
         Allow New-AGMLibMSSQLMount to remount a mount
 
@@ -166,7 +173,7 @@ PrivateData = @{
 
         ## [0.0.0.16] 2020-09-18
         Get-AGMLibApplicationID now offers -f for fuzzy search on appname
-        PS5 compatability
+        PS5 compatibility
 
         ## [0.0.0.15] 2020-09-11
         Add label to New-AGMLibImage

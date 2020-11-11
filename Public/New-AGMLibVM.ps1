@@ -592,25 +592,25 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
     if ($wait)
     {
         Start-Sleep -s 15
-        $i=0
-        while ($i -lt 8)
+        $i=1
+        while ($i -lt 9)
         {
             Clear-Host
             write-host "Checking for a running job for appid $appid against targethostname $vmname"
             $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$vmname" -sort queuedate:desc -limit 1 
             if (!($jobgrab.jobname))
             {
-                write-host "Job not running yet, will wait 15 seconds and check again"
+                write-host "Job not running yet, will wait 15 seconds and check again.  Check $i of 8"
                 Start-Sleep -s 15
                 $jobgrab = Get-AGMJob -filtervalue "appid=$appid&jobclasscode=5&isscheduled=False&targethost=$vmname" -sort queuedate:desc -limit 1 
                 if (!($jobgrab.jobname))
                 {
-                    $1++
+                    $i++
                 }
             }
             else
             {   
-                $i=8
+                $i=9
                 $jobgrab| select-object jobname,status,progress,queuedate,startdate,targethost
                 
             }

@@ -95,6 +95,7 @@ Function Get-AGMLibApplicationID ([string]$appname,[switch][alias("f")]$fuzzy,[s
     {
         $fv = $fv + "&" + "hostname=$hostname"
     }  
+
     # if user specified hostid lets use it
     if ($hostid)
     {
@@ -117,18 +118,21 @@ Function Get-AGMLibApplicationID ([string]$appname,[switch][alias("f")]$fuzzy,[s
             $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
             $id | Add-Member -NotePropertyName hostid -NotePropertyValue $id.host.id
             $id | Add-Member -NotePropertyName slaid -NotePropertyValue $id.sla.id
-            $AGMArray += [pscustomobject]@{
-                id = $id.id
-                friendlytype = $id.friendlytype
-                hostname = $id.hostname
-                hostid = $id.hostid
-                appname = $id.appname
-                appliancename = $id.appliancename
-                applianceip = $id.applianceip
-                applianceid = $id.applianceid
-                appliancetype = $id.appliancetype
-                managed = $id.managed
-                slaid = $id.slaid
+            if ($id.hostname)
+            {
+                $AGMArray += [pscustomobject]@{
+                    id = $id.id
+                    friendlytype = $id.friendlytype
+                    hostname = $id.hostname
+                    hostid = $id.hostid
+                    appname = $id.appname
+                    appliancename = $id.appliancename
+                    applianceip = $id.applianceip
+                    applianceid = $id.applianceid
+                    appliancetype = $id.appliancetype
+                    managed = $id.managed
+                    slaid = $id.slaid
+                }
             }
         }
         $AGMArray | Sort-Object -Property hostname -Descending
