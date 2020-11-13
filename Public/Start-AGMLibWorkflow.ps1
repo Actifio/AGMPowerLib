@@ -1,4 +1,4 @@
-Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refresh,[switch][alias("m")]$monitor)
+Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[string]$imagename,[string]$recoverypoint,[switch]$refresh,[switch][alias("m")]$monitor)
 {
     <#
     .SYNOPSIS
@@ -9,19 +9,39 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
     Runs a guided menu to let you start a workflow
 
     .EXAMPLE
-    Start-AGMLibWorkflow -workflowid 1234
-    Starts workflowflow id 1234 using the latest image
+    Start-AGMLibWorkflow -workflowid 29409450 -appid 56430632 
+    
+    Starts workflow id 29409450 for appid 56430632 using the latest image.    If the appname already exists the workflow will fail.   You need to add -refresh
+    Because no image was specified, if there are logs the mount will be rolled to the latest point in time.
+    Note that the appid parameter is not mandatory but specifying it will make the function run slightly faster
 
     .EXAMPLE
-    Start-AGMLibWorkflow -workflowid 1234 -refresh
-    Starts workflowflow id 1234 using the latest image refreshing an existing image
+    Start-AGMLibWorkflow -workflowid 29409450 -appid 56430632 -refresh
+    
+    Starts workflow id 29409450 for appid 56430632 refreshing an existing mount.  Note that if no mount exists a new one will be created.
 
     .EXAMPLE
-    Start-AGMLibWorkflow -workflowid 1234 -refresh -monitor
-    Starts workflowflow id 1234 using the latest image refreshing an existing image, then monitors the workflow to completion
+    Start-AGMLibWorkflow -workflowid 29409450 -appid 56430632 -imagename Image_29363841 -m -refresh
+    
+    Starts workflow id 29409450 for appid 56430632 refreshing an existing mount using the specified image, then monitors the workflow to completion
+    Because an image was specified but a recoverypoint was not, no roll log roll forward will be run.  
+
+    .EXAMPLE
+    Start-AGMLibWorkflow -workflowid 29409450 -appid 56430632 -imagename Image_29411948 -recoverypoint "2020-11-12 21:48:39" -m -refresh
+    
+    Starts workflow id 29409450 for appid 56430632 refreshing an existing mount using the specified image and recovery point, then monitors the workflow to completion.
+    The recovery point must be specified in host time, not user time.  This is important if the user (local) timezone is different to the host timezone.
+    AGMPowerCLI default is to always show all time and date fields included ENDPIT in user (local) timezone.
 
     .DESCRIPTION
     A function to start workflows
+
+    -workflowid     Mandatory, needed to identify the workflow.  Learn this by running this function without specifying anything.
+    -appid          Not mandatory, but helpful.  Learn this by running this function without specifying anything.
+    -imagename      Not mandatory.  If not specified, the latest snapshot image will be used
+    -recoverypoint  Not mandatory.  Must be used with an imagename.  Must be in ISO format like 2020-10-10 10:10:10  Must be host time
+    -refresh        Refreshes an existing mount.   If a mount does not exist, a new one will be created.   Not mandatory, but if an existing mount exists, you must either unmount it, or specify refresh.  
+    -monitor        Monitors the workflow to completion
 
     #>
 
@@ -40,6 +60,8 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
             return
         }
     }
+
+    # if we get a workflow ID, lets learn the AppID.   We need AppID as part of the API
     if ( (!($appid)) -and ($workflowid) )
     {   
         $appid = (Get-AGMWorkFlow -filtervalue id=$workflowid).application.id
@@ -51,7 +73,7 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
     }
 
 
-    # if we don't get an appid, then lets presume we are going to build a command
+    # if we don't get an appid or workflow ID, then we are going to need to build a command guided style
     if ( (!($appid)) -or (!($workflowid)) )
     {
         Clear-Host
@@ -118,7 +140,9 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
             return
         }
     }
+    
 
+    # if we run a refresh we need to send some flow info.   In GUI, user could change this, but for now we are going to use the saved info.
     if ($refresh)
     {
         $flowitemgrab = Get-AGMApplicationWorkflowStatus -id $appid -workflowid $workflowid 
@@ -137,21 +161,67 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[switch]$refre
         {
             $mountedappid = $frommoutgrab.id
         }
-        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot" -sort id:desc -limit 1 
+        if (!($imagename))
+        {
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot" -sort id:desc -limit 1 
+            if ($imagegrab.id.count -eq 1)
+            {
+                $imageid = $imagegrab.srcid
+                if (!($recoverypoint))
+                {
+                    if ($imagegrab.endpit)
+                    {
+                        if ($usertimezone)
+                        {
+                            $endpit = $imagegrab.endpit
+                            $itemprops += @{ "key" = "recoverytime" ; "value" = $endpit }
+                        }
+                        else 
+                        {
+                            $oldagmtz = $AGMTimezone
+                            Set-AGMTimeZoneHandling -u
+                            $imagegrab2 = Get-AGMImage ($imagegrab).id
+                            [datetime]$endpitutc = $imagegrab2.endpit
+                            $hosttimezone = $imagegrab2.hosttimezone
+                            $HoursToAdd = $hosttimezone.substring(3,3)
+                            $MinutesToAdd = $hosttimezone.substring(6,2)
+                            $endpit = $endpitutc.AddHours($HoursToAdd).AddMinutes($MinutesToAdd).ToString('yyyy-MM-dd HH:mm:ss')
+                            $itemprops += @{ "key" = "recoverytime" ; "value" = $endpit }
+                            if ($oldagmtz -eq "local")
+                            {
+                                Set-AGMTimeZoneHandling -l
+                            }
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find a snapshot for $appid"
+                return
+            }
+        }
+    }
+
+    # if user supplied an image name, we are going to learn the SRC ID since we need this.   We are NOT going to learn the ENDPIT, if the user wants recovery time, they can define that, else we wont roll forward.  
+    if ($imagename)
+    {
+        $imagegrab = Get-AGMImage -filtervalue "backupname=$imagename" -sort id:desc -limit 1 
         if ($imagegrab.id.count -eq 1)
         {
             $imageid = $imagegrab.srcid
-            if ($imagegrab.endpit)
-            {
-                $endpit = $imagegrab.endpit
-                $itemprops += @{ "key" = "recoverytime" ; "value" = $endpit }
-            }
         }
         else 
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find a snapshot for $appid"
             return
         }
+    }
+
+    # if user supplied a recovery point we will use it without checking it.   
+    if ($recoverypoint)
+    {
+        $itemprops += @{ "key" = "recoverytime" ; "value" = $recoverypoint }
     }
 
     $body = [ordered]@{}

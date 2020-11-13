@@ -1,4 +1,4 @@
-Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,[string]$label,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$backuptype,[string]$capturetype,[string]$label,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -22,17 +22,23 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
     Create a new snapshot for AppID 2133445 with a label.
 
     .EXAMPLE
-    New-AGMLibImage  -appid 2133445 -capturetype log
+    New-AGMLibImage  -appid 2133445 -backuptype log
     Create a new log snapshot for AppID 2133445
 
 
     .EXAMPLE
-    New-AGMLibImage  -appid 2133445 -capturetype log -m 
+    New-AGMLibImage  -appid 2133445 -backuptype log -m 
     Create a new log snapshot for AppID 2133445 and monitor the resulting job to completion 
 
 
     .DESCRIPTION
     A function to create new snapshot images
+
+    * Databases with log protection
+    If a database has log protection, you will need to specify -backuptype 
+
+    -backuptype log         This will run a log snapshot
+    -backuptype db          This will run a DB snapshot
 
     * Monitoring options:
 
@@ -55,18 +61,23 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
             return
         }
     }
-
     if ($capturetype)
     {
-        if (( $capturetype -ne "db") -and ( $capturetype -ne "log"))
+        $backuptype = $capturetype
+    }
+
+
+    if ($backuptype)
+    {
+        if (( $backuptype -ne "db") -and ( $backuptype -ne "log"))
         {
-            Get-AGMErrorMessage -messagetoprint "Requested backup type is invalid, use either db or log"
+            Get-AGMErrorMessage -messagetoprint "Requested backuptype $backuptype is invalid, use either `'-backuptype db`' or `'-backuptype log`'"
             return
         }
     }
-    if (!($capturetype))
+    if (!($backuptype))
     {
-        $capturetype = ""
+        $backuptype = ""
     }
 
     if (!($appid))
@@ -115,17 +126,20 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
                 return
             }
         }
+        # help the user
+        write-host -nonewline  "Running this command: New-AGMLibImage  -appid $appid -policyid $policyid"
+        if ($backuptype) 
+        {
+            write-host -nonewline " -backuptype $backuptype"
+        }
+        if ($label) 
+        {
+            write-host -nonewline " -label $label"
+        }
+        write-host ""
     }
-    # help the user
-    write-host -nonewline  "Running this command: New-AGMLibImage  -appid $appid -policyid $policyid"
-    if ($capturetype) 
-    {
-        write-host -nonewline " -capturetype $capturetype"
-    }
-    if ($label) 
-    {
-        write-host -nonewline " -label $label"
-    }
+    
+
     # now create JSON
     $policy = @{id=$policyid}
     $body = [ordered]@{}
@@ -134,12 +148,17 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$capturetype,
         $body += @{label=$label}
     }
     $body += @{policy=$policy}
-    if ($capturetype)
+    if ($backuptype)
     {
-        $body += @{backuptype=$capturetype}
+        $body += @{backuptype=$backuptype}
     }
     $json = $body | ConvertTo-Json
-    Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
+    $runbackup = Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
+    if ($runbackup.err_message)
+    {
+        $runbackup
+        return
+    }
     if ($monitor)
     {
         $wait = $true
