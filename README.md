@@ -1,10 +1,11 @@
 # AGMPowerLib
-A Library of PowerShell Scripts to interact with AGM
+
+A Powershell module that allows PowerShell users to issue complex API calls to Actifio Global Manager. This module contains what we call composite functions, these being complex combination of API endpoints.  
 
 ## Prerequisite
 
 This module requires AGMPowerCLI to already be installed.
-Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI-Beta
+Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
 
 
 ### Install or Upgrade AGMPowerLib
