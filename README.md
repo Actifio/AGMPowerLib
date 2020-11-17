@@ -6,6 +6,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 
 This module requires AGMPowerCLI to already be installed.
 Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
+Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib to get the composite functions.
 
 
 ### Install or Upgrade AGMPowerLib
