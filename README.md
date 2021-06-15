@@ -621,7 +621,7 @@ Remove-AGMMount $mount -d
 
 ### esxhostid vs esxhostlist
 
-You can just specify one esxhost ID with -esxhostid.   If you are using NFS datastore and you will let DRS rebalance laterm, this cna make things much faster
+You can just specify one esxhost ID with -esxhostid.   If you are using NFS datastore and you will let DRS rebalance later, this can make things much faster
 
 ## datastore vs datastorelist
 
