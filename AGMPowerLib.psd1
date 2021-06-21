@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.28'
+ModuleVersion = '0.0.0.29'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@ Author = 'Anthony Vandewerdt'
 CompanyName = 'Actifio'
 
 # Copyright statement for this module
-Copyright = '(c) 2020 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2021 Actifio, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
@@ -140,6 +140,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.29] 2021-06-20
+        Allow Get-AGMLibImageRange to work with PolicyName or SLT Name.  Note this needs patched AGM 10.0.4+ or higher to work.  Lower versions of AGM get a filter error when trying to use policyname
+        Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
+
         ## [0.0.0.28] 2020-11-12
         Start-AGMLibWorkflow now uses correct host timezone when specifying ENDPIT and user and host timezones are different
         New-AGMLibImage was not printing errors in monitor mode, fixed this.  Also changed the syntax from capturetype to backuptype as this is more obvious

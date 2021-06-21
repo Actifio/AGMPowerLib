@@ -77,7 +77,11 @@ function CreateModuleContent
   # Attempts to create a new folder and copy over the AGMPowerLib Module contents
   try
   {
-    $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
+    $platform=$PSVersionTable.platform
+    if ( $platform -notmatch "Unix" )
+    {
+      $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
+    }
     $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
     $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
     $null = Test-Path -Path $InstallPath -ErrorAction Stop
