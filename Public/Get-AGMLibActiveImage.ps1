@@ -1,4 +1,4 @@
-Function Get-AGMLibActiveImage([string]$appid, [string]$jobclass,[switch][alias("i")]$imageidprint,[switch][alias("n")]$nfsprint,[switch][alias("u")]$unmount) 
+Function Get-AGMLibActiveImage([string]$appid,[string]$jobclass,[switch][alias("i")]$imageidprint,[switch][alias("n")]$nfsprint,[switch][alias("u")]$unmount) 
 {
     <#
     .SYNOPSIS
