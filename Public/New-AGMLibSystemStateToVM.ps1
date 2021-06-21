@@ -533,12 +533,21 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
     }
     if ($poweroffvm) { $body += [ordered]@{ poweronvm = "false" } } else { $body += [ordered]@{ poweronvm = "true" } }
     $systemstateoptions = @()
+    if ($ostype)
+    {   
     $systemstateoptions += @( 
         [ordered]@{ name = 'CPU'; value = $cpu }
         [ordered]@{ name = 'Memory'; value = $memory } 
         [ordered]@{ name = 'OSType'; value = $ostype } 
         [ordered]@{ name = 'CloudType'; value = "VMware" }  
     )
+    }
+    else {
+    $systemstateoptions += @( 
+        [ordered]@{ name = 'CPU'; value = $cpu }
+        [ordered]@{ name = 'Memory'; value = $memory } 
+        [ordered]@{ name = 'CloudType'; value = "VMware" }   
+    }
 
     if ($dhcpnetworks)
     {

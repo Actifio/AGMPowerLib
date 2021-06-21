@@ -142,6 +142,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.29] 2021-06-20
         Allow Get-AGMLibImageRange to work with PolicyName or SLT Name.  Note this needs patched AGM 10.0.4+ or higher to work.  Lower versions of AGM get a filter error when trying to use policyname
+        Check for ostype in New-AGMLibSystemStateToVM as some vmware images may not have that value as reported in Issue 13
         Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
 
         ## [0.0.0.28] 2020-11-12
