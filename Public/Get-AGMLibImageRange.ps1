@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$policyname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
+Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -26,10 +26,6 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     .EXAMPLE
     Get-AGMLibImageRange -fuzzyappname smalldb
     Get all snapshot created in the last day for any app with an app name like smalldb
-
-    .EXAMPLE
-    Get-AGMLibImageRange -policyname ovdaily
-    Get all snapshot created in the last day for any image with a policyname like ovdaily
 
     .EXAMPLE
     Get-AGMLibImageRange -sltname Gold

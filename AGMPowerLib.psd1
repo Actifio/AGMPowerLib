@@ -101,7 +101,8 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibVMExisting',
 'Restore-AGMLibMount',
 'Set-AGMLibMSSQLMigrate',
-'Start-AGMLibWorkflow')
+'Start-AGMLibWorkflow',
+'Start-AGMLibPolicy')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -141,7 +142,8 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.29] 2021-06-20
-        Allow Get-AGMLibImageRange to work with PolicyName or SLT Name.  Note this needs patched AGM 10.0.4+ or higher to work.  Lower versions of AGM get a filter error when trying to use policyname
+        Added Start-AGMLibPolicy
+        Allow Get-AGMLibImageRange to work with SLT Name.  
         Check for ostype in New-AGMLibSystemStateToVM as some vmware images may not have that value as reported in Issue 13
         Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
 

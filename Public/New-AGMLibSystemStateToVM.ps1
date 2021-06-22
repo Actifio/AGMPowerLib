@@ -1,4 +1,4 @@
-Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweronvm,[string]$esxhostid,[string]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
+Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[int]$cpu,[int]$memory,[string]$ostype,[string]$datastore,[string]$poweroffvm,[string]$esxhostid,[string]$vcenterid,[string]$dhcpnetworks,[string]$fixedipnetworks,[switch][alias("g")]$guided) 
 {
     <#
     .SYNOPSIS
@@ -241,7 +241,6 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
                 }
             }
             $imageid =  $imagelist[($imageselection - 1)].id   
-            $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
     }
 
@@ -401,8 +400,8 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         Write-Host ""
         [int]$userselection = Read-Host "Please select from this list (1-2)"
         if ($userselection -eq "") { $userselection = 1 }
-        if ($userselection -eq 1) {  $poweronvm = $TRUE  }
-        if ($userselection -eq 2) {  $poweronvm = $FALSE  }
+        if ($userselection -eq 1) {  $poweroffvm = $FALSE  }
+        if ($userselection -eq 2) {  $poweroffvm = $TRUE  }
 
         $systemstateoptions = Get-AGMImageSystemStateOptions -imageid $imageid -target VMware
         $cpudefault = $ostype = ($systemstateoptions| where-object {$_.name -eq "CPU"}).defaultvalue
@@ -546,7 +545,8 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
     $systemstateoptions += @( 
         [ordered]@{ name = 'CPU'; value = $cpu }
         [ordered]@{ name = 'Memory'; value = $memory } 
-        [ordered]@{ name = 'CloudType'; value = "VMware" }   
+        [ordered]@{ name = 'CloudType'; value = "VMware" }  
+    ) 
     }
 
     if ($dhcpnetworks)

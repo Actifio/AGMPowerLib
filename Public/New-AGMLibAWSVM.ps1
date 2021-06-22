@@ -330,8 +330,8 @@ Function New-AGMLibAWSVM ([string]$appid,[string]$appname,[string]$mountapplianc
         Write-Host ""
         [int]$userselection = Read-Host "Please select from this list (1-2)"
         if ($userselection -eq "") { $userselection = 1 }
-        if ($userselection -eq 1) {  $poweronvm = $TRUE  }
-        if ($userselection -eq 2) {  $poweronvm = $FALSE  }
+        if ($userselection -eq 1) {  $poweroffvm = $FALSE  }
+        if ($userselection -eq 2) {  $poweroffvm = $TRUE  }
         Write-Host ""
         # cpu and memory
         [int]$cpu = read-host "CPU (vCPU) (default $cpudefault)"
