@@ -1,4 +1,4 @@
-function Start-AGMLibPolicy ([string]$policyid,[string]$jobclass,[string]$label,[string]$backuptype)
+function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptype)
 {
     <#
     .SYNOPSIS
