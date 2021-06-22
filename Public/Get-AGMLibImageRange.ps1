@@ -40,8 +40,8 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     Get all snapshot created in the last day for appid 4771 on the appliance with the specified clusterid
 
     .EXAMPLE
-    Get-AGMLibImageRange -appid 4771 -jobclass dedup
-    Get all dedups created in the last day for appid 4771
+    Get-AGMLibImageRange -appid 4771 -jobclass OnVault
+    Get all OnVault created in the last day for appid 4771
 
     .EXAMPLE
     Get-AGMLibImageRange -appid 4771 -olderlimit 4 -hours
@@ -128,7 +128,10 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         return
     }
 
-      
+    # powershell is not case sensitive, but AGM jobclasses are, so this is a nice way to make sure the right case gets sent to AGM
+    if ($jobclass -eq "onvault") {  $jobclass = "OnVault" }
+    if ($jobclass -eq "snapshot") {  $jobclass = "snapshot" }
+
     if ($jobclass)
     {
         $fv = $fv + "&jobclass=$jobclass"
@@ -137,7 +140,7 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     {
         $fv = $fv + "&jobclass=snapshot"
     }
-
+    # we offer two ways to ask for onvault, either -jobclass onVault   or just  -onvault  or even -o
     if ($onvault)
     {
         $fv = $fv + "&jobclass=OnVault"
