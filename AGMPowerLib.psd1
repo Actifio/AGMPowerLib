@@ -93,6 +93,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibFSMount',
 'New-AGMLibGCPVM',
 'New-AGMLibImage',
+'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
 'New-AGMLibVM',
 'New-AGMLibMultiVM',
@@ -143,7 +144,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.29] 2021-06-20
-        Added Start-AGMLibPolicy, New-AGMLibGCEInstance
+        Added Start-AGMLibPolicy, New-AGMLibGCEInstance, New-AGMLibMultiMount
         Allow Get-AGMLibImageRange to work with SLT Name.  
         Check for ostype in New-AGMLibSystemStateToVM as some vmware images may not have that value as reported in Issue 13
         Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
