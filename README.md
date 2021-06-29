@@ -541,21 +541,223 @@ During guided mode you will notice that for functions that expect authentication
 
 # User Story - Ransomware recovery
 
-There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can start the recovery.
+The first user story is VMware ransomware recovery
 
-First we build an object that contains a list of images.  For this we can use:
+## Running on-demand jobs based on policy ID
+O
+ne way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
+If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
+We can then learn the policy ID and create a command to run it like this.
+
+First learn the policy ID.  In this example the policy ID of the cloud job is 25627
+```
+PS /tmp/agmpowercli> Get-AGMLibPolicies | ft
+
+sltid sltname       id    name        op    priority retention starttime endtime rpo
+----- -------       --    ----        --    -------- --------- --------- ------- ---
+25606 FSSnaps_RW_OV 25627 OndemandOV  cloud medium   14 days   19:00     18:50   24 hours
+25606 FSSnaps_RW_OV 25607 DailySnap   snap  medium   7 days    00:00     23:59   24 hours
+```
+We now have what we need to build our script.
+Before we begin we need to enable the service account we are going to use 
+
+We then start the OnVault jobs like this:
+```
+PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
+Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+```
+We can then monitor them like this:
+```
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status  progress
+------  --------
+running       97
+running       98
+```
+Good logic would work like this:
+1. Count the relevant apps.  In this example we have 2.
+```
+PS /tmp/agmpowercli> $appgrab = Get-AGMApplication -filtervalue "sltname=FSSnaps_RW_OV"
+PS /tmp/agmpowercli> $appgrab.count
+2
+```
+1. Count the current images.  We currently have 6 OnVault images.
+```
+PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
+PS /tmp/agmpowercli> $imagegrab.count
+6
+```
+1. Run a new OnVault job.  We get two jobs started.
+```
+PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
+Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+```
+1.  Scan for running jobs until they all finish
+```
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status             progress
+------             --------
+queued                    0
+queued (readiness)        0
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status  progress
+------  --------
+running        2
+running        2
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status    progress
+------    --------
+running         98
+succeeded      100
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status progress
+------ --------
+
+
+PS /tmp/agmpowercli>
+
+```
+1. Count the images and ensure they went up by the number of apps.   Note that if expiration run at this time, this will confuse the issue.
+You can see here we went from 6 to 8.
+```
+PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
+PS /tmp/agmpowercli> $imagegrab.count
+8
+PS /tmp/agmpowercli>
+```
+
+## File System multi-mount
+
+There are many cases where you may want to mount many filesystems in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production filesystem.   So lets mount as many images as we can as quickly as we can so we can find unaffected filesystems and start the recovery.
+
+### Building a list of images
+First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a synytax like this:
+```
+$imagelist = Get-AGMLibImageRange
+```
+In this example we get all images of filesystems created in the last day:
+```
+$imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 1
+```
+If we know that images created in the last 24 hours are all infected, we could use this (up to 3 days old but not less than 1 day old):
+```
+$imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 3 -newerlimit 1
+```
+We can also use the Template Name (SLT) to find our apps.  This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
+```
+$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV
+```
+
+#### Editing your $Imagelist 
+
+You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+In this example we grab 20 days of images:
+
+```
+Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+```
+
+We now edit the CSV  we created **images.csv** to remove images we don't want.   We then import what is left into our $imagelist variable:
+```
+$imagelist = Import-Csv -Path .\images.csv
+```
+Now we have our image list, we can begin to create our recovery command.
+
+### Define our scanning host list
+ 
+We need to define a single host to use as our mount target or an array of hosts.
+
+```
+PS /tmp/agmpowerlib> Get-AGMHost -filtervalue "hostname~mysql" | select id,hostname
+
+id   hostname
+--   --------
+7376 mysqltarget
+6915 mysqlsource
+
+PS /tmp/agmpowerlib> $hostlist = @(7376,6915)
+```
+We could also define a specific host like this:
+```
+$hostid = 7376
+```
+### Run our multi-mount command
+
+We can now fire our new command using the settings we defined and our image list:
+```
+New-AGMLibMultiMount -imagelist $imagelist -hostlist $hostlist -mountpoint /tmp/
+```
+For uniqueness we have quite a few choices to generate mounts with useful names.   A numeric indicator will always be added to each mountpoint as a suffix.  Optionally we can use:
+
+* -a or -appnamesuffix   :  which will add the appname of the image to the mountpoint
+* -c or -condatesuffix   :  which will add the consistency date of the image to the mountpoint
+* -i  or -imagesuffix    :  which will add the image name of the image to the mountpoint
+
+This will mount all the images in the list and round robin through the host list.
+
+If you don't specify a label, all the image will get the label **MultiFS Recovery**   This will let you easily spot your mounts by doing this:
+```
+$mountlist = Get-AGMLibActiveImage | where-object  {$_.label -eq "MultiFS Recovery"}
+```
+When you are ready to unmount them, run this script:
+```
+foreach ($mount in $mountlist.imagename)
+{
+Remove-AGMMount $mount -d
+}
+```
+## VMware multi-mount
+
+There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can find unaffected VMs and start the recovery.
+
+### Building a list of images
+First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a synytax like this:
 ```
 $imagelist = Get-AGMLibImageRange
 ```
 In this example we get all images of VMs created in the last day:
 ```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 1
+$imagelist = Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 1
 ```
-if we now that the last 24 hours is not going to be any good, we could use this (up to 3 days but not less than 1 day old):
+If we know that images created in the last 24 hours are all infected, we could use this (up to 3 days old but not less than 1 day old):
 ```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 3 -newerlimit 1
+$imagelist = Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 3 -newerlimit 1
 ```
-Learn your vcenter host ID and set id:
+We can also use the Template Name (SLT) to find our apps.  This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
+```
+$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV
+```
+
+#### Editing your $Imagelist 
+
+You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+In this example we grab 20 days of images:
+
+```
+Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+```
+
+We now edit the CSV  we created **images.csv** to remove images we don't want.   We then import what is left into our $imagelist variable:
+```
+$imagelist = Import-Csv -Path .\images.csv
+```
+Now we have our image list, we can begin to create our recovery command.
+
+### Define our VMware environment 
+ 
+First we learn our vcenter host ID and set id:
 ```
 PS /Users/anthony/git/AGMPowerLib> Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
 
@@ -594,7 +796,10 @@ PS /Users/anthony/git/AGMPowerLib> $datastorelist
 IBM-FC-V3700
 Pure
 ```
-We can now fire our new command:
+
+### Run our multi-mount command
+
+We can now fire our new command using the VMware settings we defined and our image list:
 ```
 New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist 
 ```
@@ -619,28 +824,15 @@ Remove-AGMMount $mount -d
 }
 ```
 
-### esxhostid vs esxhostlist
+#### esxhostid vs esxhostlist
 
 You can just specify one esxhost ID with -esxhostid.   If you are using NFS datastore and you will let DRS rebalance later, this can make things much faster
 
-## datastore vs datastorelist
+#### datastore vs datastorelist
 
 You can also specify a single datastore rather than a list.
 
-## Editing your $Imagelist 
 
-You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
-
-In this example we grab 20 days of images:
-
-```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
-```
-
-We now edit the CSV to remove images we don't want.   We then import what is left into our $imagelist:
-```
-$imagelist = Import-Csv -Path .\images.csv
-```
 
 
 # User Story - Microsoft SQL Mount and Migrate
@@ -756,4 +948,40 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
+# User Story - Persistent Disk Snapshots
 
+In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.
+
+
+### Managing the mounted GCE Instance 
+
+```
+PS /tmp/agmpowercli> Get-AGMLibActiveImage
+
+imagename        : Image_0021181
+apptype          : GCPInstance
+appliancename    : avwlab2sky
+hostname         : windows
+appname          : windows
+mountedhost      : avrecovery4
+allowedip        :
+childappname     : avrecovery4
+consumedsize_gib : 0
+daysold          : 0
+label            :
+imagestate       : Mounted
+```
+We have two choices 
+
+1.Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
+
+```
+PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
+PS /tmp/agmpowercli>
+```
+2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image
+
+```
+PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
+PS /tmp/agmpowercli>
+```
