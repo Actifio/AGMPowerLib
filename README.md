@@ -544,10 +544,10 @@ During guided mode you will notice that for functions that expect authentication
 The first user story is VMware ransomware recovery
 
 ## Running on-demand jobs based on policy ID
-O
-ne way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
+
+One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
 If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
-We can then learn the policy ID and create a command to run it like this.
+We can then learn the policy ID and create a command to run it.
 
 First learn the policy ID.  In this example the policy ID of the cloud job is 25627
 ```
@@ -558,10 +558,8 @@ sltid sltname       id    name        op    priority retention starttime endtime
 25606 FSSnaps_RW_OV 25627 OndemandOV  cloud medium   14 days   19:00     18:50   24 hours
 25606 FSSnaps_RW_OV 25607 DailySnap   snap  medium   7 days    00:00     23:59   24 hours
 ```
-We now have what we need to build our script.
-Before we begin we need to enable the service account we are going to use 
-
-We then start the OnVault jobs like this:
+We now have what we need to build our command.
+Before we begin we need to enable the service account we are going to use.  We then start the OnVault jobs like this:
 ```
 PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
 Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
@@ -583,19 +581,19 @@ PS /tmp/agmpowercli> $appgrab = Get-AGMApplication -filtervalue "sltname=FSSnaps
 PS /tmp/agmpowercli> $appgrab.count
 2
 ```
-1. Count the current images.  We currently have 6 OnVault images.
+2. Count the current images.  We currently have 6 OnVault images.
 ```
 PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
 PS /tmp/agmpowercli> $imagegrab.count
 6
 ```
-1. Run a new OnVault job.  We get two jobs started.
+3. Run a new OnVault job.  We get two jobs started.
 ```
 PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
 Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
 Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
 ```
-1.  Scan for running jobs until they all finish
+4.  Scan for running jobs until they all finish
 ```
 PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
 
@@ -627,7 +625,7 @@ status progress
 PS /tmp/agmpowercli>
 
 ```
-1. Count the images and ensure they went up by the number of apps.   Note that if expiration run at this time, this will confuse the issue.
+5. Count the images and ensure they went up by the number of apps.   Note that if expiration run at this time, this will confuse the issue.
 You can see here we went from 6 to 8.
 ```
 PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
