@@ -639,11 +639,7 @@ PS /tmp/agmpowercli>
 There are many cases where you may want to mount many filesystems in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production filesystem.   So lets mount as many images as we can as quickly as we can so we can find unaffected filesystems and start the recovery.
 
 ### Building a list of images
-First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a synytax like this:
-```
-$imagelist = Get-AGMLibImageRange
-```
-In this example we get all images of filesystems created in the last day:
+First we build an object that contains a list of images.  For this we can use **Get-AGMLibImageRange** in a synytax like this, where in this example we get all images of filesystems created in the last day:
 ```
 $imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 1
 ```
@@ -653,7 +649,7 @@ $imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -old
 ```
 We can also use the Template Name (SLT) to find our apps.  This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
 ```
-$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV
+$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV -olderlimit 3 -newerlimit 1
 ```
 
 #### Editing your $Imagelist 
