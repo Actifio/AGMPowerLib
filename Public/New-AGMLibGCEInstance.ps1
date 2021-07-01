@@ -16,14 +16,14 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
 
     To learn the first three parameters below, you could use this command:
 
-    Get-AGMImage -filtervalue apptype=GCPInstance | select appname,id,name,consistencydate,diskpool | ft
+    Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
     
     There are many paramters that need to be supplied:
 
     -imageid         You need to supply either the imageid or the imagename or both
     -imagename       You need to supply either the imageid or the imagename or both
-    -credentialid    Learn this with Get-AGMCredential or the Get-AGMImage command above.  The credentialid is the srcid.
-    -credentialname  Learn this with Get-AGMCredential.
+    -credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
+    -credentialname  Learn this with Get-AGMCredential.  The credentialname is the name.
     -projectname     This is the unique Google Project name
     -zone            This is the GCP Zone such as: australia-southeast1-c
     -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
@@ -104,9 +104,9 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
         Get-AGMErrorMessage -messagetoprint "Please specify a credential name for the new instance with -credentialname"
         return
     }
-    if (!($project))
+    if (!($projectname))
     {
-        Get-AGMErrorMessage -messagetoprint "Please specify a project for the new instance with -project"
+        Get-AGMErrorMessage -messagetoprint "Please specify a project for the new instance with -projectname"
         return
     }
     if (!($zone))
