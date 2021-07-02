@@ -1,10 +1,10 @@
-Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$credentialid,[string]$credentialname,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$poweronvm) 
+Function New-AGMLibGCEInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$poweronvm) 
 {
     <#
     .SYNOPSIS
     Mounts a PD Snapshot as a new GCE Instance
     To learn which Applications are suitable:
-    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" 
+    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
 
     To learn which Cloud Credentials are available.   The credentialid is the srcid.
     Get-AGMCredential
@@ -14,7 +14,7 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
 
     This mounts the specified imageid
 
-    To learn the first three parameters below, you could use this command:
+    To learn the image ID or image name, you could use this command:
 
     Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
     
@@ -23,12 +23,11 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
     -imageid         You need to supply either the imageid or the imagename or both
     -imagename       You need to supply either the imageid or the imagename or both
     -credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
-    -credentialname  Learn this with Get-AGMCredential.  The credentialname is the name.
+    -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
     -zone            This is the GCP Zone such as: australia-southeast1-c
     -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
     -machinetype     This is the GCP instance machine type such as:  e2-micro
-    -serviceaccount  The service account that is being used to request the instance creation
     -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
     -labels          Labels are key value pairs.   Separate key and value with semi colons and each label with commas.   For example:   -labels "dog;cat,sheep;cow"
     -nic0network     The network name in URL format
@@ -60,6 +59,22 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
         }
     }
 
+
+    # if recovery point specified without imagename or ID
+    if ( (!($imagename)) -and (!($imageid)) -and ($appid) )
+    {
+        $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&apptype=GCPInstance" -sort id:desc -limit 1
+        if ($imagecheck.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any images for appid $appid"
+            return
+        }
+        $imageid = $imagecheck.id
+        $imagename = $imagecheck.name
+    }
+
+
+
     # learn about the image
     if (($imagename) -and (!($imageid)))
     {
@@ -85,7 +100,7 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
         }
         else 
         {
-            $imagename = $imagegrab.backupname
+            $imagename = $imagegrab.name
         }
     }
     if ((!($imagename)) -and (!($imageid)))
@@ -99,11 +114,7 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
         Get-AGMErrorMessage -messagetoprint "Please specify a credential ID for the new instance with -credentialid"
         return
     }
-    if (!($credentialname))
-    {
-        Get-AGMErrorMessage -messagetoprint "Please specify a credential name for the new instance with -credentialname"
-        return
-    }
+
     if (!($projectname))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a project for the new instance with -projectname"
@@ -135,18 +146,9 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic0 for the new instance with -nic0subnet"
         return
     }
-    if (!($nic0externalip))
-    {
-
-    }
-    if (!($nic0internalip))
-    {
-
-    }
-
 
     # cloud credentials
-    $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"' +$credentialname  +'","name":"' +$credentialid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
+    $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$credentialid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
     #project name
     $json = $json + '{"displayName":"PROJECT NAME","name":"project","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"projectid","name":"' +$projectname +'","selected":true}],"_getchoices":"getAllProjects#handle,cloudcredential","_dependent":["zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"projectid"},'
     # zone
@@ -156,8 +158,11 @@ Function New-AGMLibGCEInstance ([string]$imageid,[string]$imagename,[string]$cre
     # machine type
     $json = $json + '{"displayName":"MACHINE TYPE","name":"machinetype","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"machinetype","name":"' +$machinetype +'","selected":true}],"_getchoices":"getMachineTypes#handle,cloudcredential,region,project,zone","_dependent":["networksettings"],"_default":"machinetype"},'
     # service account
-    $json = $json + '{"displayName":"SERVICE ACCOUNT","name":"serviceaccount","helpId":1265,"type":"text","description":"","required":true,"currentValue":"' +$serviceaccount +'","modified":false,"size":40,"_getDefault":"getDefaultServiceAccount","_default":"gserviceaccount.com"},'
-    # network tags   
+    if ($serviceaccount)
+    {
+        $json = $json + '{"displayName":"SERVICE ACCOUNT","name":"serviceaccount","helpId":1265,"type":"text","description":"","required":true,"currentValue":"' +$serviceaccount +'","modified":false,"size":40,"_getDefault":"getDefaultServiceAccount","_default":"gserviceaccount.com"},'
+    } 
+        # network tags   
     if (!($networktags))
     {
         $json = $json + '{"displayName":"NETWORK TAGS","name":"networktag","helpId":1265,"type":"multiselection","description":"","required":false,"modified":false,"minimum":0,"maximum":10,"choices":[{"displayName":"http-server","name":"http-server","selected":false},{"displayName":"https-server","name":"https-server","selected":false}],"_getchoices":"getNetworkTags#handle,cloudcredential,project","_default":"[]"}],"groupType":"layout"},'
