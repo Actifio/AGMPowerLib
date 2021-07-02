@@ -1,4 +1,4 @@
-Function New-AGMLibGCEInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$poweronvm) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$poweronvm) 
 {
     <#
     .SYNOPSIS
@@ -10,7 +10,7 @@ Function New-AGMLibGCEInstance ([string]$appid,[string]$imageid,[string]$imagena
     Get-AGMCredential
 
     .EXAMPLE
-    New-AGMLibGCEInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog;cat,sheep;cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog;cat,sheep;cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 
     This mounts the specified imageid
 
