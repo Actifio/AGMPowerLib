@@ -3,11 +3,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     <#
     .SYNOPSIS
     Mounts a PD Snapshot as a new GCP Instance (VM)
-    To learn which Applications are suitable:
-    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
-
-    To learn which Cloud Credentials are available use this command(the credentialid is the srcid):
-    Get-AGMCredential
 
     .EXAMPLE
     New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
@@ -20,10 +15,13 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     This mounts the most recent snapshot from appid 1234
 
     .DESCRIPTION
-    A function to create a new GCE Instance from a PD Snapshot
+    To learn which Applications are suitable use this command:
+    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
+
+    To learn which Cloud Credentials are available use this command (use the srcid as the credential ID):
+    Get-AGMCredential
 
     To learn the image ID or image name, you could use this command:
-
     Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
     
     There are many parameters that need to be supplied:
@@ -52,7 +50,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
     -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
  
-
+    What is not supported right now:
+    1)  Using different storage classes
+    2)  Specifying more than one internal IP per subnet.
+    
+    If you need either of these, please open an issue in Github.
 
 
     #>
