@@ -1,4 +1,4 @@
-Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mountpoint,[switch][alias("a")]$appnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS
@@ -21,12 +21,13 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mount
 
     The suffix is optional but recommended.  This basically adds an extra foldername to the mount point.
 
-    There are three mechanisms to get unique mount names:
-    1)  You can specify -a and the App Name will be used as part of the mount point
-    2)  You can specify -c and the Consistency Date will be used as part of the mountpoint
+    There are four mechanisms to get unique mount names:
+    1)  You can specify -h and the Host Name will be used as part of the mount point
+    2)  You can specify -a and the App Name will be used as part of the mount point
     3)  You can specify -i and the Image Name will be used as part of the mount point
-    
-    The point point will always end in a unqiue number to guarantee uniqueness.
+    4)  You can specify -c and the Consistency Date will be used as part of the mountpoint
+   
+    The point point will always end in a unique number to guarantee uniqueness.
     If you want to control the starting number of that number use -startindex
 
     By default it will use a label of "MultiFS Recovery" to make the mounts easier to find.  you can changes this with -label xxxx  to set your own unique label.
@@ -128,6 +129,17 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mount
         }
         else 
         {
+            if ($hostnamesuffix)
+            { 
+                # for linux mount points starting with / we need to trim the leading / to avoid // in the mount point
+                if ($image.hostname.Substring(0,1) -match "[/]")
+                {
+                    $image.hostname = $image.hostname.substring(1) 
+                }
+                # we also remove spaces in app names and full colon, so they dont make strange mount points
+                $imagemountpoint = $imagemountpoint + $image.hostname -replace '\s','' -replace ':',''  
+                $imagemountpoint = $imagemountpoint + $fieldsep
+            }
             if ($appnamesuffix)
             { 
                 # for linux mount points starting with / we need to trim the leading / to avoid // in the mount point
@@ -139,15 +151,14 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mount
                 $imagemountpoint = $imagemountpoint + $image.appname -replace '\s','' -replace ':',''  
                 $imagemountpoint = $imagemountpoint + $fieldsep
             }
+            if ($imagesuffix)
+            { $imagemountpoint = $imagemountpoint + $image.backupname + $fieldsep }
             if ($condatesuffix)
             {  
                 # we need to make the date just numbers
                 $imagemountpoint = $imagemountpoint + $image.consistencydate -replace '\s','' -replace '-','' -replace ':',''  
                 $imagemountpoint = $imagemountpoint + $fieldsep
             }
-            if ($imagesuffix)
-            { $imagemountpoint = $imagemountpoint + $image.backupname + $fieldsep }
-
 
             # we always end on a number to guarantee uniqueness
             $imagemountpoint = $imagemountpoint + $startindex 
