@@ -5,16 +5,16 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 ### Table of Contents
 **[Prerequisites](#prerequisite)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
-**[User Stories: Database Mounts](#options-to-handle-urls)**<br>
-**[User Story:  SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
+**[User Story: Database Mounts](#user-stories-database-mounts)**<br>
+**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
 **[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
-**[User Story - run a workflow](#user-story-run-a-workflow)**<br>
-**[User Story - Creating new VMs](#user-story-creating-new-vms)**<br>
-**[User Story - Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
-**[User Story - File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
-**[User Story - VMware multi-mount](#user-story-vmware-multi-mount)**<br>
-**[User Story - Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
-**[User Story - Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+**[User Story: Running a workflow](#user-story-run-a-workflow)**<br>
+**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
+**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
+**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
+**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
+**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
 
 
 ## Prerequisites
@@ -104,7 +104,7 @@ New-AGMLibVMExisting
 ```
 
 
-## User Stories: Database Mounts
+## User Story: Database Mounts
 Here are some user stories for Database mounts
 
 ### SQL Test and Dev Image usage
@@ -431,7 +431,7 @@ duration  : 00:01:20
 ```
 We can then continue to work with our child app, creating new snapshots or even new child apps using those snapshots.
 
-# User Story - run a workflow
+# User Story: Running a workflow
 
 Note there is no function to create Workflows, so continue to use AGM for this.   
 There are two functions for workflows:
@@ -492,7 +492,7 @@ jobclass    status    startdate           enddate
 reprovision succeeded 2020-10-17 11:52:57 2020-10-17 11:55:08
 ```
 
-## User Story - Creating new VMs
+## User Story: Creating new VMs
 
 Actifio can store images of many kinds of virtual machines.  The two formats we are going to explore here are:
 
@@ -554,7 +554,7 @@ During guided mode you will notice that for functions that expect authentication
 * New-AGMLibVM - This uses stored credentials on the appliance.
 
 
-## User Story - Running on-demand jobs based on policy ID
+## User Story: Running on-demand jobs based on policy ID
 
 One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
 If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
@@ -645,7 +645,7 @@ PS /tmp/agmpowercli> $imagegrab.count
 PS /tmp/agmpowercli>
 ```
 
-## User Story - File System multi-mount for Ransomware analysis
+## User Story: File System multi-mount for Ransomware analysis
 
 There are many cases where you may want to mount many filesystems in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production filesystem.   So lets mount as many images as we can as quickly as we can so we can find unaffected filesystems and start the recovery.
 
@@ -724,7 +724,7 @@ foreach ($mount in $mountlist.imagename)
 Remove-AGMMount $mount -d
 }
 ```
-## User Story - VMware multi-mount
+## User Story: VMware multi-mount
 
 There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can find unaffected VMs and start the recovery.
 
@@ -842,7 +842,7 @@ You can also specify a single datastore rather than a list.
 
 
 
-## User Story - Microsoft SQL Mount and Migrate
+## User Story: Microsoft SQL Mount and Migrate
 
 In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk
 
@@ -955,7 +955,7 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
-## User Story - Persistent Disk Snapshots
+## User Story: Persistent Disk Snapshots
 
 In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.
 
