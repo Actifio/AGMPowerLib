@@ -5,10 +5,10 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 ### Table of Contents
 **[Prerequisites](#prerequisite)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
-**[User Story: Database Mounts](#user-stories-database-mounts)**<br>
+**[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
 **[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
-**[User Story: Running a workflow](#user-story-run-a-workflow)**<br>
+**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
 **[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
 **[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
 **[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
