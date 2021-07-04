@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
+Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -17,7 +17,7 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     .EXAMPLE
     Get-AGMLibImageRange -appid 4771 -o
     Get all snapshot and OnVault images created in the last day for appid 4771
-    Only unique OnVault images will be shown, meaning if a snapshot and an OnVault image have the same consistencydate only the snapashot will be shown
+    Only unique OnVault images will be shown, meaning if a snapshot and an OnVault image have the same consistencydate only the snapshot will be shown
     
     .EXAMPLE
     Get-AGMLibImageRange -appname smalldb
@@ -28,6 +28,10 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     Get all snapshot created in the last day for any app with an app name like smalldb
 
     .EXAMPLE
+    Get-AGMLibImageRange -sltname Gold
+    Get all snapshot created in the last day for any image with an SLT name like Gold
+
+    .EXAMPLE
     Get-AGMLibImageRange -appid 4771 -appliancename "sa-hq"
     Get all snapshot created in the last day for appid 4771 on the appliance called sa-hq
 
@@ -36,8 +40,8 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     Get all snapshot created in the last day for appid 4771 on the appliance with the specified clusterid
 
     .EXAMPLE
-    Get-AGMLibImageRange -appid 4771 -jobclass dedup
-    Get all dedups created in the last day for appid 4771
+    Get-AGMLibImageRange -appid 4771 -jobclass OnVault
+    Get all OnVault created in the last day for appid 4771
 
     .EXAMPLE
     Get-AGMLibImageRange -appid 4771 -olderlimit 4 -hours
@@ -97,14 +101,37 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     {
         $fv = $fv + "&apptype=" + $apptype
     }
+
+    # search for policyname
+    if ( (!($fv)) -and ($policyname) )
+    {
+        $fv = "policyname=" + $policyname
+    }
+    elseif ( ($fv) -and ($policyname) )
+    {
+        $fv = $fv + "&policyname=" + $policyname
+    }
+
+    # search for sltname
+    if ( (!($fv)) -and ($sltname) )
+    {
+        $fv = "sltname=" + $sltname
+    }
+    elseif ( ($fv) -and ($sltname) )
+    {
+        $fv = $fv + "&sltname=" + $sltname
+    }
  
     if (!($fv))
     { 
-        Get-AGMErrorMessage -messagetoprint "Please specify either appid, appname, fuzzyappname or apptype."
+        Get-AGMErrorMessage -messagetoprint "Please specify either appid, appname, fuzzyappname, sltname, policyname or apptype."
         return
     }
 
-      
+    # powershell is not case sensitive, but AGM jobclasses are, so this is a nice way to make sure the right case gets sent to AGM
+    if ($jobclass -eq "onvault") {  $jobclass = "OnVault" }
+    if ($jobclass -eq "snapshot") {  $jobclass = "snapshot" }
+
     if ($jobclass)
     {
         $fv = $fv + "&jobclass=$jobclass"
@@ -113,7 +140,7 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     {
         $fv = $fv + "&jobclass=snapshot"
     }
-
+    # we offer two ways to ask for onvault, either -jobclass onVault   or just  -onvault  or even -o
     if ($onvault)
     {
         $fv = $fv + "&jobclass=OnVault"

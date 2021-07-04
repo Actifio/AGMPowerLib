@@ -2,7 +2,22 @@
 
 A Powershell module that allows PowerShell users to issue complex API calls to Actifio Global Manager. This module contains what we call composite functions, these being complex combination of API endpoints.  
 
-## Prerequisite
+### Table of Contents
+**[Prerequisites](#prerequisite)**<br>
+**[Guided Wizards](#guided-wizards)**<br>
+**[User Story: Database Mounts](#user-story-database-mounts)**<br>
+**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
+**[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
+**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
+**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
+**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
+**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
+**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
+**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+
+
+## Prerequisites
 
 This module requires AGMPowerCLI to already be installed.
 Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
@@ -89,7 +104,7 @@ New-AGMLibVMExisting
 ```
 
 
-# User Stories: Database Mounts
+## User Story: Database Mounts
 Here are some user stories for Database mounts
 
 ### SQL Test and Dev Image usage
@@ -297,7 +312,7 @@ PS /Users/anthony> New-AGMLibMSSQLMount -imagename Image_24351142 -appid 5552336
 ```
 
 
-## SQL Instance Test and Dev Image usage
+## User Story: SQL Instance Test and Dev Image usage
 
 In this 'story' a user wants to mount two databases from the latest snapshot of a SQL Instance to a host.  Most aspects of the story are the same as above, however they need some more information to run their mount command.   They learn the App ID of the SQL Instance:
 
@@ -346,7 +361,7 @@ So now we know the names of the DBs inside our SQL instance, we just need to cho
 PS /Users/anthony>  New-AGMLibMSSQLMount -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "testdev_" -dbnamesuffix "_av"
 ```
 
-## Protecting and re-winding child-apps
+## User Story: Protecting and re-winding child apps
 
 In this story, we create a child app of a SQL DB that is protected by an on-demand template.
 
@@ -416,7 +431,7 @@ duration  : 00:01:20
 ```
 We can then continue to work with our child app, creating new snapshots or even new child apps using those snapshots.
 
-# User Story - run a workflow
+# User Story: Running a workflow
 
 Note there is no function to create Workflows, so continue to use AGM for this.   
 There are two functions for workflows:
@@ -477,7 +492,7 @@ jobclass    status    startdate           enddate
 reprovision succeeded 2020-10-17 11:52:57 2020-10-17 11:55:08
 ```
 
-# User Story - Creating new VMs
+## User Story: Creating new VMs
 
 Actifio can store images of many kinds of virtual machines.  The two formats we are going to explore here are:
 
@@ -539,23 +554,217 @@ During guided mode you will notice that for functions that expect authentication
 * New-AGMLibVM - This uses stored credentials on the appliance.
 
 
-# User Story - Ransomware recovery
+## User Story: Running on-demand jobs based on policy ID
 
-There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can start the recovery.
+One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
+If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
+We can then learn the policy ID and create a command to run it.
 
-First we build an object that contains a list of images.  For this we can use:
+First learn the policy ID.  In this example the policy ID of the cloud job is 25627
+```
+PS /tmp/agmpowercli> Get-AGMLibPolicies | ft
+
+sltid sltname       id    name        op    priority retention starttime endtime rpo
+----- -------       --    ----        --    -------- --------- --------- ------- ---
+25606 FSSnaps_RW_OV 25627 OndemandOV  cloud medium   14 days   19:00     18:50   24 hours
+25606 FSSnaps_RW_OV 25607 DailySnap   snap  medium   7 days    00:00     23:59   24 hours
+```
+We now have what we need to build our command.
+Before we begin we need to enable the service account we are going to use.  We then start the OnVault jobs like this:
+```
+PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
+Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+```
+We can then monitor them like this:
+```
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status  progress
+------  --------
+running       97
+running       98
+```
+Good logic would work like this:
+1. Count the relevant apps.  In this example we have 2.
+```
+PS /tmp/agmpowercli> $appgrab = Get-AGMApplication -filtervalue "sltname=FSSnaps_RW_OV"
+PS /tmp/agmpowercli> $appgrab.count
+2
+```
+2. Count the current images.  We currently have 6 OnVault images.
+```
+PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
+PS /tmp/agmpowercli> $imagegrab.count
+6
+```
+3. Run a new OnVault job.  We get two jobs started.
+```
+PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
+Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+```
+4.  Scan for running jobs until they all finish
+```
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status             progress
+------             --------
+queued                    0
+queued (readiness)        0
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status  progress
+------  --------
+running        2
+running        2
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status    progress
+------    --------
+running         98
+succeeded      100
+
+PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
+
+status progress
+------ --------
+
+
+PS /tmp/agmpowercli>
+
+```
+5. Count the images and ensure they went up by the number of apps.   Note that if expiration run at this time, this will confuse the issue.
+You can see here we went from 6 to 8.
+```
+PS /tmp/agmpowercli> $imagegrab = Get-AGMImage -filtervalue "sltname=FSSnaps_RW_OV&jobclass=OnVault"
+PS /tmp/agmpowercli> $imagegrab.count
+8
+PS /tmp/agmpowercli>
+```
+
+## User Story: File System multi-mount for Ransomware analysis
+
+There are many cases where you may want to mount many filesystems in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production filesystem.   So lets mount as many images as we can as quickly as we can so we can find unaffected filesystems and start the recovery.
+
+#### Building a list of images
+First we build an object that contains a list of images.  For this we can use **Get-AGMLibImageRange** in a synytax like this, where in this example we get all images of filesystems created in the last day:
+```
+$imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 1
+```
+If we know that images created in the last 24 hours are all infected, we could use this (up to 3 days old but not less than 1 day old):
+```
+$imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 3 -newerlimit 1
+```
+We can also use the Template Name (SLT) to find our apps.  This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
+```
+$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV -olderlimit 3 -newerlimit 1
+```
+
+#### Editing your $Imagelist 
+
+You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+In this example we grab 20 days of images:
+
+```
+Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+```
+
+We now edit the CSV  we created **images.csv** to remove images we don't want.   We then import what is left into our $imagelist variable:
+```
+$imagelist = Import-Csv -Path .\images.csv
+```
+Now we have our image list, we can begin to create our recovery command.
+
+#### Define our scanning host list
+ 
+We need to define a single host to use as our mount target or an array of hosts.
+
+```
+PS /tmp/agmpowerlib> Get-AGMHost -filtervalue "hostname~mysql" | select id,hostname
+
+id   hostname
+--   --------
+7376 mysqltarget
+6915 mysqlsource
+
+PS /tmp/agmpowerlib> $hostlist = @(7376,6915)
+```
+We could also define a specific host like this:
+```
+$hostid = 7376
+```
+#### Run our multi-mount command
+
+We can now fire our new command using the settings we defined and our image list:
+```
+New-AGMLibMultiMount -imagelist $imagelist -hostlist $hostlist -mountpoint /tmp/
+```
+For uniqueness we have quite a few choices to generate mounts with useful names.   A numeric indicator will always be added to each mountpoint as a suffix.  Optionally we can use any of the following.   They will be added in the order they are listed here:
+
+* -h or hostnamesuffix   :  which will add the host name of the image to the mountpoint
+* -a or -appnamesuffix   :  which will add the appname of the image to the mountpoint
+* -i  or -imagesuffix    :  which will add the image name of the image to the mountpoint
+* -c or -condatesuffix   :  which will add the consistency date of the image to the mountpoint
+
+
+This will mount all the images in the list and round robin through the host list.
+
+If you don't specify a label, all the image will get the label **MultiFS Recovery**   This will let you easily spot your mounts by doing this:
+```
+$mountlist = Get-AGMLibActiveImage | where-object  {$_.label -eq "MultiFS Recovery"}
+```
+When you are ready to unmount them, run this script:
+```
+foreach ($mount in $mountlist.imagename)
+{
+Remove-AGMMount $mount -d
+}
+```
+## User Story: VMware multi-mount
+
+There are many cases where you may want to mount many VMs in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production VM.   So lets mount as many images as we can as quickly as we can so we can find unaffected VMs and start the recovery.
+
+### Building a list of images
+First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a synytax like this:
 ```
 $imagelist = Get-AGMLibImageRange
 ```
 In this example we get all images of VMs created in the last day:
 ```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 1
+$imagelist = Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 1
 ```
-if we now that the last 24 hours is not going to be any good, we could use this (up to 3 days but not less than 1 day old):
+If we know that images created in the last 24 hours are all infected, we could use this (up to 3 days old but not less than 1 day old):
 ```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 3 -newerlimit 1
+$imagelist = Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 3 -newerlimit 1
 ```
-Learn your vcenter host ID and set id:
+We can also use the Template Name (SLT) to find our apps.  This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
+```
+$imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV
+```
+
+### Editing your $Imagelist 
+
+You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+In this example we grab 20 days of images:
+
+```
+Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+```
+
+We now edit the CSV  we created **images.csv** to remove images we don't want.   We then import what is left into our $imagelist variable:
+```
+$imagelist = Import-Csv -Path .\images.csv
+```
+Now we have our image list, we can begin to create our recovery command.
+
+### Define our VMware environment 
+ 
+First we learn our vcenter host ID and set id:
 ```
 PS /Users/anthony/git/AGMPowerLib> Get-AGMHost -filtervalue "isvcenterhost=true" | select id,hostname,srcid
 
@@ -594,7 +803,10 @@ PS /Users/anthony/git/AGMPowerLib> $datastorelist
 IBM-FC-V3700
 Pure
 ```
-We can now fire our new command:
+
+### Run our multi-mount command
+
+We can now fire our new command using the VMware settings we defined and our image list:
 ```
 New-AGMLibMultiVM -imagelist $imagelist -vcenterid $vcenterid -esxhostlist $esxhostlist -datastorelist 
 ```
@@ -619,31 +831,18 @@ Remove-AGMMount $mount -d
 }
 ```
 
-### esxhostid vs esxhostlist
+#### esxhostid vs esxhostlist
 
 You can just specify one esxhost ID with -esxhostid.   If you are using NFS datastore and you will let DRS rebalance later, this can make things much faster
 
-## datastore vs datastorelist
+#### datastore vs datastorelist
 
 You can also specify a single datastore rather than a list.
 
-## Editing your $Imagelist 
-
-You could create a CSV of images, edit it and then convert that into an object.  This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
-
-In this example we grab 20 days of images:
-
-```
-Get-AGMLibImageRange -apptype VMBackup -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
-```
-
-We now edit the CSV to remove images we don't want.   We then import what is left into our $imagelist:
-```
-$imagelist = Import-Csv -Path .\images.csv
-```
 
 
-# User Story - Microsoft SQL Mount and Migrate
+
+## User Story: Microsoft SQL Mount and Migrate
 
 In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk
 
@@ -756,4 +955,108 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
+## User Story: Persistent Disk Snapshots
 
+In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.
+
+### Creating a single GCE Instance from Snapshot
+
+To learn which Applications are suitable use this command:
+```
+Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
+```
+To learn which Cloud Credentials are available use this command (use the srcid as the credential ID):
+```
+Get-AGMCredential
+```
+To learn the image ID or image name, you could use this command:
+```
+Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
+```
+There are many parameters that need to be supplied:
+```
+-appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
+-imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
+-imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
+-credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
+-serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
+-projectname     This is the unique Google Project name
+-zone            This is the GCP Zone such as: australia-southeast1-c
+-instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
+-machinetype     This is the GCP instance machine type such as:  e2-micro
+-networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
+-labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "dog:cat,sheep:cow"
+-nic0network     The network name in URL format for nic0
+-nic0subnet      The subnet name in URL format for nic0
+-nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
+-nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
+-poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
+                    There is no need to specify: -poweronvm true 
+```
+Optionally you can request a second NIC:
+```
+-nic1network     The network name in URL format for nic1
+-nic1subnet      The subnet name in URL format for nic1
+-nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
+-nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.  
+```
+This brings us to a command like this one:
+```
+New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+```
+
+### Performing a multi-mount from file
+
+We can take our command to create a new GCP VM and store the parameters needed in a CSV file
+Here is an example:
+```
+appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,poweronvm
+35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,TRUE
+51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,
+36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,TRUE
+```
+We can then run the command like this:
+```
+New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.cav
+```
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
+ 
+What is not supported right now:
+1)  Using different storage classes
+2)  Specifying more than one internal IP per subnet.
+    
+If you need either of these, please open an issue in Github.
+
+
+### Managing the mounted GCE Instance 
+
+```
+PS /tmp/agmpowercli> Get-AGMLibActiveImage
+
+imagename        : Image_0021181
+apptype          : GCPInstance
+appliancename    : avwlab2sky
+hostname         : windows
+appname          : windows
+mountedhost      : avrecovery4
+allowedip        :
+childappname     : avrecovery4
+consumedsize_gib : 0
+daysold          : 0
+label            :
+imagestate       : Mounted
+```
+We have two choices 
+
+1.Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
+
+```
+PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
+PS /tmp/agmpowercli>
+```
+2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image
+
+```
+PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
+PS /tmp/agmpowercli>
+```

@@ -37,6 +37,11 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
     }
 
     $fv = "status=running"
+    # we allow filtering on temp
+    if ($sltname)
+    {
+        $fv = $fv + "$sltname=" + $sltname
+    }
     if ($queue)
     {
         $outputgrab = Get-AGMJob | where-object { $_.status -like "queued" } 

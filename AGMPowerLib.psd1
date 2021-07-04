@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.28'
+ModuleVersion = '0.0.0.29'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@ Author = 'Anthony Vandewerdt'
 CompanyName = 'Actifio'
 
 # Copyright statement for this module
-Copyright = '(c) 2020 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2021 Actifio, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
@@ -77,6 +77,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibApplicationID',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibContainerYAML',
+'New-AGMLibGCPInstance',
 'Get-AGMLibHostID',
 'Get-AGMLibImageDetails',
 'Get-AGMLibImageRange',
@@ -90,8 +91,11 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
 'New-AGMLibFSMount',
+'New-AGMLibGCPInstance',
+'New-AGMLibGCPInstanceMultiMount',
 'New-AGMLibGCPVM',
 'New-AGMLibImage',
+'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
 'New-AGMLibVM',
 'New-AGMLibMultiVM',
@@ -101,7 +105,8 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibVMExisting',
 'Restore-AGMLibMount',
 'Set-AGMLibMSSQLMigrate',
-'Start-AGMLibWorkflow')
+'Start-AGMLibWorkflow',
+'Start-AGMLibPolicy')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -140,6 +145,12 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.29] 2021-06-20
+        Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
+        Allow Get-AGMLibImageRange to work with SLT Name.  
+        Check for ostype in New-AGMLibSystemStateToVM as some vmware images may not have that value as reported in Issue 13
+        Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
+
         ## [0.0.0.28] 2020-11-12
         Start-AGMLibWorkflow now uses correct host timezone when specifying ENDPIT and user and host timezones are different
         New-AGMLibImage was not printing errors in monitor mode, fixed this.  Also changed the syntax from capturetype to backuptype as this is more obvious
