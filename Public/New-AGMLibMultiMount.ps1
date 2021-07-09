@@ -1,4 +1,4 @@
-Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hostid,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS

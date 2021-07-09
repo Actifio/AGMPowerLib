@@ -128,6 +128,7 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         return
     }
 
+    $appfv = $fv
     # powershell is not case sensitive, but AGM jobclasses are, so this is a nice way to make sure the right case gets sent to AGM
     if ($jobclass -eq "onvault") {  $jobclass = "OnVault" }
     if ($jobclass -eq "snapshot") {  $jobclass = "snapshot" }
@@ -248,18 +249,22 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     }
 
 
-    $output = Get-AGMImage -filtervalue "$fv" -sort ConsistencyDate:desc
-    if ($output.id)
+    $imagegrab = Get-AGMImage -filtervalue "$fv" -sort ConsistencyDate:desc
+    $applicationgrab = Get-AGMApplication -filtervalue "$appfv"
+    if ($imagegrab.id)
     {
         $AGMArray = @()
 
-        Foreach ($id in $output)
+        Foreach ($id in $imagegrab)
         { 
             $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+            $ostype = ($applicationgrab |  where-object {$_.id -eq $id.application.id} | select-object host).host.ostype
+            $id | Add-Member -NotePropertyName ostype -NotePropertyValue $ostype
             $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
             $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
             $AGMArray += [pscustomobject]@{
                 apptype = $id.apptype
+                ostype = $id.ostype
                 hostname = $id.hostname
                 appname = $id.appname
                 appid = $id.appid
@@ -275,16 +280,16 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         }
         if ($onvault)
         {
-            $AGMArray | Select-Object apptype, appliancename, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate,jobclasscode
+            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate,jobclasscode
         }
         else 
         {
-            $AGMArray | Select-Object apptype, appliancename, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate
+            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate
         }
     }
     else
     {
-        $output
+        $imagegrab
     }
 
 

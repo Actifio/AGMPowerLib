@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.29'
+ModuleVersion = '0.0.0.30'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -145,6 +145,11 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.30] 2021-07-09
+        Added ostype field to Get-AGMLibImageRange
+        Give Hostname and appname when running Start-AGMLibPolicy
+        New-AGMLibMultiMount was ignoring hostid, corrected this
+
         ## [0.0.0.29] 2021-06-20
         Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
         Allow Get-AGMLibImageRange to work with SLT Name.  

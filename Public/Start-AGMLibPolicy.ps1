@@ -131,9 +131,12 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
    }
    $json = $body | ConvertTo-Json
 
-   foreach ($appid in $applist.id)
+   foreach ($app in $applist)
    {
-        write-host "Starting job for appid $appid using $optype policy ID $policyid from SLT $sltname"
+        $appname = $app.appname
+        $appid = $app.id
+        $hostname = (($app).host).hostname
+        write-host "Starting job for hostname: $hostname   appname: $appname   appid: $appid using: $optype policyID: $policyid from SLTName: $sltname"
         Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
    }
 }
