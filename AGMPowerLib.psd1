@@ -146,7 +146,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.30] 2021-07-09
-        Added ostype field to Get-AGMLibImageRange
+        Added ostype and label field to Get-AGMLibImageRange
         Give Hostname and appname when running Start-AGMLibPolicy
         New-AGMLibMultiMount was ignoring hostid, corrected this
 

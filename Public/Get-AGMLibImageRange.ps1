@@ -275,16 +275,16 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
                 id = $id.id
                 consistencydate = $id.consistencydate
                 endpit = $id.endpit
-
+                label = $id.label
             }
         }
         if ($onvault)
         {
-            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate,jobclasscode
+            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode
         }
         else 
         {
-            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit | sort-object hostname,appname,consistencydate
+            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate
         }
     }
     else
