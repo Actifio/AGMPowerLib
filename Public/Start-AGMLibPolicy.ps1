@@ -1,4 +1,4 @@
-function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptype)
+function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$label,[string]$backuptype)
 {
     <#
     .SYNOPSIS
@@ -63,6 +63,18 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
        $backuptype = ""
    }
 
+   # if asked for logicalgroupid
+   if ($logicalgroupid)
+   {
+       $groupgrab = Get-AGMLogicalGroup -id $logicalgroupid
+       if ($groupgrab.err_code)
+       {
+        $groupgrab
+        return
+       }
+   }
+
+
    # we could let user fail, but this is a composite function, so lets be polite.
    if ($policyid)
    {
@@ -124,8 +136,8 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
         $sltname = $printarray.sltname[($userselection - 1)]
         $optype = $printarray.operation[($userselection - 1)]
        
-       #  
-       if (!($backuptype))
+        #  
+        if (!($backuptype))
         {
             Write-Host ""
             Write-Host "Backup Type (this is only applied to database applications with a defined appclass"
@@ -140,11 +152,63 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
             if ($userselection -eq 4) {  $backuptype = "log"  }
         } 
 
+        # offer group support
+        Write-Host ""
+        Write-Host "Do you want to run this policy for a specific group"
+        Write-Host "1`: No(default)"
+        Write-Host "2`: Yes"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) 
+        {  
+            $groupgrab = Get-AGMLogicalGroup | where-object { $_.membercount -gt 0 } | where-object { $_.managed -eq "True" } 
+            if ($groupgrab.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find any managed and used Logical groups with Get-AGMLogicalGroup"
+                return
+            }
+
+            $printarray = @()
+            $i = 1
+            foreach ($group in $groupgrab)
+            {
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    name = $group.name
+                    logicalgroupid = $group.id
+                    membercount = $group.membercount
+                }
+                $i += 1
+            }
+
+
+            Clear-Host
+            write-host "Logical Group selection menu.  Please select which Logical Group will be run"
+            Write-host ""
+            $printarray | Format-Table
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $printarray.count
+                [int]$userselection = Read-Host "Please select a Logical Group to run (1-$listmax)"
+                if ($userselection -lt 1 -or $userselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $logicalgroupid = $printarray.logicalgroupid[($userselection - 1)]
+        }
         # help the user
        Write-Host ""
        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
        Write-Host ""
-       if ($backuptype) { write-host "Start-AGMLibPolicy -policyid $policyid -backuptype $backuptype"} else { write-host "Start-AGMLibPolicy -policyid $policyid"}
+       Write-host -nonewline "Start-AGMLibPolicy -policyid $policyid"
+       if ($backuptype) { Write-Host -nonewline " -backuptype $backuptype" }
+       if ($logicalgroupid) { Write-Host -nonewline " -logicalgroupid $logicalgroupid" }
        Write-Host ""
        Write-Host "1`: Run the command now (default)"
        Write-Host "2`: Exit without running the command"
@@ -157,10 +221,17 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
    }
 
    # we now have to find all apps using this policy and run a backup for each one.   
-   $applist = Get-AGMApplication -filtervalue sltname=$sltname
+   
+   if ($logicalgroupid)
+   {    
+        $applist = (Get-AGMLogicalGroupMember -id $logicalgroupid).sources
+   } else {
+        $applist = Get-AGMApplication -filtervalue sltname=$sltname
+   }
+   
    if ($applist.count -eq 0)
    {
-       Get-AGMErrorMessage -messagetoprint "Failed to find any applications using policy ID $policyid  and SLT Name $sltname."
+       Get-AGMErrorMessage -messagetoprint "Failed to find any applications using policy ID $policyid and SLT Name $sltname."
        return
    }
 
@@ -183,7 +254,8 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
    {
         $appname = $app.appname
         $appid = $app.id
-        $hostname = (($app).host).hostname
+        if (($app).host)
+        { $hostname = (($app).host).hostname }
         # if there is no appclass, lets assume it is not a database and not cause confused errors.
         if (($backuptype) -and ($app.appclass))
         {

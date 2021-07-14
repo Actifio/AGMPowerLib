@@ -149,6 +149,8 @@ PrivateData = @{
         Added ostype and label field to Get-AGMLibImageRange
         Give Hostname and appname when running Start-AGMLibPolicy
         New-AGMLibMultiMount was ignoring hostid, corrected this
+        Added full guided mode for Start-AGMLibPolicy
+        Teach Start-AGMLibPolicy to work with logical groups
 
         ## [0.0.0.29] 2021-06-20
         Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
