@@ -558,25 +558,27 @@ During guided mode you will notice that for functions that expect authentication
 
 One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
 If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
-We can then learn the policy ID and create a command to run it.
 
-First learn the policy ID.  In this example the policy ID of the cloud job is 25627
-```
-PS /tmp/agmpowercli> Get-AGMLibPolicies | ft
+Now since this user story relies on running specific policies for specific groups of apps, we need a way to group them.
+There are two ways to achieve this:
 
-sltid sltname       id    name        op    priority retention starttime endtime rpo
------ -------       --    ----        --    -------- --------- --------- ------- ---
-25606 FSSnaps_RW_OV 25627 OndemandOV  cloud medium   14 days   19:00     18:50   24 hours
-25606 FSSnaps_RW_OV 25607 DailySnap   snap  medium   7 days    00:00     23:59   24 hours
+* Using unique Templates for each group
+* Using LogicalGroups to group your apps.   This is the recommended method.
+
+Once we have done this, then we can use **Start-AGMLibPolicy** to run a job against all apps either for one policy or in one logical group (or both).
+So just run the command and follow the prompts to build your command:
 ```
-We now have what we need to build our command.
-Before we begin we need to enable the service account we are going to use.  We then start the OnVault jobs like this:
+Start-AGMLibPolicy
 ```
-PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
-Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
-Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+We then run our command, for instance:
 ```
-We can then monitor them like this:
+PS /home/avw_google_com> Start-AGMLibPolicy -policyid 6393 -backuptype dblog
+Starting job for hostname: mysqlsource   appname: mysqlsource   appid: 51919 using: snap policyID: 6393 from SLTName: PDSnaps
+Starting job for hostname: mysqltarget   appname: mysqltarget   appid: 36104 using: snap policyID: 6393 from SLTName: PDSnaps
+Starting job for hostname: tiny   appname: tiny   appid: 35590 using: snap policyID: 6393 from SLTName: PDSnaps
+PS /home/avw_google_com>
+```
+We can then monitor the jobs like this:
 ```
 PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
 
@@ -585,7 +587,7 @@ status  progress
 running       97
 running       98
 ```
-Good logic would work like this:
+Your logic would work like this:
 1. Count the relevant apps.  In this example we have 2.
 ```
 PS /tmp/agmpowercli> $appgrab = Get-AGMApplication -filtervalue "sltname=FSSnaps_RW_OV"

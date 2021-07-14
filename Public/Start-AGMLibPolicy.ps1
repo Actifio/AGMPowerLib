@@ -26,6 +26,7 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
 
     -policyid       Will start an on-demand job for all apps using this policy ID
     -backuptype <type>  Where type needs to be db, dblog or log
+    -logicalgroupid   WIll start on-demand job for all members of the logical group
 
     #>
 
