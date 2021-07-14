@@ -13,6 +13,11 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
     Runs on-demand jobs for all apps using policy ID 1234
 
     .EXAMPLE
+    Start-AGMLibPolicy -policyid 1234 -backuptype db
+    Runs on-demand jobs for all apps using policy ID 1234 with a backup type of DB
+    If the application if not a database type, in that the appclass field for that application is blank, then the backuptype will be ignored.
+
+    .EXAMPLE
     Start-AGMLibPolicy -policyid 1234 -label "testrun"
     Runs on-demand jobs for all apps using policy ID 1234 where each image gets a label of "testrun"
 
@@ -20,6 +25,7 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
     A function to start large numbers of on-demand jobs
 
     -policyid       Will start an on-demand job for all apps using this policy ID
+    -backuptype <type>  Where type needs to be db, dblog or log
 
     #>
 
@@ -46,9 +52,9 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
    }
    if ($backuptype)
    {
-       if (( $backuptype -ne "db") -and ( $backuptype -ne "log"))
+       if (( $backuptype -ne "db") -and ( $backuptype -ne "log") -and ( $backuptype -ne "dblog"))
        {
-           Get-AGMErrorMessage -messagetoprint "Requested backuptype $backuptype is invalid, use either `'-backuptype db`' or `'-backuptype log`'"
+           Get-AGMErrorMessage -messagetoprint "Requested backuptype $backuptype is invalid, use either `'-backuptype db`' or `'-backuptype log`' or `'-backuptype dblog`'"
            return
        }
    }
@@ -74,23 +80,37 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
    if (!($policyid))
    {     
         $policygrab = Get-AGMLibPolicies 
+        $printarray = @()
+        $i = 1
+            foreach ($policy in $policygrab)
+            {
+                if ($policy.op -eq "snap") { $operation = "snapshot" }
+                    elseif ($policy.op -eq "cloud")
+                    { $operation = "onvault" }
+                    else {
+                        $operation = $policy.op
+                    }  
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    sltname = $policy.sltname
+                    policyname = $policy.name
+                    policyid = $policy.id
+                    operation = $operation
+                    retention = $policy.retention
+                }
+                $i += 1
+            }
+
+
         Clear-Host
         write-host "Policy ID selection menu.  Please select which Policy ID will be run"
         Write-host ""
-
-        $i = 1
-        foreach
-        ($policy in $policygrab)
-        { 
-            Write-Host -Object "$i`:  SLTname: $($policy.sltname)  PolicyName: $($policy.sltname)   PolicyID:  $($policy.id)   Type:  $($policy.op)"
-            $i++
-        }
-        
+        $printarray | Format-Table
         While ($true) 
         {
             Write-host ""
             $listmax = $policygrab.sltid.count
-            [int]$userselection = Read-Host "Please select a policy ID to run (1-$listmax)"
+            [int]$userselection = Read-Host "Please select a ID to run (1-$listmax)"
             if ($userselection -lt 1 -or $userselection -gt $listmax)
             {
                 Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -100,19 +120,47 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
                 break
             }
         }
-        $policyid = $policygrab.id[($userselection - 1)]
-        $sltname = $policygrab.sltname[($userselection - 1)]
-        $optype = $policygrab.op[($userselection - 1)]
-       # help the user
-       write-host -nonewline  "Run this command: Start-AGMLibPolicy -policyid $policyid"
-       break
+        $policyid = $printarray.policyid[($userselection - 1)]
+        $sltname = $printarray.sltname[($userselection - 1)]
+        $optype = $printarray.operation[($userselection - 1)]
+       
+       #  
+       if (!($backuptype))
+        {
+            Write-Host ""
+            Write-Host "Backup Type (this is only applied to database applications with a defined appclass"
+            Write-Host "1`: Non-Database(default)"
+            Write-Host "2`: DB"
+            Write-Host "3`: DB+Log"
+            Write-Host "4`: Log"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-4)"
+            if ($userselection -eq 2) {  $backuptype = "db"  }
+            if ($userselection -eq 3) {  $backuptype = "dblog"  }
+            if ($userselection -eq 4) {  $backuptype = "log"  }
+        } 
+
+        # help the user
+       Write-Host ""
+       Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+       Write-Host ""
+       if ($backuptype) { write-host "Start-AGMLibPolicy -policyid $policyid -backuptype $backuptype"} else { write-host "Start-AGMLibPolicy -policyid $policyid"}
+       Write-Host ""
+       Write-Host "1`: Run the command now (default)"
+       Write-Host "2`: Exit without running the command"
+       $userchoice = Read-Host "Please select from this list (1-2)"
+       if ($userchoice -eq "") { $userchoice = 1 }
+       if ($userchoice -eq 2)
+       {
+           return
+       }
    }
 
    # we now have to find all apps using this policy and run a backup for each one.   
    $applist = Get-AGMApplication -filtervalue sltname=$sltname
    if ($applist.count -eq 0)
    {
-       Get-AGMErrorMessage -messagetoprint "Failed to find any applications using policy ID $policyid  and SLT Name $sltname.  Please check the Policy ID with Get-AGMLibPolicies."
+       Get-AGMErrorMessage -messagetoprint "Failed to find any applications using policy ID $policyid  and SLT Name $sltname."
        return
    }
 
@@ -136,7 +184,14 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$label,[string]$backuptyp
         $appname = $app.appname
         $appid = $app.id
         $hostname = (($app).host).hostname
-        write-host "Starting job for hostname: $hostname   appname: $appname   appid: $appid using: $optype policyID: $policyid from SLTName: $sltname"
+        # if there is no appclass, lets assume it is not a database and not cause confused errors.
+        if (($backuptype) -and ($app.appclass))
+        {
+            write-host "Starting job for hostname: $hostname   appname: $appname   appid: $appid using: $optype policyID: $policyid from SLTName: $sltname with backuptype: $backuptype"
+        }
+        else {
+            write-host "Starting job for hostname: $hostname   appname: $appname   appid: $appid using: $optype policyID: $policyid from SLTName: $sltname"
+        }
         Post-AGMAPIData  -endpoint /application/$appid/backup -body $json
    }
 }
