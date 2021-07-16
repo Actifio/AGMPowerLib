@@ -62,7 +62,34 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
 
     .DESCRIPTION
     A function to find a range of images available for an application
-    
+
+    Building your Imagelist:
+
+    To get a list of applications, use:  Get-AGMApplication -sort "hostname:asc,appname:asc"| select id, {$_.host.hostname} , appname, apptype, {$_.cluster.name} | format-table
+    To get a list of SLTNames or policynames, use:  Get-AGMLibPolicies
+
+    First we build an object that contains a list of images. For this we can use Get-AGMLibImageRange in a syntax like this, where in this example we get all images of filesystems created in the last day:
+
+    $imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 1
+    If we know that images created in the last 24 hours are all infected, we could use this (up to 3 days old but not less than 1 day old):
+
+    $imagelist = Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 3 -newerlimit 1
+    We can also use the Template Name (SLT) to find our apps. This is a handy way to separate apps since you can create as many SLTs as you like and use them as a unique way to group apps.
+
+    $imagelist = Get-AGMLibImageRange -sltname FSSnaps_RW_OV -olderlimit 3 -newerlimit 1
+
+    Editing your Imagelist:
+
+    You could create a CSV of images, edit it and then convert that into an object. This would let you delete all the images you don't want to recover, or create chunks to recover (say 20 images at a time)
+
+    In this example we grab 20 days of images:
+
+    Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+    We now edit the CSV we created images.csv to remove images we don't want. We then import what is left into our $imagelist variable:
+
+    $imagelist = Import-Csv -Path .\images.csv
+    Now we have our image list, we can begin to create our recovery command.
+        
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -124,7 +151,10 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
  
     if (!($fv))
     { 
-        Get-AGMErrorMessage -messagetoprint "Please specify either appid, appname, fuzzyappname, sltname, policyname or apptype."
+        write-host "This is a function to find a range of images available for an application"
+        Write-host "Please specify either appid, appname, fuzzyappname, apptype, sltname, or policyname."
+        write-host ""
+        write-host "Please read the help for this command carefully to determine how to use the output.  Get-Help Get-AGMLibImageRange"
         return
     }
 

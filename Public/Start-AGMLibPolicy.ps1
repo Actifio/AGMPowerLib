@@ -116,6 +116,11 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
 
 
         Clear-Host
+        Write-host "This function is used to start large numbers of on-demand jobs.  This is done by choosing:"
+        Write-host "-- The Policy ID to run"
+        Write-Host "-- The backup type for any database apps (this is optional)" 
+        Write-host "-- A Logical Group (this is optional)"
+        Write-host ""
         write-host "Policy ID selection menu.  Please select which Policy ID will be run"
         Write-host ""
         $printarray | Format-Table
@@ -207,9 +212,11 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
        Write-Host ""
        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
        Write-Host ""
+       Write-Host ""
        Write-host -nonewline "Start-AGMLibPolicy -policyid $policyid"
        if ($backuptype) { Write-Host -nonewline " -backuptype $backuptype" }
        if ($logicalgroupid) { Write-Host -nonewline " -logicalgroupid $logicalgroupid" }
+       Write-Host ""
        Write-Host ""
        Write-Host "1`: Run the command now (default)"
        Write-Host "2`: Exit without running the command"
@@ -257,6 +264,9 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
         $appid = $app.id
         if (($app).host)
         { $hostname = (($app).host).hostname }
+        else {
+            $hostname = $appname
+        }
         # if there is no appclass, lets assume it is not a database and not cause confused errors.
         if (($backuptype) -and ($app.appclass))
         {

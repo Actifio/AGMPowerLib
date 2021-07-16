@@ -86,6 +86,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibLatestImage',
 'Get-AGMLibPolicies',
 'Get-AGMLibRunningJobs',
+'Get-AGMLibSLA',
 'Get-AGMLibWorkflowStatus',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
@@ -104,6 +105,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
 'Restore-AGMLibMount',
+'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
 'Start-AGMLibWorkflow',
 'Start-AGMLibPolicy')
@@ -146,11 +148,13 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.30] 2021-07-09
-        Added ostype and label field to Get-AGMLibImageRange
+        Added ostype and label field to Get-AGMLibImageRange.  Also added a lot more help info.
         Give Hostname and appname when running Start-AGMLibPolicy
-        New-AGMLibMultiMount was ignoring hostid, corrected this
+        New-AGMLibMultiMount was ignoring hostid, corrected this.  
         Added full guided mode for Start-AGMLibPolicy
         Teach Start-AGMLibPolicy to work with logical groups
+        Taught New-AGMLibGCPInstance to handle disktype requests
+        Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage
 
         ## [0.0.0.29] 2021-06-20
         Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
