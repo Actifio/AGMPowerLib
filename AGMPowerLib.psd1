@@ -155,6 +155,7 @@ PrivateData = @{
         Teach Start-AGMLibPolicy to work with logical groups
         Taught New-AGMLibGCPInstance to handle disktype requests
         Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage
+        Changed Get-AGMLibPolicies and Get-AGMLibAppPolicies to use common operation terms rather than id
 
         ## [0.0.0.29] 2021-06-20
         Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount

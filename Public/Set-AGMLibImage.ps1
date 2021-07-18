@@ -2,7 +2,7 @@ Function Set-AGMLibImage ([array]$imagelist,$filename)
 {
     <#
     .SYNOPSIS
-    Sets the label for a range of images using either an array or CSV file
+    Sets the label for a range of images using either an array of images or a CSV file
 
     .EXAMPLE
     Set-AGMLibImage -imagelist $imagelist 
@@ -16,6 +16,10 @@ Function Set-AGMLibImage ([array]$imagelist,$filename)
     We could then export  like this:    $imagelist | Export-Csv -Path images.csv
     Then edit the file and when reading save the CSV and run this command:  
     Set-AGMLibImage -filename images.csv
+
+    Another way to create the image list is with:   New-AGMLibImageRange
+
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -34,7 +38,7 @@ Function Set-AGMLibImage ([array]$imagelist,$filename)
     }
     if ((!($imagelist)) -and (!($filename)))
     {
-        Write-host "we need either -imagelist or -filename"
+        Write-host "We need either -imagelist or -filename to supply a list of images with new labels that need to be applied"
     }
     if ($filename)
     {
