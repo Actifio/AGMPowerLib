@@ -79,7 +79,7 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
    # we could let user fail, but this is a composite function, so lets be polite.
    if ($policyid)
    {
-       $policygrab = Get-AGMLibPolicies  | where-object { $_.id -eq $policyid }
+       $policygrab = Get-AGMLibPolicies  | where-object { $_.policyid -eq $policyid }
        if ($policygrab.op.count -ne 1)
        {
            Get-AGMErrorMessage -messagetoprint "Failed to find policy ID $policyid  Please check the Policy ID with Get-AGMLibPolicies"
