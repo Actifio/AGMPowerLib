@@ -97,18 +97,12 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
         $i = 1
             foreach ($policy in $policygrab)
             {
-                if ($policy.op -eq "snap") { $operation = "snapshot" }
-                    elseif ($policy.op -eq "cloud")
-                    { $operation = "onvault" }
-                    else {
-                        $operation = $policy.op
-                    }  
                 $printarray += [pscustomobject]@{
                     id = $i
                     sltname = $policy.sltname
                     policyname = $policy.name
-                    policyid = $policy.id
-                    operation = $operation
+                    policyid = $policy.policyid
+                    operation = $policy.operation
                     retention = $policy.retention
                 }
                 $i += 1
