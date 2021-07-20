@@ -107,6 +107,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Restore-AGMLibMount',
 'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
+'Set-AGMLibSLA',
 'Start-AGMLibWorkflow',
 'Start-AGMLibPolicy')
 
