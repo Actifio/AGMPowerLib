@@ -80,13 +80,13 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
    if ($policyid)
    {
        $policygrab = Get-AGMLibPolicies  | where-object { $_.policyid -eq $policyid }
-       if ($policygrab.op.count -ne 1)
+       if ($policygrab.operation.count -ne 1)
        {
            Get-AGMErrorMessage -messagetoprint "Failed to find policy ID $policyid  Please check the Policy ID with Get-AGMLibPolicies"
            return
        }
        $sltname = $policygrab.sltname
-       $optype = $policygrab.op
+       $optype = $policygrab.operation
    }
 
    #  if we have got to here and have no policy ID, we go to guided mode
