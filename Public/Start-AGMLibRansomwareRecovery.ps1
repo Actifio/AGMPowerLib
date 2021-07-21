@@ -64,7 +64,7 @@ function Start-AGMLibRansomwareRecovery
         Clear-Host
         Write-Host "3`: Mount one image"
         Write-Host ""
-        Write-Host "There are many functions to run mounts depending on Application type:"
+        Write-Host "There are several functions to run mounts depending on Application type:"
         write-host ""
         Write-host "FileSystems:      New-AGMLibFSMount"
         Write-host "MS SQLServer DB:  New-AGMLibMSSQLMount"
