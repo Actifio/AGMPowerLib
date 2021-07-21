@@ -1,8 +1,12 @@
-Function Set-AGMLibImage ([array]$imagelist,$filename) 
+Function Set-AGMLibImage ([array]$imagelist,$filename,[string]$imagename,[string]$label) 
 {
     <#
     .SYNOPSIS
-    Sets the label for a range of images using either an array of images or a CSV file
+    Sets the label for an image or a range of images using either an array of images or a CSV file
+
+    .EXAMPLE
+    Set-AGMLibImage -imagename Image_1234 -label "ConfirmedGood" 
+    Set the label for the image with imagename Image_1234
 
     .EXAMPLE
     Set-AGMLibImage -imagelist $imagelist 
@@ -36,9 +40,9 @@ Function Set-AGMLibImage ([array]$imagelist,$filename)
             return
         }
     }
-    if ((!($imagelist)) -and (!($filename)))
+    if ((!($imagelist)) -and (!($filename)) -and (!($imagename)))
     {
-        Write-host "We need either -imagelist or -filename to supply a list of images with new labels that need to be applied"
+        Write-host "We need -imagename or either -imagelist or -filename to supply a list of images with new labels that need to be applied"
     }
     if ($filename)
     {
@@ -55,10 +59,18 @@ Function Set-AGMLibImage ([array]$imagelist,$filename)
             return
         }
     }
-
-    foreach ($image in $imagelist | where-object {$_.label.length -gt 0})
+    if ($imagename)
     {
-        Set-AGMImage -id $image.id -label $image.label -imagename $image.backupname
+        if (!($label))
+        {
+            [string]$label = Read-host "Label"
+        }
+        Set-AGMImage -imagename $imagename -label $label
     }
-
+    else {
+        foreach ($image in $imagelist | where-object {$_.label.length -gt 0})
+        {
+            Set-AGMImage -id $image.id -label $image.label -imagename $image.backupname
+        }
+    }
 }
