@@ -109,7 +109,8 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Set-AGMLibMSSQLMigrate',
 'Set-AGMLibSLA',
 'Start-AGMLibWorkflow',
-'Start-AGMLibPolicy')
+'Start-AGMLibPolicy',
+'Start-AGMLibRansomwareRecovery')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -155,7 +156,7 @@ PrivateData = @{
         Added full guided mode for Start-AGMLibPolicy
         Teach Start-AGMLibPolicy to work with logical groups
         Taught New-AGMLibGCPInstance to handle disktype requests
-        Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage
+        Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage, Start-AGMLibRansomwareRecovery
         Changed Get-AGMLibPolicies and Get-AGMLibAppPolicies to use common operation terms rather than id
 
         ## [0.0.0.29] 2021-06-20
