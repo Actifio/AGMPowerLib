@@ -1036,8 +1036,7 @@ New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-south
 
 ### Performing a multi-mount from file
 
-We can take our command to create a new GCP VM and store the parameters needed in a CSV file
-Here is an example:
+We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE
@@ -1046,7 +1045,7 @@ appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,netw
 ```
 We can then run the command like this:
 ```
-New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.cav
+New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
  
