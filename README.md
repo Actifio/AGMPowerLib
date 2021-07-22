@@ -52,22 +52,19 @@ $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllV
 
 Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.
-You could also use:   
-```
-wget https://github.com/Actifio/AGMPowerCLI/archive/refs/heads/main.zip
-```
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.  
 1.  Copy the Zip file to the server where you want to install it
 1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
-1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder.
-You could also use:   
-```
-Expand-Archive ./main.zip
-```
+1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder. 
 1.  Now start PWSH and change directory to the AGMPowerLib-main directory that should contain our module files.   
 1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
 If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
+For Download you could also use this:
+```
+wget https://github.com/Actifio/AGMPowerCLI/archive/refs/heads/main.zip
+Expand-Archive ./main.zip
+```
 
 If the install fails with this (which usually occurs if you didn't unblock the zip file):
 ```
