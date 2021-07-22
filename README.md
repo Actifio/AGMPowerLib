@@ -1050,8 +1050,8 @@ New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
  
 What is not supported right now:
-1)  Using different storage classes
-2)  Specifying more than one internal IP per subnet.
+1.  Specifying more than one internal IP per subnet.
+1.  Specifying different disk types per disk
     
 If you need either of these, please open an issue in Github.
 
