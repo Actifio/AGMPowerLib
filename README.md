@@ -1017,7 +1017,7 @@ appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,netw
 ```
 We can then run the command like this:
 ```
-New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.cav
+New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
  
