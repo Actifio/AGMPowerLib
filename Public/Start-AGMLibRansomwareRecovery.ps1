@@ -47,7 +47,17 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "1`: Check the scheduler"  
         Write-Host ""
         Write-Host "The function you need to run is:   Get-AGMLibSLA"
-        Write-Host "The help can be read by using:     Get-Help Get-AGMLibSLA -detailed"
+        Write-Host ""
+        Write-Host "1`: Exit, I will run it later (default)"
+        Write-Host "2`: Run it now"
+        [int]$userselection1 = Read-Host "Please select from this list [1-2]"
+        if ($userselection1 -eq 2)
+        {
+            Clear-Host
+            Get-AGMLibSLA
+        } else {
+            return
+        }
     
    }
    if ($userselection -eq 2) 
