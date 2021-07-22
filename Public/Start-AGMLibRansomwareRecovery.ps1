@@ -18,7 +18,7 @@ function Start-AGMLibRansomwareRecovery
    Clear-Host
    Write-Host "This function is designed to help you learn which functions to run during a ransomware attack.   What do you need to do?"
    Write-Host ""
-   Write-Host "1`: Run a backup            Do you want to an on-demand backup right now?"
+   Write-Host "1`: Check the scheduler     Do you want to check if the scheduler is enabled?"
    Write-Host "2`: Stop new backups        Do you want to stop the scheduler or expiration right now?  This is to stop new backups being created."
    Write-Host "3`: Mount one image         Do you want to run mount jobs one at a time to find good images?"
    Write-Host "4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
@@ -44,10 +44,10 @@ function Start-AGMLibRansomwareRecovery
    if ($userselection -eq 1) 
    {  
         Clear-Host
-        Write-Host "1`: Run a backup"  
+        Write-Host "1`: Check the scheduler"  
         Write-Host ""
-        Write-Host "The function you need to run is:   New-AGMLibImage"
-        Write-Host "The help can be read by using:     Get-Help New-AGMLibImage -detailed"
+        Write-Host "The function you need to run is:   Get-AGMLibSLA"
+        Write-Host "The help can be read by using:     Get-Help Get-AGMLibSLA -detailed"
     
    }
    if ($userselection -eq 2) 
@@ -56,7 +56,17 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Stop new backups"
         Write-Host ""
         Write-Host "The function you need to run is:   Set-AGMLibSLA"
-        Write-Host "The help can be read by using:     Get-Help Set-AGMLibSLA -detailed"
+        Write-Host ""
+        Write-Host "1`: Exit, I will run it later (default)"
+        Write-Host "2`: Run it now"
+        [int]$userselection = Read-Host "Please select from this list [1-2]"
+        if ($userselection -eq 2)
+        {
+            Clear-Host
+            Set-AGMLibSLA
+        } else {
+            return
+        }
 
    }
    if ($userselection -eq 3) 

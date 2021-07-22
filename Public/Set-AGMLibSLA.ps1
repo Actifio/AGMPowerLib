@@ -70,7 +70,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         Write-Host "This command is used to enable or disable the scheduler and/or expiration."
         Write-Host "This is either for a specific application, a specific logical group or every application"
         write-host ""
-        Write-Host "Firstly what change do you want to make to the scheduler state"
+        Write-Host "Step one: What change do you want to make to the scheduler state (we will determine which apps are affected by this in step 3)"
         Write-Host "1`: I don't want to change the scheduler (default)"
         Write-Host "2`: I want to enable the scheduler"
         Write-Host "3`: I want to disable the scheduler"
@@ -84,7 +84,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             $scheduler = "enable"
         }
         write-host ""
-        Write-Host "Secondly what change do you want to make to the Expiration state"
+        Write-Host "Step two: What change do you want to make to the Expiration state"
         Write-Host "1`: I don't want to change expiration (default)"
         Write-Host "2`: I want to enable expiration"
         Write-Host "3`: I want to disable expiration"
@@ -99,7 +99,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         }
         $command = ""; if ($scheduler) { $command += " -scheduler $scheduler" }; if ($expiration) { $command += " -expiration $expiration" }
         Write-Host ""
-        Write-Host "Finally, what do you want to work with?"
+        Write-Host "Step 3: What do you want to work with?"
         Write-Host "1`: I want to work with one application (default)"
         Write-Host "2`: I want to work with one logical group"
         Write-Host "3`: I want to work with every application known to AGM"
