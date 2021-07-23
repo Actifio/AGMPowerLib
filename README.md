@@ -1004,21 +1004,21 @@ There are many parameters that need to be supplied:
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
--serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
--projectname     This is the unique Google Project name
+-serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
+-projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
 -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
 -machinetype     This is the GCP instance machine type such as:  e2-micro
 -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
--labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "dog:cat,sheep:cow"
+-labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,drink:milk"
 -nic0network     The network name in URL format for nic0
 -nic0subnet      The subnet name in URL format for nic0
 -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
 -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
 -poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
-                    There is no need to specify: -poweronvm true 
+                 There is no need to specify: -poweronvm true 
 ```
-Optionally you can request a second NIC:
+Optionally you can request a second NIC with these parameters:
 ```
 -nic1network     The network name in URL format for nic1
 -nic1subnet      The subnet name in URL format for nic1
@@ -1027,7 +1027,7 @@ Optionally you can request a second NIC:
 ```
 Optionally you can also change the disk type of the disks in the new GCP VM:
 ```
--disktype        Has to be one  of pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
+-disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
 This brings us to a command like this one:
 ```
@@ -1036,20 +1036,22 @@ New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-south
 
 ### Performing a multi-mount from file
 
-We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example:
+We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE
 51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,
 36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE
 ```
-We can then run the command like this:
+The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
+We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series.
  
 What is not supported right now:
+
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
     
@@ -1058,6 +1060,7 @@ If you need either of these, please open an issue in Github.
 
 ### Managing the mounted GCE Instance 
 
+Once we have created a new GCP Instance, there is no dependency on Actifio because the disks for the instance were created from the snapshots stored in Google Cloud Storage, rather than an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
 ```
 PS /tmp/agmpowercli> Get-AGMLibActiveImage
 
@@ -1074,7 +1077,7 @@ daysold          : 0
 label            :
 imagestate       : Mounted
 ```
-We have two choices 
+We have two choices on how to handle this image:
 
 1. Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
 
@@ -1082,8 +1085,7 @@ We have two choices
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
 PS /tmp/agmpowercli>
 ```
-2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image
-
+2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image.   You can see the only difference with the choice above is the -p for preserve.
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
