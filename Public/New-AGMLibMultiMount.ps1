@@ -69,7 +69,7 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hosti
     if ((!($mountpoint)) -and (!($imagelist)))
     {
         Write-host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
-        Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange"
+        Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange and then put into a variable"
         Write-Host "-- A host list or a host ID which will be our target hosts.  We learn these with Get-AGMHost" 
         Write-host "-- A mount point with parameters"
         Write-host ""

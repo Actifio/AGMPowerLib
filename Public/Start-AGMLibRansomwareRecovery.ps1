@@ -110,7 +110,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host ""
         Write-Host "The function you need to run is:   Get-AGMLibImageRange"
         Write-Host "The help can be read by using:     Get-Help Get-AGMLibImageRange -detailed"
-        Write-host "First read the help and then run the function.   You got here by choosing option 4.  Once you have the image list, come back and choose option 5."
+        Write-host "First read the help and then run the function.   You got here by choosing option 5.  Once you have the image list, come back and choose option 6."
 
    }
    if ($userselection -eq 6) 
@@ -119,8 +119,10 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "6`: Mount your image list"
         Write-Host ""
         Write-Host "The function you need to run is:   New-AGMLibMultiMount"
-        Write-Host "The help can be read by using:     Get-Help New-AGMLibMultiMount -detailed"
-
+        Write-Host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
+        Write-Host "-- A list of images to mount, normally created with New-AGMLibImageRange"
+        Write-Host "-- A host list or a host ID which will be our target hosts.  We learn these with Get-AGMHost"
+        Write-Host "-- A mount point with parameters"
    }
 
    if ($userselection -eq 7) 
@@ -129,8 +131,10 @@ function Start-AGMLibRansomwareRecovery
         write-host "7`: Set image labels"
         Write-Host ""
         Write-Host "The function you need to run is:   Set-AGMLibImage"
-        Write-Host "The help can be read by using:     Get-Help Set-AGMLibImage -detailed"
-
+        Write-Host "This function is used to label a large number of images in a single command.  This is done by supplying one of the following:
+-- A list of images to label, normally created with New-AGMLibImageRange.  We then use -imagelist <imagelist>
+-- A CSV file contained a list of images with new labels.  The file needs to have at least id,backupname,label as headings.  You could use New-AGMLibImageRange to create this file.  Then use:  -filename <filename.csv>
+-- An imagename.   You could learn this in the AGM Web GUI.   Then use:  -imagename <imagename> -label <newlabel>"
    }
 
    if ($userselection -eq 8) 
