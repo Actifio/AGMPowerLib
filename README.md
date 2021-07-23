@@ -1076,7 +1076,7 @@ imagestate       : Mounted
 ```
 We have two choices 
 
-1.Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
+1. Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
 
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
