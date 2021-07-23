@@ -42,7 +42,10 @@ Function Set-AGMLibImage ([array]$imagelist,$filename,[string]$imagename,[string
     }
     if ((!($imagelist)) -and (!($filename)) -and (!($imagename)))
     {
-        Write-host "We need -imagename or either -imagelist or -filename to supply a list of images with new labels that need to be applied"
+        Write-host "This function is used to label a large number of images in a single command.  This is done by supplying one of the following:
+-- A list of images to label, normally created with New-AGMLibImageRange.  We then use -imagelist <imagelist>
+-- A CSV file contained a list of images with new labels.  The file needs to have at least id,backupname,label as headings.  You could use New-AGMLibImageRange to create this file.  Then use:  -filename <filename.csv>
+-- An imagename.   You could learn this in the AGM Web GUI.   Then use:  -imagename <imagename> -label <newlabel>"
     }
     if ($filename)
     {

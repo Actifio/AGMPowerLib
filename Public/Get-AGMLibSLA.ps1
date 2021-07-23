@@ -85,6 +85,8 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
         $hostname = ($applicationgrab |  where-object {$_.id -eq $sla.application.id}).host.hostname  
         $sla | Add-Member -NotePropertyName hostname -NotePropertyValue $hostname    
         $appname = ($applicationgrab |  where-object {$_.id -eq $sla.application.id} | select-object appname).appname
+        $groupname = ($applicationgrab |  where-object {$_.id -eq $sla.application.id} | select-object logicalgroup).logicalgroup.name
+        $groupid = ($applicationgrab |  where-object {$_.id -eq $sla.application.id} | select-object logicalgroup).logicalgroup.id
         $sla | Add-Member -NotePropertyName appname -NotePropertyValue $appname
         if ($logicalgroupid)
         {
@@ -98,6 +100,8 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
                     appid = $sla.application.id
                     scheduler = $scheduler
                     expiration = $expiration
+                    logicalgroupname = $groupname
+                    logicalgroupid = $groupid
                 }
             }
         } 
@@ -111,6 +115,8 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
                 appid = $sla.application.id
                 scheduler = $scheduler
                 expiration = $expiration
+                logicalgroupname = $groupname
+                logicalgroupid = $groupid
             }
         }
 

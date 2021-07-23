@@ -1,4 +1,4 @@
-Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[string]$expiration,[string]$scheduler,[switch][alias("e")]$everysla) 
+Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[string]$expiration,[string]$scheduler,[switch][alias("e")]$everysla,[switch][alias("s")]$showsla) 
 {
     <#
     .SYNOPSIS
@@ -69,6 +69,15 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         #guided mode
         Write-Host "This command is used to enable or disable the scheduler and/or expiration."
         Write-Host "This is either for a specific application, a specific logical group or every application"
+        write-host ""
+        Write-Host "1`: Lets get started (default)"
+        Write-Host "2`: I need to know the current state"
+        $userchoice = Read-Host "Please select from this list (1-2)"
+        if ($userchoice -eq 2)
+        {
+            $slagrab = Get-AGMLibSLA
+            $slagrab
+        }
         write-host ""
         Write-Host "Step one: What change do you want to make to the scheduler state (we will determine which apps are affected by this in step 3)"
         Write-Host "1`: I don't want to change the scheduler (default)"
@@ -147,9 +156,12 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             Write-Host "Set-AGMLibSLA -slaid $slaid $command"
             Write-Host ""
             Write-Host "1`: Run the command now"
-            Write-Host "2`: Exit without running the command"
-            $userchoice = Read-Host "Please select from this list (1-2)"
-            if ($userchoice -ne 1)
+            Write-Host "2`: Run the command now and then show the new status"
+            Write-Host "3`: Exit without running the command"
+            $appuserchoice = Read-Host "Please select from this list (1-3)"
+            if ($appuserchoice -eq "") { $appuserchoice = 1}
+            if ($appuserchoice -eq 2) { $showsla = $true}
+            if ($appuserchoice -eq 3)
             {
                 return
             }
@@ -192,10 +204,13 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             Write-Host ""
             Write-Host "Set-AGMLibSLA -logicalgroupid $logicalgroupid $command"
             Write-Host ""
-            Write-Host "1`: Run the command now"
-            Write-Host "2`: Exit without running the command"
-            $userchoice = Read-Host "Please select from this list (1-2)"
-            if ($userchoice -ne 1)
+            Write-Host "1`: Run the command now (default)"
+            Write-Host "2`: Run the command now and then show the new status"
+            Write-Host "3`: Exit without running the command"
+            $groupuserchoice = Read-Host "Please select from this list (1-3)"
+            if ($groupuserchoice -eq "") { $groupuserchoice = 1}
+            if ($groupuserchoice -eq 2) { $showsla = $true}
+            if ($groupuserchoice -eq 3)
             {
                 return
             }
@@ -217,14 +232,16 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             Write-Host ""
             Write-Host "Set-AGMLibSLA -everysla $command"
             Write-Host ""
-            Write-Host "1`: Run the command now"
-            Write-Host "2`: Exit without running the command"
-            $userchoice = Read-Host "Please select from this list (1-2)"
-            if ($userchoice -ne 1)
+            Write-Host "1`: Run the command now and exit (default)"
+            Write-Host "2`: Run the command now and then show the new settings"
+            Write-Host "3`: Exit without running the command"
+            $everyuserchoice = Read-Host "Please select from this list (1-3)"
+            if ($everyuserchoice -eq "") { $everyuserchoice = 1}
+            if ($everyuserchoice -eq 2) { $showsla = $true}
+            if ($everyuserchoice -eq 3)
             {
                 return
             }
-
         }
        
     }
@@ -283,5 +300,11 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
                 Set-AGMSLA -slaid $target -expiration $expiration -scheduler $scheduler
             }
         }
+    }
+    if ($showsla -eq $true)
+    {
+        if ($slaid) { Get-AGMLibSLA -slaid $slaid}
+        if ($logicalgroupid) { Get-AGMLibSLA -logicalgroupid $logicalgroupid}
+        if ($everysla) { Get-AGMLibSLA}
     }
 }
