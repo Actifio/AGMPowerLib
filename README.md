@@ -65,7 +65,7 @@ For Download you could also use this:
 wget https://github.com/Actifio/AGMPowerLib/archive/refs/heads/main.zip
 pwsh
 Expand-Archive ./main.zip
-./main/AGMPowerCLI-main/Install-AGMPowerCLI.ps1
+./main/AGMPowerLib-main/Install-AGMPowerLib.ps1
 rm main.zip
 rm -r main
 ```
