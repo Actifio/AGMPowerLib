@@ -71,7 +71,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         Write-Host "This is either for a specific application, a specific logical group or every application"
         write-host ""
         Write-Host "1`: Lets get started (default)"
-        Write-Host "2`: I need to know the current state"
+        Write-Host "2`: I need to know the current state - please run Get-AGMLibSLA"
         $userchoice = Read-Host "Please select from this list (1-2)"
         if ($userchoice -eq 2)
         {
