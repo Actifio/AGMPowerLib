@@ -62,8 +62,12 @@ If it finds multiple installs, we strongly recommend you delete them all and run
 
 For Download you could also use this:
 ```
-wget https://github.com/Actifio/AGMPowerCLI/archive/refs/heads/main.zip
+wget https://github.com/Actifio/AGMPowerLib/archive/refs/heads/main.zip
+pwsh
 Expand-Archive ./main.zip
+./main/AGMPowerCLI-main/Install-AGMPowerCLI.ps1
+rm main.zip
+rm -r main
 ```
 
 If the install fails with this (which usually occurs if you didn't unblock the zip file):
