@@ -52,14 +52,23 @@ $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllV
 
 Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.  
 1.  Copy the Zip file to the server where you want to install it
 1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
-1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder.
+1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder. 
 1.  Now start PWSH and change directory to the AGMPowerLib-main directory that should contain our module files.   
 1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
 If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
+For Download you could also use this:
+```
+wget https://github.com/Actifio/AGMPowerLib/archive/refs/heads/main.zip
+pwsh
+Expand-Archive ./main.zip
+./main/AGMPowerCLI-main/Install-AGMPowerCLI.ps1
+rm main.zip
+rm -r main
+```
 
 If the install fails with this (which usually occurs if you didn't unblock the zip file):
 ```
@@ -558,25 +567,27 @@ During guided mode you will notice that for functions that expect authentication
 
 One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
 If we create an OnVault or Direct2Onvault policy that never runs, meaning it is set to run everyday except everyday, then the policy will only run when manually requested.
-We can then learn the policy ID and create a command to run it.
 
-First learn the policy ID.  In this example the policy ID of the cloud job is 25627
-```
-PS /tmp/agmpowercli> Get-AGMLibPolicies | ft
+Now since this user story relies on running specific policies for specific groups of apps, we need a way to group them.
+There are two ways to achieve this:
 
-sltid sltname       id    name        op    priority retention starttime endtime rpo
------ -------       --    ----        --    -------- --------- --------- ------- ---
-25606 FSSnaps_RW_OV 25627 OndemandOV  cloud medium   14 days   19:00     18:50   24 hours
-25606 FSSnaps_RW_OV 25607 DailySnap   snap  medium   7 days    00:00     23:59   24 hours
+* Using unique Templates for each group
+* Using LogicalGroups to group your apps.   This is the recommended method.
+
+Once we have done this, then we can use **Start-AGMLibPolicy** to run a job against all apps either for one policy or in one logical group (or both).
+So just run the command and follow the prompts to build your command:
 ```
-We now have what we need to build our command.
-Before we begin we need to enable the service account we are going to use.  We then start the OnVault jobs like this:
+Start-AGMLibPolicy
 ```
-PS /tmp/agmpowercli> Start-AGMLibPolicy -policyid 25627
-Starting job for appid 20577 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
-Starting job for appid 6965 using cloud policy ID 25627 from SLT FSSnaps_RW_OV
+We then run our command, for instance:
 ```
-We can then monitor them like this:
+PS /home/avw_google_com> Start-AGMLibPolicy -policyid 6393 -backuptype dblog
+Starting job for hostname: mysqlsource   appname: mysqlsource   appid: 51919 using: snap policyID: 6393 from SLTName: PDSnaps
+Starting job for hostname: mysqltarget   appname: mysqltarget   appid: 36104 using: snap policyID: 6393 from SLTName: PDSnaps
+Starting job for hostname: tiny   appname: tiny   appid: 35590 using: snap policyID: 6393 from SLTName: PDSnaps
+PS /home/avw_google_com>
+```
+We can then monitor the jobs like this:
 ```
 PS /tmp/agmpowercli> Get-AGMJob -filtervalue "policyname=OndemandOV" | select status,progress
 
@@ -585,7 +596,7 @@ status  progress
 running       97
 running       98
 ```
-Good logic would work like this:
+Your logic would work like this:
 1. Count the relevant apps.  In this example we have 2.
 ```
 PS /tmp/agmpowercli> $appgrab = Get-AGMApplication -filtervalue "sltname=FSSnaps_RW_OV"
@@ -648,6 +659,15 @@ PS /tmp/agmpowercli>
 ## User Story: File System multi-mount for Ransomware analysis
 
 There are many cases where you may want to mount many filesystems in one hit.  A simple scenario is ransomware, where you are trying to find an uninfected or as yet unattacked (but infected) image for each production filesystem.   So lets mount as many images as we can as quickly as we can so we can find unaffected filesystems and start the recovery.
+
+### Stopping the Scheduler and/or expiration 
+
+Prior to beginning recovery efforts you may want to stop the scheduler and expiration on large numbers of Apps or even your whole environment.
+If you created Logical Groups this is one convenient way to manage this.   
+There are two commands you can use:
+
+* Get-AGMLibSLA      This command will list the Scheduler and Expiration status for all your apps, or if you use -appid or -slaid, for a specific app
+* Set-AGMLibSLA      This command will let you set the scheduler or Expiration status for all your apps, specific apps or specific Logical Groups.
 
 #### Building a list of images
 First we build an object that contains a list of images.  For this we can use **Get-AGMLibImageRange** in a syntax like this, where in this example we get all images of filesystems created in the last day:
@@ -723,6 +743,15 @@ foreach ($mount in $mountlist.imagename)
 {
 Remove-AGMMount $mount -d
 }
+```
+#### Updating Labels
+We can use the following command to update the Label of a specific image:
+```
+Set-AGMImage
+```
+However we could update a large number of images with this command:
+```
+Set-AGMLibImage
 ```
 ## User Story: VMware multi-mount
 
@@ -979,26 +1008,30 @@ There are many parameters that need to be supplied:
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
--serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
--projectname     This is the unique Google Project name
+-serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
+-projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
 -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
 -machinetype     This is the GCP instance machine type such as:  e2-micro
 -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
--labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "dog:cat,sheep:cow"
+-labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,drink:milk"
 -nic0network     The network name in URL format for nic0
 -nic0subnet      The subnet name in URL format for nic0
 -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
 -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
 -poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
-                    There is no need to specify: -poweronvm true 
+                 There is no need to specify: -poweronvm true 
 ```
-Optionally you can request a second NIC:
+Optionally you can request a second NIC with these parameters:
 ```
 -nic1network     The network name in URL format for nic1
 -nic1subnet      The subnet name in URL format for nic1
 -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
 -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.  
+```
+Optionally you can also change the disk type of the disks in the new GCP VM:
+```
+-disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
 This brings us to a command like this one:
 ```
@@ -1007,29 +1040,31 @@ New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-south
 
 ### Performing a multi-mount from file
 
-We can take our command to create a new GCP VM and store the parameters needed in a CSV file
-Here is an example:
+We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
 ```
-appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,poweronvm
-35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,TRUE
-51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,
-36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,TRUE
+appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm
+35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE
+51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,
+36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE
 ```
-We can then run the command like this:
+The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
+We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series.
  
 What is not supported right now:
-1)  Using different storage classes
-2)  Specifying more than one internal IP per subnet.
+
+1.  Specifying more than one internal IP per subnet.
+1.  Specifying different disk types per disk
     
 If you need either of these, please open an issue in Github.
 
 
 ### Managing the mounted GCE Instance 
 
+Once we have created a new GCP Instance, there is no dependency on Actifio because the disks for the instance were created from the snapshots stored in Google Cloud Storage, rather than an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
 ```
 PS /tmp/agmpowercli> Get-AGMLibActiveImage
 
@@ -1046,16 +1081,15 @@ daysold          : 0
 label            :
 imagestate       : Mounted
 ```
-We have two choices 
+We have two choices on how to handle this image:
 
-1.Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
+1. Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
 
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
 PS /tmp/agmpowercli>
 ```
-2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image
-
+2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image.   You can see the only difference with the choice above is the -p for preserve.
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>

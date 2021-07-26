@@ -77,6 +77,14 @@ Function Get-AGMLibPolicies ([string]$appid,[string]$sltid)
         $policygrab = Get-AGMSLTpolicy -id $slt.id
         foreach ($policy in $policygrab)
         {
+            if ($policy.op -eq "snap") { $operation = "snapshot" }
+            elseif ($policy.op -eq "cloud")
+            { $operation = "onvault" }
+            else {
+                $operation = $policy.op
+            }  
+            $policy | Add-Member -NotePropertyName operation -NotePropertyValue $operation
+            $policy | Add-Member -NotePropertyName policyid -NotePropertyValue $policy.id
             $policy | Add-Member -NotePropertyName sltid -NotePropertyValue $slt.id 
             $policy | Add-Member -NotePropertyName sltname -NotePropertyValue $slt.name
             if ($policy.retention)
@@ -98,6 +106,6 @@ Function Get-AGMLibPolicies ([string]$appid,[string]$sltid)
                 $policy.endtime = $et.ToString("hh\:mm")
             }
         }
-        $policygrab | select-object sltid,sltname,id,name,op,priority,retention,starttime,endtime,rpo
+        $policygrab | select-object sltid,sltname,policyid,name,operation,priority,retention,starttime,endtime,rpo
     }  
 }

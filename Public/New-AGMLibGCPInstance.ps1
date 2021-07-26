@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm) 
 {
     <#
     .SYNOPSIS
@@ -10,7 +10,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     This mounts the specified imageid 56410933
 
     .EXAMPLE
-    New-AGMLibGCPInstance -appid 1234 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCPInstance -appid 1234 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
 
     This mounts the most recent snapshot from appid 1234
 
@@ -43,6 +43,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
     -poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
                      There is no need to specify: -poweronvm true 
+  
 
     Optionally you can request a second NIC:
     -nic1network     The network name in URL format for nic1
@@ -50,9 +51,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
     -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
  
+    Optionally you can specify that all disks be a different type:
+    -disktype        Has to be one  of pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
+    
     What is not supported right now:
-    1)  Using different storage classes
-    2)  Specifying more than one internal IP per subnet.
+    1)  Specifying more than one internal IP per subnet.
+    2)  Specifying different disk types per disk
     
     If you need either of these, please open an issue in Github.
     
@@ -70,6 +74,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         if ($sessiontest -ne $AGMSESSIONID)
         {
             Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+            return
+        }
+    }
+
+    if ($disktype)
+    {
+        if (($disktype -ne "pd-balanced") -and ($disktype -ne "pd-extreme") -and ($disktype -ne "pd-ssd") -and ($disktype -ne "pd-standard"))
+        {
+            Get-AGMErrorMessage -messagetoprint "The Disk type requested using -disktype is not valid.   It needs to be one of pd-balanced, pd-extreme, pd-ssd or pd-standard"
             return
         }
     }
@@ -173,6 +186,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         return
     }
 
+    # disktype 
+    if ($disktype)
+    {
+        $disktypegrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=existingmount"
+        if (!($disktypegrab.fields))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find data for image ID $imageid.  Please check this is a valid image ID with Get-AGMImage -id $imageid"
+        return
+        }
+        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
+            if ($row.selected -eq "True")
+            {
+                $row.selected = ""
+            }
+        }
+        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
+            if ($row.name -eq $disktype)
+            {
+                $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
+            }
+        }
+        $diskjson = $gcpdata.fields | where-object { $_.name -eq "volumeselection" } | ConvertTo-json -depth 5 -compress
+    }
+
+
     # cloud credentials
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$credentialid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
     #project name
@@ -274,9 +312,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
 
 
     # volumes
-    # $json = $json + '{"displayName":"","name":"volumes","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"Select Volumes to Mount","name":"volumeselection","helpId":1265,"type":"volumeselectiontable","description":"","required":true,"modified":true,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"SIZE","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"DEVICE INDEX","name":"deviceindex","type":"text"},{"displayName":"VOLUME ID","name":"volumeid","type":"text"},{"displayName":"DEVICE TYPE","name":"devicetype","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"rows":[{"size":"10 GB","volumeid":"862641384278357116","devicename":"tiny","disktype":[{"displayName":"Balanced Persistent Disk(DiskSizeGb: 100)","name":"pd-balanced","selected":true}],"sourcemountpath":"dev/sda","devicetype":"BOOT","deviceindex":"0","selected":true,"disabled":true,"disktypeDisabled":false}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"},'
-    $json = $json + '{"displayName":"","name":"volumes","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"Select Volumes to Mount","name":"volumeselection","helpId":1265,"type":"volumeselectiontable","description":"","required":false,"modified":false,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"SIZE","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"DEVICE INDEX","name":"deviceindex","type":"text"},{"displayName":"VOLUME ID","name":"volumeid","type":"text"},{"displayName":"DEVICE TYPE","name":"devicetype","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"},'
-   
+    if ($diskjson)
+    {
+        $json = $json + $diskjson +","
+    } else {
+        $json = $json + '{"displayName":"","name":"volumes","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"Select Volumes to Mount","name":"volumeselection","helpId":1265,"type":"volumeselectiontable","description":"","required":false,"modified":false,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"SIZE","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"DEVICE INDEX","name":"deviceindex","type":"text"},{"displayName":"VOLUME ID","name":"volumeid","type":"text"},{"displayName":"DEVICE TYPE","name":"devicetype","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"},'
+    }
     # power on/off VM
     if ($poweronvm -eq "false")
     {

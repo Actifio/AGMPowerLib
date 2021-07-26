@@ -1,4 +1,4 @@
-Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hostid,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS
@@ -65,6 +65,52 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mount
         $hostlist = $hostid
     }
 
+    # guided menu
+    if ((!($mountpoint)) -and (!($imagelist)))
+    {
+        Write-host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
+        Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange and then put into a variable"
+        Write-Host "-- A host list or a host ID which will be our target hosts.  We learn these with Get-AGMHost" 
+        Write-host "-- A mount point with parameters"
+        Write-host ""
+        Write-host "We require an imagelist. This needs to be created with Get-AGMLibImageRange.  If you have not created it, then quit out, run that command first and then come back here when done"
+        [array]$imagelist = Read-Host "Supply the image list array name (or quit out now)"
+        if (!($imagelist.imagename))
+        {
+            Get-AGMErrorMessage -messagetoprint "Imagelist needs to be created with Get-AGMLibImageRange"
+            return
+        }
+        # host ID list
+        Write-host ""
+        Write-Host "You now need to supply a list of host IDs to mount to.  These hosts need to have the same OS (only Windows or only Linux)"
+        Write-Host "Make sure the hosts are on the same appliance name as the images"
+        Write-Host 'To get this list, run this command:   Get-AGMHost -sort hostname:asc  | select id,hostname,ostype,{$_.appliance.name}'
+        Write-host ""
+        Write-Host "1`: I have the host IDs, let me enter them"
+        Write-Host "2`: I need to learn them. "
+        $userchoice = Read-Host "Please select from this list (1-2)"
+        if ($userchoice -eq 1)
+        {
+            While ($true)  { if ($hostgrab.length -eq 0) { 
+                [string]$hostgrab = Read-Host "Please supply host IDs, comma separated, like:    1234,5467,9012"
+            } else { break } }
+            $hostlist = @($hostgrab)
+        }   
+        else 
+        {
+            return
+        }
+        write-host ""
+        While ($true)  { if ($fieldsep.length -eq 0) {  
+            [string]$mountpoint = Read-Host "Please supply a mount point such as /tmp/testmount/ or C:\Temp\  making sure to add the trailing slash as shown" 
+            if ($mountpoint -match '\\$') { $fieldsep = "\" }
+            if ($mountpoint -match '/$') { $fieldsep = "/" }
+        } else { break } }
+    }
+
+
+
+
     if (!($mountpoint))
     {
         Get-AGMErrorMessage -messagetoprint "Please supply a starter mountpoint such as /tmp/testmount/ or C:\Temp\"
@@ -96,11 +142,11 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$mount
         return
     }
 
+
     if (!($startindex))
     {
         $startindex = 1
     }
-    
 
     if (!($label))
     {

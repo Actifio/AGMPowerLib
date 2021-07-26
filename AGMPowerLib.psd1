@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.29'
+ModuleVersion = '0.0.0.30'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -86,6 +86,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibLatestImage',
 'Get-AGMLibPolicies',
 'Get-AGMLibRunningJobs',
+'Get-AGMLibSLA',
 'Get-AGMLibWorkflowStatus',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
@@ -104,9 +105,12 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
 'Restore-AGMLibMount',
+'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
+'Set-AGMLibSLA',
 'Start-AGMLibWorkflow',
-'Start-AGMLibPolicy')
+'Start-AGMLibPolicy',
+'Start-AGMLibRansomwareRecovery')
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 CmdletsToExport = '*'
@@ -145,6 +149,16 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.30] 2021-07-09
+        Added ostype and label field to Get-AGMLibImageRange.  Also added a lot more help info.
+        Give Hostname and appname when running Start-AGMLibPolicy
+        New-AGMLibMultiMount was ignoring hostid, corrected this.  
+        Added full guided mode for Start-AGMLibPolicy
+        Teach Start-AGMLibPolicy to work with logical groups
+        Taught New-AGMLibGCPInstance to handle disktype requests
+        Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage, Start-AGMLibRansomwareRecovery
+        Changed Get-AGMLibPolicies and Get-AGMLibAppPolicies to use common operation terms rather than id
+
         ## [0.0.0.29] 2021-06-20
         Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
         Allow Get-AGMLibImageRange to work with SLT Name.  

@@ -63,6 +63,15 @@ Function Get-AGMLibAppPolicies ([string]$appid)
     {
         foreach ($policy in $policygrab)
         {
+
+            if ($policy.op -eq "snap") { $operation = "snapshot" }
+            elseif ($policy.op -eq "cloud")
+            { $operation = "onvault" }
+            else {
+                $operation = $policy.op
+            }  
+            $policy | Add-Member -NotePropertyName operation -NotePropertyValue $operation
+            $policy | Add-Member -NotePropertyName policyid -NotePropertyValue $policy.id
             if ($policy.retention)
             {
                 $policy.retention = $policy.retention + " " + $policy.retentionm
@@ -82,6 +91,6 @@ Function Get-AGMLibAppPolicies ([string]$appid)
                 $policy.endtime = $et.ToString("hh\:mm")
             }
         }
-        $policygrab | select-object id,name,op,priority,retention,starttime,endtime,rpo
+        $policygrab | select-object policyid,name,operation,priority,retention,starttime,endtime,rpo
     }    
 }
