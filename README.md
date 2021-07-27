@@ -1061,6 +1061,15 @@ What is not supported right now:
     
 If you need either of these, please open an issue in Github.
 
+#### Maximum slot counts and mount jobs
+
+The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   To resolve this we need to use Appliance PowerShell which can be found here:
+
+https://github.com/Actifio/ActPowerCLI/
+
+The method to change slots is here:
+
+https://github.com/Actifio/ActPowerCLI/blob/main/README.md#slot-management
 
 ### Managing the mounted GCE Instance 
 
