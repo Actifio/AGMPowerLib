@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.30'
+ModuleVersion = '0.0.0.31'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -149,6 +149,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.30] 2021-07-27
+        Improved New-AGMLibMultiMount help
+
         ## [0.0.0.30] 2021-07-09
         Added ostype and label field to Get-AGMLibImageRange.  Also added a lot more help info.
         Give Hostname and appname when running Start-AGMLibPolicy
