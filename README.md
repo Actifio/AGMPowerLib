@@ -1071,6 +1071,21 @@ The method to change slots is here:
 
 https://github.com/Actifio/ActPowerCLI/blob/main/README.md#slot-management
 
+Specifically you will need to use:
+
+https://github.com/Actifio/ActPowerCLI/blob/main/README.md#mount-job-slot-command
+
+Validate the slot counts for ondemand jobs (this is Appliance CLI, which needs PowerShell Module ActPowerCLI):
+```
+udsinfo getparameter -param reservedondemandslots
+udsinfo getparameter -param maxondemandslots
+```
+Set the slot counts to larger values like this:
+```
+udstask setparameter -param reservedondemandslots -value 10
+udstask setparameter -param maxondemandslots -value 15
+```
+
 
 ### Managing the mounted GCE Instance 
 
