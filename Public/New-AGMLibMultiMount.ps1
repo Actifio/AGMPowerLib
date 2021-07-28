@@ -116,6 +116,43 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "2`: Exit"
         $userchoice2 = Read-Host "Please select from this list (1-3)"
         if ($userchoice2 -eq "" -or $userchoice2 -eq 2) { return }
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run these mounts"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+        }
         if ($userchoice2 -eq 1) 
         {
             Clear-Host
@@ -129,12 +166,12 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             if ($userchoice3 -eq 1)
             {
                 $ostype = "Linux"
-                $hostgrab = Get-AGMHost -filtervalue ostype=$ostype -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($userchoice3 -eq 2)
             {
                 $ostype = "Win32"
-                $hostgrab = Get-AGMHost -filtervalue ostype=$ostype -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($hostgrab.id.count -eq 0)
             {
