@@ -70,7 +70,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
     {
         Write-host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
         Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange and then placed into a CSV file"
-        Write-Host "-- A host list or a host ID which will be our scanninng hosts that we use to check our images" 
+        Write-Host "-- A host list or a host ID which will be our scanning hosts that we use to check our images" 
         Write-host "-- A mount point with parameters"
         Write-host ""
         write-host "The end result will be that we will mount all the listed images on our scanning hosts so they can be checked"
@@ -79,7 +79,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-host "If you have not created it, then choose Exit, run that command first and work with the output and then come back here when done"
         Write-host ""
         Write-Host "1`: I have the image list as a file"
-        Write-Host "2`: Please run Get-AGMLibImageRange"
+        Write-Host "2`: I need to run Get-AGMLibImageRange to create the CSV file"
         Write-Host "3`: Exit"
         $userchoice1 = Read-Host "Please select from this list (1-3)"
         if ($userchoice1 -eq "" -or $userchoice1 -eq 3) { return }
@@ -177,7 +177,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         }
         Clear-Host
         Write-host "Finally we need to choose which suffixes we will use in the mount points to both guarantee uniqueness and make the images easy to find"
-        Write-host " There are four mechanisms to get unique mount names.  If you hit enter then we will use -h -a -i"
+        Write-host " There are four mechanisms to get unique mount names."
         Write-host " 1)  You can specify -h and the Host Name will be used as part of the mount point"
         Write-host " 2)  You can specify -a and the App Name will be used as part of the mount point"
         Write-host " 3)  You can specify -i and the Image Name will be used as part of the mount point"
