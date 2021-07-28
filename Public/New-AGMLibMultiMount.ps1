@@ -103,7 +103,8 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         }
         if ($userchoice1 -eq 2)
         {
-            Get-AGMLibImageRange
+            Get-AGMLibImageRange6
+            
             return
         }
         
