@@ -112,6 +112,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         Clear-Host
         write-host "This is a function to find a range of images available for an application"
         Write-host "We need to search either with appid, appname, fuzzyappname, apptype or sltname"
+        write-host "Alternatively we can just grab every image"
         write-host ""
         write-host "Please read the help for this command carefully to determine how to use the output.  Get-Help Get-AGMLibImageRange"
         write-host ""
@@ -265,6 +266,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
                 return
             }
             Clear-Host
+            write-host "Please select an application type"
             $i = 1
             foreach ($type in $datagrab)
             { 
@@ -349,10 +351,21 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         Write-Host "2`: Search in hours"
         [int]$userchoice = Read-Host "Please select from this list (1-2)"
         if ($userchoice -eq 2) { $hours = $true }
-        write-host "The Olderlimit determines how far back in time we look for images.  By default it is 1 day."
-        [int]$olderlimit = Read-Host "Olderlimit"
-        write-host "The Newerlimit determines how close to today we look for images. If you say 2, then no image created in last 2 days will be listed"
-        [int]$newerlimit = Read-Host "Newerlimit"
+        if ($hours)
+        {
+            write-host "The Olderlimit determines how far back in time we look for images.  By default it is 1 hour."
+            [int]$olderlimit = Read-Host "Olderlimit"
+            write-host "The Newerlimit determines how close to today we look for images. If you specify 2, then no image created in the last 2 hours will be listed"
+            [int]$newerlimit = Read-Host "Newerlimit"
+        } 
+        else    
+        {
+            write-host "The Olderlimit determines how far back in time we look for images.  By default it is 1 day."
+            [int]$olderlimit = Read-Host "Olderlimit"
+            write-host "The Newerlimit determines how close to today we look for images. If you specify 2, then no image created in the last 2 days will be listed"
+            [int]$newerlimit = Read-Host "Newerlimit"
+
+        }
         Write-host "Optionally you can supply a consistency date in ISO format to use as the date to work with rather than the current date"
         [string]$consistencydate = Read-Host "Hit enter or type a date in format like 2021-07-28 12:00"
 
@@ -365,7 +378,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($userchoice -eq 2) { $onvault = $true }
         if ($userchoice -eq 3) { $jobclass = "OnVault" } 
 
-        [string]$csvfile = Read-Host "Please supply a file name to write out a CSV file"
+        [string]$csvfile = Read-Host "Please supply a file name to write out a CSV file (or press enter to display to the screen)"
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""

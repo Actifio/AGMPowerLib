@@ -16,7 +16,7 @@ function Start-AGMLibRansomwareRecovery
 
    #
    
-
+    Clear-Host
     Write-Host "This function is designed to help you learn which functions to run during a ransomware attack."
     Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
     Write-Host "What do you need to do?"
@@ -65,6 +65,7 @@ function Start-AGMLibRansomwareRecovery
         {
             Clear-Host
             Get-AGMLibSLA
+            Read-Host -Prompt "Press enter to continue"
             Start-AGMLibRansomwareRecovery
         } else {
             return
@@ -109,9 +110,18 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "5`: Create an image list"
         Write-Host ""
         Write-Host "The function you need to run is:   Get-AGMLibImageRange"
-        Write-Host "The help can be read by using:     Get-Help Get-AGMLibImageRange -detailed"
-        Write-host "First read the help and then run the function.   You got here by choosing option 5.  Once you have the image list, come back and choose option 6."
-
+        Write-Host ""
+        Write-Host "1`: Exit, I will run it later (default)"
+        Write-Host "2`: Run it now"
+        [int]$userselection2 = Read-Host "Please select from this list [1-2]"
+        if ($userselection2 -eq 2)
+        {
+            Get-AGMLibImageRange
+            Read-Host -Prompt "Press enter to continue"
+            Start-AGMLibRansomwareRecovery
+        } else {
+            return
+        }
    }
    if ($userselection -eq 6) 
    {  
@@ -119,10 +129,16 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "6`: Mount your image list"
         Write-Host ""
         Write-Host "The function you need to run is:   New-AGMLibMultiMount"
-        Write-Host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
-        Write-Host "-- A list of images to mount, normally created with New-AGMLibImageRange"
-        Write-Host "-- A host list or a host ID which will be our target hosts.  We learn these with Get-AGMHost"
-        Write-Host "-- A mount point with parameters"
+        Write-Host ""
+        Write-Host "1`: Exit, I will run it later (default)"
+        Write-Host "2`: Run it now"
+        [int]$userselection2 = Read-Host "Please select from this list [1-2]"
+        if ($userselection2 -eq 2)
+        {
+            New-AGMLibMultiMount
+        } else {
+            return
+        }
    }
 
    if ($userselection -eq 7) 

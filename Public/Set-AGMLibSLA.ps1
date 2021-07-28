@@ -77,6 +77,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         {
             $slagrab = Get-AGMLibSLA
             $slagrab
+            Read-Host -Prompt "Press enter to continue"
         }
         write-host ""
         Write-Host "Step one: What change do you want to make to the scheduler state (we will determine which apps are affected by this in step 3)"
@@ -305,6 +306,10 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
     {
         if ($slaid) { Get-AGMLibSLA -slaid $slaid}
         if ($logicalgroupid) { Get-AGMLibSLA -logicalgroupid $logicalgroupid}
-        if ($everysla) { Get-AGMLibSLA}
+        if ($everysla) 
+        { 
+            Get-AGMLibSLA
+            Read-Host -Prompt "Press enter to continue"
+        }
     }
 }
