@@ -24,9 +24,9 @@ function Start-AGMLibRansomwareRecovery
     write-host "1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
     Write-Host "2`: Check the scheduler     Do you want to check if the scheduler is enabled?"
     Write-Host "3`: Stop new backups        Do you want to stop the scheduler or expiration right now?  This is to stop new backups being created."
-    Write-Host "4`: Mount one image         Do you want to run mount jobs one at a time to find good images?"
-    Write-Host "5`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
-    Write-Host "6`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
+    Write-Host "4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
+    Write-Host "5`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
+    Write-Host "6`: UnMount your images     Do you want to unmount the images we mounted in step 5"
     write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
     write-host "8`: Exit"
     Write-Host ""
@@ -86,28 +86,18 @@ function Start-AGMLibRansomwareRecovery
         {
             Clear-Host
             Set-AGMLibSLA
+            Read-Host -Prompt "Press enter to continue"
             Start-AGMLibRansomwareRecovery
         } else {
             return
         }
 
    }
+
    if ($userselection -eq 4) 
    {  
         Clear-Host
-        Write-Host "4`: Mount one image"
-        Write-Host ""
-        Write-Host "There are several functions to run mounts depending on Application type:"
-        write-host ""
-        Write-host "FileSystems:      New-AGMLibFSMount"
-        Write-host "MS SQLServer DB:  New-AGMLibMSSQLMount"
-        Write-host "Oracle DB:        New-AGMLibOracleMount"
-        Write-host "VMware VM:        New-AGMLibVM"
-   }
-   if ($userselection -eq 5) 
-   {  
-        Clear-Host
-        Write-Host "5`: Create an image list"
+        Write-Host "4`: Create an image list"
         Write-Host ""
         Write-Host "The function you need to run is:   Get-AGMLibImageRange"
         Write-Host ""
@@ -123,10 +113,10 @@ function Start-AGMLibRansomwareRecovery
             return
         }
    }
-   if ($userselection -eq 6) 
+   if ($userselection -eq 5) 
    {  
         Clear-Host
-        Write-Host "6`: Mount your image list"
+        Write-Host "5`: Mount your image list"
         Write-Host ""
         Write-Host "The function you need to run is:   New-AGMLibMultiMount"
         Write-Host ""
@@ -136,9 +126,40 @@ function Start-AGMLibRansomwareRecovery
         if ($userselection2 -eq 2)
         {
             New-AGMLibMultiMount
+
         } else {
             return
         }
+   }
+   if ($userselection -eq 6) 
+   {  
+        Clear-Host
+        Write-Host "6`: UnMount your images"
+        Write-Host ""
+        Write-Host "The functions you need to run are:   Get-AGMLibActiveImage and Remove-AGMMount"
+        Write-Host ""
+        Write-Host "1`: Exit, I will run them later (default)"
+        Write-Host "2`: Guide me now"
+        [int]$userselection2 = Read-Host "Please select from this list [1-2]"
+        if ($userselection2 -ne 2)
+        {
+            return
+        }
+        Clear-Host
+        [string]$labelsearch = Read-Host "Enter the label that was used for the multi-mount"
+        if ($labelsearch)
+        {
+            $mountgrab = Get-AGMLibActiveImage -label $labelsearch
+        }
+        if ($mountgrab.imagename.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any mounted images with label $labelsearch"
+            return
+        }
+        write-host "Current Mounts with label $labelsearch"
+        $mountgrab | Format-Table
+        write-host ""
+        Write-Host " "
    }
 
    if ($userselection -eq 7) 

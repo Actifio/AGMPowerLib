@@ -385,6 +385,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         write-host -nonewline "Get-AGMLibImageRange"
         if ($appid) { write-host -nonewline " -appid $appid" }
         if ($appname) { write-host -nonewline " -appname $appname" }
+        if ($sltname) { write-host -nonewline " -sltname $sltname" }
         if ($apptype) { write-host -nonewline " -apptype $apptype" }
         if ($olderlimit) { write-host -nonewline " -olderlimit $olderlimit" }
         if ($newerlimit) { write-host -nonewline " -newerlimit $newerlimit" }
