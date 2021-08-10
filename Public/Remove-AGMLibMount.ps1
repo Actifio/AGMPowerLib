@@ -39,6 +39,11 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         Read-Host -Prompt "Press enter to display the current mounts"
         Clear-Host
         $mountgrab = Get-AGMLibActiveImage 
+        if ($mountgrab.errormessage)
+        {
+            $mountgrab
+            return
+        }
         if ($mountgrab.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any mounted images with Get-AGMLibActiveImage"
