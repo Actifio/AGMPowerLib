@@ -125,6 +125,7 @@ Function Get-AGMLibActiveImage([string]$label,[string]$appid,[string]$jobclass,[
             else 
             {
                 $AGMArray += [pscustomobject]@{
+                    id = $id.id
                     imagename = $id.backupname
                     apptype = $id.apptype
                     appliancename = $id.appliancename

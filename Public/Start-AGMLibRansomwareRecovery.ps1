@@ -26,7 +26,7 @@ function Start-AGMLibRansomwareRecovery
     Write-Host "3`: Stop new backups        Do you want to stop the scheduler or expiration right now?  This is to stop new backups being created."
     Write-Host "4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
     Write-Host "5`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
-    Write-Host "6`: UnMount your images     Do you want to unmount the images we mounted in step 5"
+    Write-Host "6`: Unmount your images     Do you want to unmount the images we mounted in step 5"
     write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
     write-host "8`: Exit"
     Write-Host ""
@@ -134,33 +134,19 @@ function Start-AGMLibRansomwareRecovery
    if ($userselection -eq 6) 
    {  
         Clear-Host
-        Write-Host "6`: UnMount your images"
+        Write-Host "6`: Unmount your images"
         Write-Host ""
-        Write-Host "The functions you need to run are:   Get-AGMLibActiveImage and Remove-AGMMount"
+        Write-Host "The function you need to run is:   Remove-AGMLibMount"
         Write-Host ""
-        Write-Host "1`: Exit, I will run them later (default)"
+        Write-Host "1`: Exit, I will run this later (default)"
         Write-Host "2`: Guide me now"
         [int]$userselection2 = Read-Host "Please select from this list [1-2]"
         if ($userselection2 -ne 2)
         {
             return
         }
-        Clear-Host
-        [string]$labelsearch = Read-Host "Enter the label that was used for the multi-mount"
-        if ($labelsearch)
-        {
-            $mountgrab = Get-AGMLibActiveImage -label $labelsearch
-        }
-        if ($mountgrab.imagename.count -eq 0)
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find any mounted images with label $labelsearch"
-            return
-        }
-        write-host "Current Mounts with label $labelsearch"
-        $mountgrab | Format-Table
-        write-host ""
-        Write-Host " "
-   }
+        Remove-AGMLibMount
+   }    
 
    if ($userselection -eq 7) 
    {  

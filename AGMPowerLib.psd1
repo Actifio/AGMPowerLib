@@ -104,6 +104,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibMSSQLMigrate',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
+'Remove-AGMLibMount',
 'Restore-AGMLibMount',
 'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
@@ -149,6 +150,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.31] 2021-08
+        Added Remove-AGMLibMount
+
         ## [0.0.0.30] 2021-07-27
         Improved New-AGMLibMultiMount help
 
