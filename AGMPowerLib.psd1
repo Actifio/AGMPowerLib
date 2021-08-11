@@ -150,8 +150,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.31] 2021-08
-        Added Remove-AGMLibMount
+        ## [0.0.0.31] 2021-08-11
+        Added Remove-AGMLibMount   Improved Start-AGMLibRansomwareRecovery
 
         ## [0.0.0.30] 2021-07-27
         Improved New-AGMLibMultiMount help
