@@ -1097,7 +1097,6 @@ udstask setparameter -param reservedondemandslots -value 10
 udstask setparameter -param maxondemandslots -value 15
 ```
 
-
 ### Managing the mounted GCE Instance 
 
 Once we have created a new GCP Instance, there is no dependency on Actifio because the disks for the instance were created from the snapshots stored in Google Cloud Storage, rather than an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
