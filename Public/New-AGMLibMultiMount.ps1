@@ -1,4 +1,4 @@
-Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hostid,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
+Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostlist,[string]$hostid,[string]$mountpoint,[switch][alias("a")]$appnamesuffix, [switch][alias("h")]$hostnamesuffix,[switch][alias("c")]$condatesuffix,[switch][alias("i")]$imagesuffix,[string]$label,[int]$startindex) 
 {
     <#
     .SYNOPSIS
@@ -66,49 +66,199 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hosti
     }
 
     # guided menu
-    if ((!($mountpoint)) -and (!($imagelist)))
+    if ((!($mountpoint)) -and (!($imagelist)) -and (!($csvfile)))
     {
         Write-host "This function is used to start a large number of file system mounts in a single command.  This is done by supplying:"
-        Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange and then put into a variable"
-        Write-Host "-- A host list or a host ID which will be our target hosts.  We learn these with Get-AGMHost" 
+        Write-host "-- A list of images to mount, normally created with New-AGMLibImageRange and then placed into a CSV file"
+        Write-Host "-- A host list or a host ID which will be our scanning hosts that we use to check our images" 
         Write-host "-- A mount point with parameters"
         Write-host ""
-        Write-host "We require an imagelist. This needs to be created with Get-AGMLibImageRange.  If you have not created it, then quit out, run that command first and then come back here when done"
-        [array]$imagelist = Read-Host "Supply the image list array name (or quit out now)"
-        if (!($imagelist.imagename))
-        {
-            Get-AGMErrorMessage -messagetoprint "Imagelist needs to be created with Get-AGMLibImageRange"
-            return
-        }
-        # host ID list
-        Write-host ""
-        Write-Host "You now need to supply a list of host IDs to mount to.  These hosts need to have the same OS (only Windows or only Linux)"
-        Write-Host "Make sure the hosts are on the same appliance name as the images"
-        Write-Host 'To get this list, run this command:   Get-AGMHost -sort hostname:asc  | select id,hostname,ostype,{$_.appliance.name}'
-        Write-host ""
-        Write-Host "1`: I have the host IDs, let me enter them"
-        Write-Host "2`: I need to learn them. "
-        $userchoice = Read-Host "Please select from this list (1-2)"
-        if ($userchoice -eq 1)
-        {
-            While ($true)  { if ($hostgrab.length -eq 0) { 
-                [string]$hostgrab = Read-Host "Please supply host IDs, comma separated, like:    1234,5467,9012"
-            } else { break } }
-            $hostlist = @($hostgrab)
-        }   
-        else 
-        {
-            return
-        }
+        write-host "The end result will be that we will mount all the listed images on our scanning hosts so they can be checked"
         write-host ""
+        Write-host "We first require an imagelist file in CSV format. This needs to be created with Get-AGMLibImageRange and exported to a CSV file."
+        Write-host "If you have not created it, then choose Exit, run that command first and work with the output and then come back here when done"
+        Write-host ""
+        Write-Host "1`: I have the image list as a file"
+        Write-Host "2`: I need to run Get-AGMLibImageRange to create the CSV file"
+        Write-Host "3`: Exit"
+        $userchoice1 = Read-Host "Please select from this list (1-3)"
+        if ($userchoice1 -eq "" -or $userchoice1 -eq 3) { return }
+        if ($userchoice1 -eq 1)
+        {
+            [string]$filename = Read-Host "Supply the file name in CSV format"
+            if ( Test-Path $filename )
+            {
+                $imagelist = Import-Csv -Path $filename
+                if (!($imagelist.backupname))
+                {
+                    Get-AGMErrorMessage -messagetoprint "The file named $filename does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
+                    return
+                }
+            }
+            else
+            {
+                Get-AGMErrorMessage -messagetoprint "The file named $filename could not be found."
+                return;
+            }
+        }
+        if ($userchoice1 -eq 2)
+        {
+            Get-AGMLibImageRange6
+            
+            return
+        }
+        
+        # host ID list
+        Clear-Host
+        Write-Host "You now need to supply a list of host IDs to mount to.  These hosts need to have the same OS (either Linux or Win32)"
+        Write-Host "Make sure the hosts are on the same appliance name as the images"
+        Write-host ""
+        Write-Host "1`: Show me the hosts and I will select them "
+        Write-Host "2`: Exit"
+        $userchoice2 = Read-Host "Please select from this list (1-3)"
+        if ($userchoice2 -eq "" -or $userchoice2 -eq 2) { return }
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run these mounts"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+        }
+        if ($userchoice2 -eq 1) 
+        {
+            Clear-Host
+            Write-Host "Are the scanning hosts Linux or Windows?"
+            Write-host ""
+            Write-Host "1`: Linux"
+            Write-Host "2`: Windows"
+            Write-Host "3`: Exit"
+            $userchoice3 = Read-Host "Please select from this list (1-3)"
+            if ($userchoice3 -eq "" -or $userchoice3 -eq 3)  { return }
+            if ($userchoice3 -eq 1)
+            {
+                $ostype = "Linux"
+                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+            }
+            if ($userchoice3 -eq 2)
+            {
+                $ostype = "Win32"
+                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+            }
+            if ($hostgrab.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "No hosts were found with selected ostype $ostype"
+                return
+            }
+
+            Clear-Host
+            Write-Host "Target host selection menu"
+            $hostgrab  | Select-Object id,hostname,ostype,{$_.appliance.name} | Format-Table
+            write-host ""
+            [string]$hostselection = Read-Host "Please select all hosts using their ID, comma separated"
+            $hostlist = @($hostselection)
+        }
+        # mount point
+        Clear-Host
         While ($true)  { if ($fieldsep.length -eq 0) {  
-            [string]$mountpoint = Read-Host "Please supply a mount point such as /tmp/testmount/ or C:\Temp\  making sure to add the trailing slash as shown" 
-            if ($mountpoint -match '\\$') { $fieldsep = "\" }
-            if ($mountpoint -match '/$') { $fieldsep = "/" }
+            if ($ostype -eq "Linux")
+            {
+                [string]$mountpoint = Read-Host "You now need to supply a mount point such as /tmp/testmount/   making sure to add the trailing slash as shown" 
+                if ($mountpoint -match '/$') { $fieldsep = "/" }
+            }
+            if ($ostype -eq "Win32")
+            {
+                [string]$mountpoint = Read-Host "You now need to supply a mount point such as  C:\Temp\  making sure to add the trailing slash as shown" 
+                if ($mountpoint -match '\\$') { $fieldsep = "\" }
+            }
         } else { break } }
+        # labels
+        Clear-Host
+        write-host "Labels are used to help find the images later, if you hit enter without typing anything, the label will default to: MultiFS Recovery"
+        write-host ""
+        $labelgrab = Read-host "Enter a Label if you want to use something different to `'MultiFS Recovery`'"
+        if (!($labelgrab))
+        {
+            $label = "MultiFS Recovery"
+        }
+        else {
+            $label = $labelgrab
+        }
+        Clear-Host
+        Write-host "Finally we need to choose which suffixes we will use in the mount points to both guarantee uniqueness and make the images easy to find"
+        Write-host " There are four mechanisms to get unique mount names."
+        Write-host " 1)  You can specify -h and the Host Name will be used as part of the mount point"
+        Write-host " 2)  You can specify -a and the App Name will be used as part of the mount point"
+        Write-host " 3)  You can specify -i and the Image Name will be used as part of the mount point"
+        Write-host " 4)  You can specify -c and the Consistency Date will be used as part of the mountpoint"
+        write-host
+        $hostoptiongrab = Read-Host "Do you want to use the hostname as part of the mount point (y/Y)"
+        if ($hostoptiongrab -eq "y" -or $hostoptiongrab -eq "Y ") 
+        { 
+            $hostnamesuffix = $true 
+            $suffixoptions = " -hostnamesuffix"
+        }
+        $appoptiongrab = Read-Host "Do you want to use the app name as part of the mount point (y/Y)"
+        if ($appoptiongrab -eq "y" -or $appoptiongrab -eq "Y ") 
+        { 
+            $appnamesuffix = $true 
+            $suffixoptions = $suffixoptions +" -appnamesuffix"
+        }
+        $imageoptiongrab = Read-Host "Do you want to use imagename as part of the mount point (y/Y)"
+        if ($imageoptiongrab -eq "y" -or $imageoptiongrab -eq "Y ") 
+        { 
+            $imagesuffix = $true 
+            $suffixoptions = $suffixoptions +" -imagesuffix"
+        }
+        $condateoptiongrab = Read-Host "Do you want to use consistency date as part of the mount point (y/Y)"
+        if ($condateoptiongrab -eq "y" -or $condateoptiongrab -eq "Y ") 
+        { 
+            $condatesuffix = $true 
+            $suffixoptions = $suffixoptions +" -condatesuffix"
+        }
+        Clear-Host
+        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host ""
+        Write-Host "New-AGMLibMultiMount -csvfile $filename -mountpoint `"$mountpoint`" -hostlist $hostselection -label `"$label`" $suffixoptions"  
+        Write-Host ""
+        Write-Host "1`: Run the command now"
+        Write-Host "2`: Exit without running the command"
+        $appuserchoice = Read-Host "Please select from this list (1-2)"
+        if ($appuserchoice -eq "") { $appuserchoice = 2}
+        if ($appuserchoice -eq 2)
+        {
+            return
+        }
     }
-
-
 
 
     if (!($mountpoint))
@@ -128,6 +278,23 @@ Function New-AGMLibMultiMount ([array]$imagelist,[array]$hostlist,[string]$hosti
         return
     }
 
+    if ($csvfile)
+    {
+        if ( Test-Path $filename )
+        {
+            $imagelist = Import-Csv -Path $filename
+            if (!($imagelist.backupname))
+            {
+                Get-AGMErrorMessage -messagetoprint "The file named $filename does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
+                return
+            }
+        }
+        else
+        {
+            Get-AGMErrorMessage -messagetoprint "The file named $filename could not be found."
+            return
+        }
+    }
 
 
     if (!($imagelist))

@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.30'
+ModuleVersion = '0.0.0.31'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -104,6 +104,7 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'New-AGMLibMSSQLMigrate',
 'New-AGMLibSystemStateToVM',
 'New-AGMLibVMExisting',
+'Remove-AGMLibMount',
 'Restore-AGMLibMount',
 'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
@@ -149,6 +150,12 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.31] 2021-08
+        Added Remove-AGMLibMount
+
+        ## [0.0.0.30] 2021-07-27
+        Improved New-AGMLibMultiMount help
+
         ## [0.0.0.30] 2021-07-09
         Added ostype and label field to Get-AGMLibImageRange.  Also added a lot more help info.
         Give Hostname and appname when running Start-AGMLibPolicy

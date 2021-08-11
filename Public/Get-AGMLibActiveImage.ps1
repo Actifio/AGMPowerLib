@@ -1,4 +1,4 @@
-Function Get-AGMLibActiveImage([string]$appid,[string]$jobclass,[switch][alias("i")]$imageidprint,[switch][alias("n")]$nfsprint,[switch][alias("u")]$unmount) 
+Function Get-AGMLibActiveImage([string]$label,[string]$appid,[string]$jobclass,[switch][alias("i")]$imageidprint,[switch][alias("n")]$nfsprint,[switch][alias("u")]$unmount) 
 {
     <#
     .SYNOPSIS
@@ -48,6 +48,10 @@ Function Get-AGMLibActiveImage([string]$appid,[string]$jobclass,[switch][alias("
     if ($appid) 
     {
         $fv = $fv + "&appid=$id" 
+    }
+    if ($label)
+    {
+        $fv = $fv + "&label=$label" 
     }
    
     
@@ -121,6 +125,7 @@ Function Get-AGMLibActiveImage([string]$appid,[string]$jobclass,[switch][alias("
             else 
             {
                 $AGMArray += [pscustomobject]@{
+                    id = $id.id
                     imagename = $id.backupname
                     apptype = $id.apptype
                     appliancename = $id.appliancename

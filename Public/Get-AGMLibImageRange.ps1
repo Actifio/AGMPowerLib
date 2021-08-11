@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
+Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,[switch]$every,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -84,7 +84,7 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
 
     In this example we grab 20 days of images:
 
-    Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 20 | Export-Csv -Path .\images.csv
+    Get-AGMLibImageRange -apptype FileSystem -appliancename sa-sky -olderlimit 20 -csvfile images.csv
     We now edit the CSV we created images.csv to remove images we don't want. We then import what is left into our $imagelist variable:
 
     $imagelist = Import-Csv -Path .\images.csv
@@ -106,7 +106,305 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
             return
         }
     }
-    
+
+    if ((!($appid)) -and (!($appname)) -and (!($fuzzyappname)) -and (!($apptype)) -and (!($sltname)) -and (!($every)))
+    { 
+        Clear-Host
+        write-host "This is a function to find a range of images available for an application"
+        Write-host "We need to search either with appid, appname, fuzzyappname, apptype or sltname"
+        write-host "Alternatively we can just grab every image"
+        write-host ""
+        write-host "Please read the help for this command carefully to determine how to use the output.  Get-Help Get-AGMLibImageRange"
+        write-host ""
+        Write-Host "1`: Run a guided menu to help me build a command"
+        Write-Host "2`: Exit"
+        $userchoice = Read-Host "Please select from this list (1-2)"
+        if ($userchoice -eq "" -or $userchoice2 -eq 2) { return }
+        Clear-Host
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
+            return
+        }
+        if ($appliancegrab.count -gt 1)
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run these mounts."
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $clusterid =  $appliancegrab.clusterid[($appselection - 1)]
+            $appliancename =  $appliancegrab.name[($appselection - 1)]
+        }
+        $userchoice = ""
+        Clear-Host
+        Write-host "Search method"
+        Write-host ""
+        Write-Host "1`: appid"
+        Write-Host "2`: appname"
+        Write-Host "3`: apptype"
+        Write-Host "4`: fuzzyappname"
+        Write-Host "5`: sltname"
+        Write-Host "6`: give me everything"
+        $userchoice = Read-Host "Please select from this list (1-6)"
+        if ($userchoice -eq 1) 
+        {
+            if ($clusterid)
+            {
+                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            else {
+                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            
+            if ($datagrab.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any Applications"
+                return
+            }
+            $printarray = @()
+            $i = 1
+            foreach ($app in $datagrab)
+            {
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    appid = $app.id
+                    hostname = $app.host.hostname
+                    appname = $app.appname
+                    apptype = $app.apptype
+                }
+                $i += 1
+            }
+            clear-host
+            write-host "Please select an application"
+            $printarray | Format-Table 
+            $listmax = $printarray.appid.count
+            While ($true) 
+            {
+                [int]$userchoice = Read-Host "Please select from this list (1-$listmax)"
+                if ($userchoice -lt 1 -or $userchoice -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $appid = $printarray.appid[$userchoice-1]
+        }
+        if ($userchoice -eq 2) 
+        {
+            if ($clusterid)
+            {
+                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            else {
+                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            if ($datagrab.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any Applications"
+                return
+            }
+            $printarray = @()
+            $i = 1
+            foreach ($app in $datagrab)
+            {
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    appid = $app.id
+                    hostname = $app.host.hostname
+                    appname = $app.appname
+                    apptype = $app.apptype
+                }
+                $i += 1
+            }
+            clear-host
+            write-host "Please select an application"
+            $printarray | Format-Table 
+            $listmax = $printarray.appid.count
+            While ($true) 
+            {
+                [int]$userchoice = Read-Host "Please select from this list (1-$listmax)"
+                if ($userchoice -lt 1 -or $userchoice -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $appname = $printarray.appname[$userchoice-1]
+        }
+        if ($userchoice -eq 3) 
+        {
+            $datagrab = Get-AGMApplicationTypes 
+            if ($datagrab.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any Application types"
+                return
+            }
+            Clear-Host
+            write-host "Please select an application type"
+            $i = 1
+            foreach ($type in $datagrab)
+            { 
+                Write-Host -Object "$i`: $type"
+                $i++
+            }
+            $userselection = ""
+            Write-host ""
+            $listmax = $datagrab.count
+            [int]$userselection = Read-Host "Please select an Application Type (1-$listmax)"
+            $apptype=$datagrab[($userselection - 1)]
+        }
+        if ($userchoice -eq 4) 
+        {
+            if ($clusterid)
+            {
+                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            else {
+                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
+            }
+            if ($datagrab.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any Applications"
+                return
+            }
+            $printarray = @()
+            $i = 1
+            foreach ($app in $datagrab)
+            {
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    appid = $app.id
+                    hostname = $app.host.hostname
+                    appname = $app.appname
+                    apptype = $app.apptype
+                }
+                $i += 1
+            }
+            clear-host
+            write-host "Please examine the app names to determine a good fuzzy appname"
+            $printarray | Format-Table 
+            $listmax = $printarray.appid.count
+            While ($true) 
+            {
+                [string]$fuzzyappname = Read-Host "Please enter a fuzzy app name"
+                if ($fuzzyappname -eq "")
+                {
+                    Write-Host -Object "Fuzzy appname cannot be blank"
+                } 
+                else
+                {
+                    break
+                }
+            }
+        }
+        if ($userchoice -eq 5) 
+        {
+            $datagrab = Get-AGMSLT -sort name:asc
+            if ($datagrab.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any SLTs"
+                return
+            }
+            Clear-Host
+            $i = 1
+            foreach ($sltname in $datagrab.name)
+            { 
+                Write-Host -Object "$i`: $sltname"
+                $i++
+            }
+            $userselection = ""
+            Write-host ""
+            $listmax = $datagrab.name.count
+            [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
+            $sltname =  $datagrab.name[($userselection - 1)]
+        }   
+        Clear-Host
+        Write-host "We need to determine what time period method we use to find images."
+        Write-host ""
+        Write-Host "1`: Search in days (default)"
+        Write-Host "2`: Search in hours"
+        [int]$userchoice = Read-Host "Please select from this list (1-2)"
+        if ($userchoice -eq 2) { $hours = $true }
+        if ($hours)
+        {
+            write-host "The Olderlimit determines how far back in time we look for images.  By default it is 1 hour."
+            [int]$olderlimit = Read-Host "Olderlimit"
+            write-host "The Newerlimit determines how close to today we look for images. If you specify 2, then no image created in the last 2 hours will be listed"
+            [int]$newerlimit = Read-Host "Newerlimit"
+        } 
+        else    
+        {
+            write-host "The Olderlimit determines how far back in time we look for images.  By default it is 1 day."
+            [int]$olderlimit = Read-Host "Olderlimit"
+            write-host "The Newerlimit determines how close to today we look for images. If you specify 2, then no image created in the last 2 days will be listed"
+            [int]$newerlimit = Read-Host "Newerlimit"
+
+        }
+        Write-host "Optionally you can supply a consistency date in ISO format to use as the date to work with rather than the current date"
+        [string]$consistencydate = Read-Host "Hit enter or type a date in format like 2021-07-28 12:00"
+
+        Write-host "We need to determine which jobclass to display."
+        Write-host ""
+        Write-Host "1`: Snapshot only(default)"
+        Write-Host "2`: Snapshot and OnVault"
+        Write-Host "3`: OnVault only"
+        [int]$userchoice = Read-Host "Please select from this list (1-3)"
+        if ($userchoice -eq 2) { $onvault = $true }
+        if ($userchoice -eq 3) { $jobclass = "OnVault" } 
+
+        [string]$csvfile = Read-Host "Please supply a file name to write out a CSV file (or press enter to display to the screen)"
+        Clear-Host
+        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host ""
+        write-host -nonewline "Get-AGMLibImageRange"
+        if ($appid) { write-host -nonewline " -appid $appid" }
+        if ($appname) { write-host -nonewline " -appname $appname" }
+        if ($sltname) { write-host -nonewline " -sltname $sltname" }
+        if ($apptype) { write-host -nonewline " -apptype $apptype" }
+        if ($olderlimit) { write-host -nonewline " -olderlimit $olderlimit" }
+        if ($newerlimit) { write-host -nonewline " -newerlimit $newerlimit" }
+        if ($hours) { write-host -nonewline " -hours" }
+        if ($jobclass) { write-host -nonewline " -jobclass $jobclass" }
+        if ($onvault) { write-host -nonewline " -onvault" }
+        if ($csvfile) { write-host -nonewline " -csvfile $csvfile" }
+        if ($clusterid) { write-host -nonewline "-clusterid $clusterid"}
+        Write-Host ""
+        Write-Host "1`: Run the command now"
+        Write-Host "2`: Exit without running the command"
+        $appuserchoice = Read-Host "Please select from this list (1-3)"
+        if ($appuserchoice -eq 2) { return }
+    }
+
+
+    # just to start fv off
+    $fv = ""
+    # normally I expect to have one of these three, but only one, not all three
     if ($appid)
     { 
         $fv = "appid=$appid"
@@ -119,43 +417,26 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     {
         $fv = "appname~" + $fuzzyappname
     }
-
-    if ( (!($fv)) -and ($apptype) )
-    {
-        $fv = "apptype=" + $apptype
-    }
-    elseif ( ($fv) -and ($apptype) )
+    # what about apptype
+    if ($apptype) 
     {
         $fv = $fv + "&apptype=" + $apptype
     }
 
-    # search for policyname
-    if ( (!($fv)) -and ($policyname) )
-    {
-        $fv = "policyname=" + $policyname
-    }
-    elseif ( ($fv) -and ($policyname) )
-    {
-        $fv = $fv + "&policyname=" + $policyname
-    }
 
     # search for sltname
-    if ( (!($fv)) -and ($sltname) )
-    {
-        $fv = "sltname=" + $sltname
-    }
-    elseif ( ($fv) -and ($sltname) )
+    if ($sltname) 
     {
         $fv = $fv + "&sltname=" + $sltname
     }
  
-    if (!($fv))
-    { 
-        write-host "This is a function to find a range of images available for an application"
-        Write-host "Please specify either appid, appname, fuzzyappname, apptype, sltname, or policyname."
-        write-host ""
-        write-host "Please read the help for this command carefully to determine how to use the output.  Get-Help Get-AGMLibImageRange"
-        return
+    # if after all this the first character in fv is & we have an issue, so chop it off
+    if ($fv)
+    {
+        if ($fv.substring(0,1) -eq "&")
+        {
+            $fv=$fv.substring(1) 
+        }
     }
 
     $appfv = $fv
@@ -163,19 +444,21 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
     if ($jobclass -eq "onvault") {  $jobclass = "OnVault" }
     if ($jobclass -eq "snapshot") {  $jobclass = "snapshot" }
 
-    if ($jobclass)
+    if ($jobclass) 
     {
-        $fv = $fv + "&jobclass=$jobclass"
+        $fv = $fv + "&jobclass=" +$jobclass
     }
-    else 
+    else
     {
         $fv = $fv + "&jobclass=snapshot"
-    }
+    }   
+
     # we offer two ways to ask for onvault, either -jobclass onVault   or just  -onvault  or even -o
-    if ($onvault)
+    if ($onvault) 
     {
         $fv = $fv + "&jobclass=OnVault"
     }
+
 
     if ($appliancename)
     { 
@@ -187,14 +470,11 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         }
     }
 
-
-    if ($clusterid)
+    if ($clusterid) 
     {
         $fv = $fv + "&clusterid=$clusterid"
     }
-
-
-
+    
     if ( (!($newerlimit)) -and (!($olderlimit)) )
     {
         if (!($consistencydate))
@@ -278,6 +558,14 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         $fv = $fv + "&consistencydate>$lowerrange&consistencydate<$upperrange"
     }
 
+      # if after all this the first character in fv is & we have an issue, so chop it off
+      if ($fv)
+      {
+          if ($fv.substring(0,1) -eq "&")
+          {
+              $fv=$fv.substring(1) 
+          }
+      }
 
     $imagegrab = Get-AGMImage -filtervalue "$fv" -sort ConsistencyDate:desc
     $applicationgrab = Get-AGMApplication -filtervalue "$appfv"
@@ -310,19 +598,33 @@ Function Get-AGMLibImageRange([string]$appid,[string]$jobclass,[string]$appname,
         }
         if ($onvault)
         {
-            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode
+            if (!($csvfile))
+            {
+                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode
+            }
+            else {
+                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode | Export-Csv -Path $csvfile
+            }
         }
         else 
         {
-            $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate
+            if (!($csvfile))
+            {
+                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate
+            }
+            else {
+                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate | Export-Csv -Path $csvfile
+            }
         }
     }
     else
     {
-        $imagegrab
+        if (!($csvfile))
+        {
+            $imagegrab
+        }
+        else {
+            $imagegrab | Export-Csv -Path $csvfile
+        }
     }
-
-
-
-
 }
