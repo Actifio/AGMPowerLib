@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.31'
+ModuleVersion = '0.0.0.32'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -73,7 +73,8 @@ RequiredModules = @('AGMPowerCLI')
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Get-AGMLibActiveImage',
+FunctionsToExport = @('Export-AGMLibSLT',
+'Get-AGMLibActiveImage',
 'Get-AGMLibApplicationID',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibContainerYAML',
@@ -150,6 +151,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.32] 2021-08-18
+        Added Export-AGMLibSLT
+
         ## [0.0.0.31] 2021-08-11
         Added Remove-AGMLibMount   Improved Start-AGMLibRansomwareRecovery
 
