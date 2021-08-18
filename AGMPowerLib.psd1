@@ -89,6 +89,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibRunningJobs',
 'Get-AGMLibSLA',
 'Get-AGMLibWorkflowStatus',
+'Import-AGMLibSLT',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
@@ -152,7 +153,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.32] 2021-08-18
-        Added Export-AGMLibSLT
+        Added Export-AGMLibSLT and Import-AGMLibSLT
 
         ## [0.0.0.31] 2021-08-11
         Added Remove-AGMLibMount   Improved Start-AGMLibRansomwareRecovery

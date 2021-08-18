@@ -8,6 +8,10 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
     Export-AGMLibSLT -all -filename outfile.json
     Exports all SLTs to a file called outfile.json
 
+    .EXAMPLE
+    Export-AGMLibSLT -sltids "1234,5678" -filename outfile.json
+    Exports the SLTs with IDS 1234 and 5678 to a file called outfile.json
+
     .DESCRIPTION
     A function to export Policy Templates
 
