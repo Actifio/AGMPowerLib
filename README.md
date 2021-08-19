@@ -15,6 +15,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+**[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 
 
 ## Prerequisites
@@ -1129,3 +1130,59 @@ PS /tmp/agmpowercli>
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
 ```
+## User Story: Importing and Exporting AGM Policy Templates
+
+In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them to a different AGM.
+First we login to the source AGM and validate our SLTs.
+
+```
+PS /Users/avw> Connect-AGM 10.152.0.5 admin -passwordfile userpass.key -i
+Login Successful!
+PS /Users/avw> Get-AGMSLT | select id,name
+
+id    name
+--    ----
+25606 FSSnaps_RW_OV
+17796 FSSnaps
+6523  Snap2OV
+6392  PDSnaps
+```
+Now we export all the SLTs to a file called export.json
+```
+PS /Users/avw> Export-AGMLibSLT -all -filename export.json
+```
+We now login to our target AGM
+```
+PS /Users/avw> connect-agm 10.194.0.3 admin -passwordfile userpass.key -i
+Login Successful!
+```
+We validate there are no Templates.   Currently this function expects there to be no templates in the target.  However if there are, as long as there are no name clashes, the import will still succeed.  In this example there are no templates in the target.
+```
+PS /Users/avw> Get-AGMSLT
+
+count items
+----- -----
+    0 {}
+
+PS /Users/avw>
+```
+We now import the Templates and then validate we now have four imported SLTs:
+```
+PS /Users/avw> Import-AGMLibSLT -filename export.json
+
+count items
+----- -----
+    4 {@{@type=sltRest; id=21067; href=https://10.194.0.3/actifio/slt/21067; name=FSSnaps_RW_OV; override=true; policy_href=https://10.194.0.3/actifio/slt/21067/policy}, @{@type=sltRest; id=21070; href=https://10.194.0.3/acti…
+
+PS /Users/avw> Get-AGMSLT | select id,name
+
+id    name
+--    ----
+21081 PDSnaps
+21072 Snap2OV
+21070 FSSnaps
+21067 FSSnaps_RW_OV
+
+PS /Users/avw>
+```
+Our import is now complete.
