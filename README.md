@@ -1132,7 +1132,8 @@ PS /tmp/agmpowercli>
 ```
 ## User Story: Importing and Exporting AGM Policy Templates
 
-In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them to a different AGM.
+In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them into a different AGM.
+
 First we login to the source AGM and validate our SLTs.
 
 ```
@@ -1147,11 +1148,11 @@ id    name
 6523  Snap2OV
 6392  PDSnaps
 ```
-Now we export all the SLTs to a file called export.json
+We now export all the SLTs to a file called export.json.  If we only want to export specific SLTs, then don't specify **-all** and you will get a help menu.
 ```
 PS /Users/avw> Export-AGMLibSLT -all -filename export.json
 ```
-We now login to our target AGM
+We now login to our target AGM:
 ```
 PS /Users/avw> connect-agm 10.194.0.3 admin -passwordfile userpass.key -i
 Login Successful!
