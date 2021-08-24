@@ -135,19 +135,14 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         
         Write-Host ""
-        Write-Host "Do you want to have the selected appliance take ownership of any images.   Default is no"
+        Write-Host "Do you want to have the selected appliance take ownership of any images. "
         Write-Host ""
         Write-Host "1`: Don't take ownership (default)"
-        Write-Host "2`: Take ownership"
+        Write-Host "2`: Take ownership of any imported images"
+        write-host "3': Forget any imported images (rather than importing new ones)"
         $ownerchoice = Read-Host "Please select from this list (1-2)"
         if ($ownerchoice -eq 2) { $owner = $true}
-        Write-Host ""
-        Write-Host "Do you want to have the selected appliance forget any discovered images.   Default is no"
-        Write-Host ""
-        Write-Host "1`: Don't forget discovered images (default)"
-        Write-Host "2`: Forget images"
-        $forgetchoice = Read-Host "Please select from this list (1-2)"
-        if ($forgetchoice -eq 2) { $forget = $true}
+        if ($ownerchoice -eq 3) { $forget = $true}
         
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
