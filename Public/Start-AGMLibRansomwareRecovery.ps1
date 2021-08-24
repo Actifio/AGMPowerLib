@@ -338,7 +338,7 @@ function Start-AGMLibRansomwareRecovery
         While ($true) 
         {
             Write-host ""
-            $listmax = 8
+            $listmax = 9
             [int]$userselection2 = Read-Host "Please select from this list [1-$listmax]"
             if ($userselection2 -lt 1 -or $userselection2 -gt $listmax)
             {
