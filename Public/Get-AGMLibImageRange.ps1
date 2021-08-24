@@ -393,7 +393,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($jobclass) { write-host -nonewline " -jobclass $jobclass" }
         if ($onvault) { write-host -nonewline " -onvault" }
         if ($csvfile) { write-host -nonewline " -csvfile $csvfile" }
-        if ($clusterid) { write-host -nonewline "-clusterid $clusterid"}
+        if ($clusterid) { write-host -nonewline " -clusterid $clusterid"}
         Write-Host ""
         Write-Host "1`: Run the command now"
         Write-Host "2`: Exit without running the command"
