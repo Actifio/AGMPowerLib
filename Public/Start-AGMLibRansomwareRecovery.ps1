@@ -290,7 +290,7 @@ function Start-AGMLibRansomwareRecovery
         write-host "3`: Import AGM SLTs         Do you want to import Policy Templates into a new AGM?"
         Write-Host "4`: Check the scheduler     Do you want to check if the scheduler is enabled?"
         Write-Host "5`: Set the scheduler       Do you want to change the scheduler or expiration right now?  For instance to stop new backups being created."
-        write-host "6`: Take me back to the previous menu"
+        write-host "6`: Back                    Take me back to the previous menu"
         write-host "7`: Exit"
         Write-Host ""
         # ask the user to choose
@@ -331,7 +331,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "5`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
         Write-Host "6`: Unmount your images     Do you want to unmount the images we mounted in step 5"
         write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
-        write-host "8`: Take me back to the previous menu"
+        write-host "8`: Back                    Take me back to the previous menu"
         write-host "9`: Exit"
         Write-Host ""
         # ask the user to choose
