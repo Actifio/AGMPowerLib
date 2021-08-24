@@ -38,7 +38,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Export-AGMLibSLT
             Read-Host -Prompt "Press enter to continue"
@@ -65,7 +65,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Import-AGMLibSLT
             Read-Host -Prompt "Press enter to continue"
@@ -91,7 +91,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Get-AGMLibSLA
             Read-Host -Prompt "Press enter to continue"
@@ -117,7 +117,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Set-AGMLibSLA
             Read-Host -Prompt "Press enter to continue"
@@ -144,10 +144,9 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Import-AGMLibOnVault
-            Read-Host -Prompt "Press enter to continue"
             gcpactions
         } 
         elseif  ($userselection1 -eq 2) 
@@ -170,7 +169,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Get-AGMLibHostList
             Read-Host -Prompt "Press enter to continue"
@@ -196,7 +195,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Get-AGMLibImageRange
             Read-Host -Prompt "Press enter to continue"
@@ -222,7 +221,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             New-AGMLibMultiMount
             Read-Host -Prompt "Press enter to continue"
@@ -248,7 +247,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "2`: Take me back to the previous menu"
         Write-Host "3`: Exit, I will run this later "
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
-        if ($userselection1 -eq 1)
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
             Remove-AGMLibMount
             Read-Host -Prompt "Press enter to continue"
@@ -280,7 +279,7 @@ function Start-AGMLibRansomwareRecovery
    
    function onpremisesactions
    {  
-        clear-host
+        Write-Host ""
         Write-host "On-Premises actions for ransomware protection"
         write-host ""    
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
@@ -290,7 +289,7 @@ function Start-AGMLibRansomwareRecovery
         write-host "2`: Export AGM SLTs         Do you want to export your Policy Templates from AGM?"
         write-host "3`: Import AGM SLTs         Do you want to import Policy Templates into a new AGM?"
         Write-Host "4`: Check the scheduler     Do you want to check if the scheduler is enabled?"
-        Write-Host "5`: Stop new backups        Do you want to stop the scheduler or expiration right now?  This is to stop new backups being created."
+        Write-Host "5`: Set the scheduler       Do you want to change the scheduler or expiration right now?  For instance to stop new backups being created."
         write-host "6`: Take me back to the previous menu"
         write-host "7`: Exit"
         Write-Host ""
@@ -319,7 +318,7 @@ function Start-AGMLibRansomwareRecovery
    }
    function gcpactions
    {  
-        clear-host
+        Write-Host ""
         Write-host "Google Cloud Platorm actions for ransomware protection"
         Write-Host ""
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"

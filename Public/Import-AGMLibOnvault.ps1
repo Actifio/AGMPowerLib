@@ -48,6 +48,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     if ((!($diskpoolid)) -or (!($applianceid)))
     {
 
+        write-host ""
         Write-Host "This function is used to import Onvault images into an Appliance."
         Write-host "We need to determine which pool to import from and which appliance created the images to import"
         Write-host "If importing we also need to decide whether the importing appliance (which owns the selected pool) should take ownership of the imported images"
@@ -156,10 +157,9 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($owner) { Write-Host -nonewline " -owner" }
         if ($appid) { Write-Host -nonewline " -appid $appid" }
         Write-Host ""
-        Write-Host "1`: Run the command now"
-        Write-Host "2`: Exit without running the command (default)"
+        Write-Host "1`: Run the command now (default)"
+        Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
-        if ($appuserchoice -eq "") { $appuserchoice = 2}
         if ($appuserchoice -eq 2)
         {
             return

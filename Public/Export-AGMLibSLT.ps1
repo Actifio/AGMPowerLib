@@ -43,20 +43,10 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
         write-host "3`: Exit"
         Write-Host ""
         # ask the user to choose
-        While ($true) 
-        {
-            Write-host ""
-            $listmax = 3
-            [int]$userselection = Read-Host "Please select from this list [1-$listmax]"
-            if ($userselection -lt 1 -or $userselection -gt $listmax)
-            {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax)]"
-            } 
-            else
-            {
-                break
-            }
-        }
+
+        $listmax = 3
+        [int]$userselection = Read-Host "Please select from this list [1-$listmax]"
+            
         if (($userselection -eq 1) -or ($userselection -eq ""))
         {  
             $all = $true
@@ -86,10 +76,9 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
         if ($filename) { Write-Host -nonewline " -filename $filename" }
         if ($sltids) { Write-Host -nonewline " -sltids `"$sltids`"" }
         Write-Host ""
-        Write-Host "1`: Run the command now"
-        Write-Host "2`: Exit without running the command (default)"
+        Write-Host "1`: Run the command now (default)"
+        Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
-        if ($appuserchoice -eq "") { $appuserchoice = 2}
         if ($appuserchoice -eq 2)
         {
             return

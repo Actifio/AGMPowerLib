@@ -67,6 +67,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
     if ( (!($slaid)) -and (!($logicalgroupid)) -and (!($everysla)))
     {
         #guided mode
+        write-host ""
         Write-Host "This command is used to enable or disable the scheduler and/or expiration."
         Write-Host "This is either for a specific application, a specific logical group or every application"
         write-host ""

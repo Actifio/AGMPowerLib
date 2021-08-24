@@ -1,0 +1,258 @@
+{
+  "@type": "sltExportArchiveRest",
+  "export_date": 1629771873230,
+  "export_user": "admin",
+  "agm_version": "10.0.4.5684",
+  "items": [
+    {
+      "name": "D2OnVault",
+      "override": "true",
+      "sourcename": "D2OnVault",
+      "policies": [
+        {
+          "endtime": "86340",
+          "exclusioninterval": "1",
+          "exclusiontype": "none",
+          "name": "Daily OnVault",
+          "op": "DirectOnVault",
+          "verification": false,
+          "priority": "medium",
+          "retention": "14",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": true
+        }
+      ],
+      "managedbyagm": true
+    },
+    {
+      "name": "SnapOnly",
+      "override": "true",
+      "sourcename": "SnapOnly",
+      "policies": [
+        {
+          "endtime": "25200",
+          "exclusioninterval": "1",
+          "exclusiontype": "daily",
+          "name": "NoSnap",
+          "op": "snap",
+          "verification": false,
+          "priority": "medium",
+          "retention": "2",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "68400",
+          "remoteretention": 0,
+          "iscontinuous": false
+        }
+      ],
+      "managedbyagm": true
+    },
+    {
+      "name": "FSSnaps_RW_OV",
+      "override": "true",
+      "sourcename": "FSSnaps_RW_OV",
+      "policies": [
+        {
+          "endtime": "67800",
+          "exclusioninterval": "1",
+          "exclusiontype": "daily",
+          "name": "OndemandOV",
+          "op": "cloud",
+          "verification": false,
+          "priority": "medium",
+          "retention": "14",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "68400",
+          "remoteretention": 0,
+          "iscontinuous": false
+        },
+        {
+          "endtime": "86340",
+          "exclusioninterval": "1",
+          "exclusiontype": "daily",
+          "name": "DailySnap",
+          "op": "snap",
+          "verification": false,
+          "priority": "medium",
+          "retention": "7",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": false
+        }
+      ],
+      "managedbyagm": true
+    },
+    {
+      "name": "FSSnaps",
+      "override": "true",
+      "sourcename": "FSSnaps",
+      "policies": [
+        {
+          "endtime": "86340",
+          "exclusioninterval": "1",
+          "exclusiontype": "daily",
+          "name": "DailySnap",
+          "op": "snap",
+          "verification": false,
+          "priority": "medium",
+          "retention": "7",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": false
+        }
+      ],
+      "managedbyagm": true
+    },
+    {
+      "name": "Snap2OV",
+      "override": "true",
+      "sourcename": "Snap2OV",
+      "policies": [
+        {
+          "endtime": "21600",
+          "exclusioninterval": "1",
+          "exclusiontype": "daily",
+          "name": "DailySnap",
+          "op": "snap",
+          "verification": false,
+          "priority": "medium",
+          "retention": "7",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [
+            {
+              "name": "logsmart",
+              "value": "true"
+            },
+            {
+              "name": "logbackupretention",
+              "value": "7"
+            },
+            {
+              "name": "logreplication",
+              "value": "false"
+            },
+            {
+              "name": "compressdblog",
+              "value": "false"
+            },
+            {
+              "name": "logbackupfreq",
+              "value": "1440"
+            }
+          ],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": false
+        },
+        {
+          "endtime": "86340",
+          "exclusioninterval": "1",
+          "exclusiontype": "none",
+          "name": "Snap2OV",
+          "op": "cloud",
+          "verification": false,
+          "priority": "medium",
+          "retention": "30",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": true
+        },
+        {
+          "endtime": "67800",
+          "exclusioninterval": "1",
+          "exclusiontype": "none",
+          "name": "weekly",
+          "op": "cloud",
+          "verification": false,
+          "priority": "medium",
+          "retention": "12",
+          "retentionm": "weeks",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "weekly",
+          "selection": "daysofweek:sun",
+          "options": [],
+          "starttime": "68400",
+          "remoteretention": 0,
+          "iscontinuous": false
+        }
+      ],
+      "managedbyagm": true
+    },
+    {
+      "name": "PDSnaps",
+      "override": "true",
+      "sourcename": "PDSnaps",
+      "policies": [
+        {
+          "endtime": "86340",
+          "exclusioninterval": "1",
+          "exclusiontype": "none",
+          "name": "DailyPDSnap",
+          "op": "snap",
+          "verification": false,
+          "priority": "medium",
+          "retention": "7",
+          "retentionm": "days",
+          "repeatinterval": "1",
+          "reptype": "0",
+          "rpo": "24",
+          "rpom": "hours",
+          "scheduletype": "daily",
+          "options": [],
+          "starttime": "0",
+          "remoteretention": 0,
+          "iscontinuous": true
+        }
+      ],
+      "managedbyagm": true
+    }
+  ]
+}
