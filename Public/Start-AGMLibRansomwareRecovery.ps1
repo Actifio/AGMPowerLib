@@ -291,7 +291,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "4`: Check the scheduler     Do you want to check if the scheduler is enabled?"
         Write-Host "5`: Set the scheduler       Do you want to change the scheduler or expiration right now?  For instance to stop new backups being created."
         write-host "6`: Back                    Take me back to the previous menu"
-        write-host "7`: Exit"
+        write-host "7`: Exit                    Take me back to the command line"
         Write-Host ""
         # ask the user to choose
         While ($true) 
@@ -332,7 +332,7 @@ function Start-AGMLibRansomwareRecovery
         Write-Host "6`: Unmount your images     Do you want to unmount the images we mounted in step 5"
         write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
         write-host "8`: Back                    Take me back to the previous menu"
-        write-host "9`: Exit"
+        write-host "9`: Exit                    Take me back to the command line"
         Write-Host ""
         # ask the user to choose
         While ($true) 
