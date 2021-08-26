@@ -1,4 +1,4 @@
-Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("o")]$ownershiptakeover) 
+Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
 {
     <#
     .SYNOPSIS
@@ -105,11 +105,12 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($appliancegrab.cluster.clusterid.count -eq 1)
         {
             $applianceid = $appliancegrab.cluster.clusterid
+            $appliancename = $appliancegrab.cluster.name
             write-host "Only one Appliance was found.  We will use this one:"  $appliancegrab.cluster.name
         }
         else
         {
-            write-host "Appliance selection menu - which Appliance will we import from"
+            write-host "Appliance selection menu - which Appliance will we import from (this is the Appliance that made the images)"
             Write-host ""
             $i = 1
             foreach ($appliance in $appliancegrab.cluster)
@@ -132,65 +133,155 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
                 }
             }
             $applianceid =  $appliancegrab.cluster.clusterid[($appselection - 1)]
+            $appliancename =  $appliancegrab.cluster.name[($appselection - 1)]
         }
-        
+        Write-Host ""
+        write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
+        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid
+        if ($applicationgrab.host)
+        {
+            $printarray = @()
+            foreach ($app in $applicationgrab)
+            {       
+                $printarray += [pscustomobject]@{
+                hostname = $app.host.hostname
+                appname = $app.application.appname
+                backupcount = $app.backupcount
+                }
+            }
+        }
+        else {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any application images to list"
+            return
+        }
+        write-host "Found the following images."
+        $printarray | sort-object hostname,appname | Format-Table
+
+
         Write-Host ""
         Write-Host "Do you want to have the selected appliance take ownership of any images. "
         Write-Host ""
         Write-Host "1`: Don't take ownership (default)"
         Write-Host "2`: Take ownership of any imported images"
-        write-host "3': Forget any imported images (rather than importing new ones)"
-        $ownerchoice = Read-Host "Please select from this list (1-2)"
+        write-host "3`: Forget any imported images (rather than importing new ones)"
+        $ownerchoice = Read-Host "Please select from this list (1-3)"
         if ($ownerchoice -eq 2) { $owner = $true}
         if ($ownerchoice -eq 3) { $forget = $true}
         
+        Write-Host ""
+        Write-Host "Do you want to monitor the import to completion. "
+        Write-Host ""
+        Write-Host "1`: Monitor the import (default)"
+        Write-Host "2`: Dont monitor the import"
+        $ownerchoice = Read-Host "Please select from this list (1-2)"
+        if ($ownerchoice -eq 1 -or $ownerchoice -eq "") { $monitor = $true}
+    
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid"  
+        Write-Host -nonewline "Import-AGMLibOnvault -diskpoolid $diskpoolid -applianceid $applianceid"  
         if ($forget) { Write-Host -nonewline " -forget" }
         if ($owner) { Write-Host -nonewline " -owner" }
+        if ($monitor) { Write-Host -nonewline " -monitor" }
         if ($appid) { Write-Host -nonewline " -appid $appid" }
         Write-Host ""
-        Write-Host "1`: Run the command now (default)"
+        Write-Host "1`: Run the command now.  This command will run in the background unless you selected monitor option. (default)"
         Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
         if ($appuserchoice -eq 2)
         {
             return
         }
+    }
 
-
-
+    if ($monitor)
+    {
+        if ($appid)
+        {
+            $startcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
+        }
+        else
+        {
+            $startcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&poolid=$diskpoolid"
+        }
     }
 
     if ($appid)
     {
         if ($owner)
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -owner
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -owner
         }
         elseif ($forget)
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -forget
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -forget
         }
         else 
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid 
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid 
         }
     }
     else {
         if ($owner)
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -owner
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -owner
         }
         elseif ($forget)
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -forget
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -forget
         }
         else 
         {
-            Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid  
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid  
         }
+    }
+
+    $importid = $import.id
+    if ($monitor -and (!($importid)))
+    {
+        $import
+    }
+    elseif ($monitor -and $importid)
+    {
+        Write-host "Image count before import:  $startcount"
+        $done = 0
+        do 
+        {
+            $jobgrab = Get-AGMAPIData -endpoint /diskpool/vaultclusters/$importid
+            if ($jobgrab.errormessage)
+            {   
+                $done = 1
+                $jobgrab
+            }    
+            elseif (!($jobgrab.status)) 
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find import with ID $importid"
+                $done = 1
+            }
+            elseif ($jobgrab.status -like "pending")
+            {
+                write-host "Import status: pending"
+                Start-Sleep -s 5
+            }
+            else 
+            {
+                $status = $jobgrab.status
+                write-host "Import status: $status"
+                $done = 1    
+            }
+        } until ($done -eq 1)
+        if ($appid)
+        {
+            $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
+        }
+        else
+        {
+            $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&poolid=$diskpoolid"
+        }
+        Write-host "Image count after import:  $endcount"
+    }
+    else {
+
+        $import
     }
 }

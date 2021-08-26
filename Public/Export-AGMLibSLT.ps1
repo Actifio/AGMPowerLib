@@ -73,7 +73,7 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
         Write-Host ""
         Write-Host -nonewline "Export-AGMLibSLT"  
         if ($all) { Write-Host -nonewline " -all" }
-        if ($filename) { Write-Host -nonewline " -filename $filename" }
+        if ($filename) { Write-Host -nonewline " -filename `"$filename`"" }
         if ($sltids) { Write-Host -nonewline " -sltids `"$sltids`"" }
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
@@ -85,6 +85,11 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
         }
     }
 
+    if ( Test-Path $filename )
+    {
+        Get-AGMErrorMessage -messagetoprint "Filename $filename already exists.  Please use a unique filename."
+        return
+    }
 
     if ($all)
     {
