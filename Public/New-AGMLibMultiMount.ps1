@@ -188,7 +188,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
 
             Clear-Host
             Write-Host "Target host selection menu"
-            $hostgrab  | Select-Object id,hostname,ostype,{$_.appliance.name} | Format-Table
+            $hostgrab  | Select-Object id,hostname,ostype,@{N='appliancename'; E={$_.appliance.name}} | Format-Table
             write-host ""
             [string]$hostselection = Read-Host "Please select all hosts using their ID, comma separated"
             $hostlist = @($hostselection)

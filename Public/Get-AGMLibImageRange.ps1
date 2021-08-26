@@ -65,7 +65,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
 
     Building your Imagelist:
 
-    To get a list of applications, use:  Get-AGMApplication -sort "hostname:asc,appname:asc"| select id, {$_.host.hostname} , appname, apptype, {$_.cluster.name} | format-table
+    To get a list of applications, use:  Get-AGMApplication -sort "hostname:asc,appname:asc"| select id, @{N='hostname'; E={$_.host.hostname}}, appname, apptype, @{N='clustername'; E={$_.cluster.name}} | format-table
     To get a list of SLTNames or policynames, use:  Get-AGMLibPolicies
 
     First we build an object that contains a list of images. For this we can use Get-AGMLibImageRange in a syntax like this, where in this example we get all images of filesystems created in the last day:
