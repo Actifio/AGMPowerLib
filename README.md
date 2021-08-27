@@ -1004,12 +1004,13 @@ In this user story we are going to use Persistent Disk Snapshots to create a new
 
 To learn which Applications are suitable use this command:
 ```
-Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
+Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
 ```
 To learn which Cloud Credential srcids are available use this command:
 ```
 Get-AGMLibCredentialSrcID
 ```
+Make sure that the credential is on the same appliance that is managing the application.
 To learn the image ID or image name, you could use this command:
 ```
 Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft

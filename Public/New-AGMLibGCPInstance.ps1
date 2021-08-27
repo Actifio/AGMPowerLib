@@ -16,7 +16,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
 
     .DESCRIPTION
     To learn which Applications are suitable use this command:
-    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
+    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
 
     To learn which Cloud Credential srcids are available use this command:
     Get-AGMLibCredentialSrcID
