@@ -15,6 +15,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+**[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 
 
 ## Prerequisites
@@ -1003,12 +1004,13 @@ In this user story we are going to use Persistent Disk Snapshots to create a new
 
 To learn which Applications are suitable use this command:
 ```
-Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
+Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
 ```
-To learn which Cloud Credentials are available use this command (use the srcid as the credential ID):
+To learn which Cloud Credential srcids are available use this command:
 ```
-Get-AGMCredential
+Get-AGMLibCredentialSrcID
 ```
+Make sure that the credential is on the same appliance that is managing the application.
 To learn the image ID or image name, you could use this command:
 ```
 Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
@@ -1018,7 +1020,8 @@ There are many parameters that need to be supplied:
 -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
--credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
+-credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work but ideally switch to -srcid
+-srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application.  Note this parameter replaced -credentialid
 -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
 -projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
@@ -1046,7 +1049,7 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 ```
 This brings us to a command like this one:
 ```
-New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 ```
 
 ### Performing a multi-mount from file
@@ -1129,3 +1132,60 @@ PS /tmp/agmpowercli>
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
 ```
+## User Story: Importing and Exporting AGM Policy Templates
+
+In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them into a different AGM.
+
+First we login to the source AGM and validate our SLTs.
+
+```
+PS /Users/avw> Connect-AGM 10.152.0.5 admin -passwordfile userpass.key -i
+Login Successful!
+PS /Users/avw> Get-AGMSLT | select id,name
+
+id    name
+--    ----
+25606 FSSnaps_RW_OV
+17796 FSSnaps
+6523  Snap2OV
+6392  PDSnaps
+```
+We now export all the SLTs to a file called export.json.  If we only want to export specific SLTs, then don't specify **-all** and you will get a help menu.
+```
+PS /Users/avw> Export-AGMLibSLT -all -filename export.json
+```
+We now login to our target AGM:
+```
+PS /Users/avw> connect-agm 10.194.0.3 admin -passwordfile userpass.key -i
+Login Successful!
+```
+We validate there are no Templates.   Currently this function expects there to be no templates in the target.  However if there are, as long as there are no name clashes, the import will still succeed.  In this example there are no templates in the target.
+```
+PS /Users/avw> Get-AGMSLT
+
+count items
+----- -----
+    0 {}
+
+PS /Users/avw>
+```
+We now import the Templates and then validate we now have four imported SLTs:
+```
+PS /Users/avw> Import-AGMLibSLT -filename export.json
+
+count items
+----- -----
+    4 {@{@type=sltRest; id=21067; href=https://10.194.0.3/actifio/slt/21067; name=FSSnaps_RW_OV; override=true; policy_href=https://10.194.0.3/actifio/slt/21067/policy}, @{@type=sltRest; id=21070; href=https://10.194.0.3/acti…
+
+PS /Users/avw> Get-AGMSLT | select id,name
+
+id    name
+--    ----
+21081 PDSnaps
+21072 Snap2OV
+21070 FSSnaps
+21067 FSSnaps_RW_OV
+
+PS /Users/avw>
+```
+Our import is now complete.

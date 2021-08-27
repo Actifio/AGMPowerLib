@@ -65,7 +65,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
 
     Building your Imagelist:
 
-    To get a list of applications, use:  Get-AGMApplication -sort "hostname:asc,appname:asc"| select id, {$_.host.hostname} , appname, apptype, {$_.cluster.name} | format-table
+    To get a list of applications, use:  Get-AGMApplication -sort "hostname:asc,appname:asc"| select id, @{N='hostname'; E={$_.host.hostname}}, appname, apptype, @{N='clustername'; E={$_.cluster.name}} | format-table
     To get a list of SLTNames or policynames, use:  Get-AGMLibPolicies
 
     First we build an object that contains a list of images. For this we can use Get-AGMLibImageRange in a syntax like this, where in this example we get all images of filesystems created in the last day:
@@ -116,10 +116,11 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         write-host ""
         write-host "Please read the help for this command carefully to determine how to use the output.  Get-Help Get-AGMLibImageRange"
         write-host ""
-        Write-Host "1`: Run a guided menu to help me build a command"
+        Write-Host "1`: Run a guided menu to help me build a command (default)"
         Write-Host "2`: Exit"
+        $userchoice = ""
         $userchoice = Read-Host "Please select from this list (1-2)"
-        if ($userchoice -eq "" -or $userchoice2 -eq 2) { return }
+        if ($userchoice -eq 2) { return }
         Clear-Host
         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
         if ($appliancegrab.count -eq 0)
@@ -371,7 +372,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
 
         Write-host "We need to determine which jobclass to display."
         Write-host ""
-        Write-Host "1`: Snapshot only(default)"
+        Write-Host "1`: Snapshot only (default)"
         Write-Host "2`: Snapshot and OnVault"
         Write-Host "3`: OnVault only"
         [int]$userchoice = Read-Host "Please select from this list (1-3)"
@@ -393,11 +394,11 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($jobclass) { write-host -nonewline " -jobclass $jobclass" }
         if ($onvault) { write-host -nonewline " -onvault" }
         if ($csvfile) { write-host -nonewline " -csvfile $csvfile" }
-        if ($clusterid) { write-host -nonewline "-clusterid $clusterid"}
+        if ($clusterid) { write-host -nonewline " -clusterid $clusterid"}
         Write-Host ""
-        Write-Host "1`: Run the command now"
+        Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Exit without running the command"
-        $appuserchoice = Read-Host "Please select from this list (1-3)"
+        $appuserchoice = Read-Host "Please select from this list (1-2)"
         if ($appuserchoice -eq 2) { return }
     }
 

@@ -67,6 +67,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
     if ( (!($slaid)) -and (!($logicalgroupid)) -and (!($everysla)))
     {
         #guided mode
+        write-host ""
         Write-Host "This command is used to enable or disable the scheduler and/or expiration."
         Write-Host "This is either for a specific application, a specific logical group or every application"
         write-host ""
@@ -156,7 +157,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             Write-Host ""
             Write-Host "Set-AGMLibSLA -slaid $slaid $command"
             Write-Host ""
-            Write-Host "1`: Run the command now"
+            Write-Host "1`: Run the command now (default)"
             Write-Host "2`: Run the command now and then show the new status"
             Write-Host "3`: Exit without running the command"
             $appuserchoice = Read-Host "Please select from this list (1-3)"
@@ -231,7 +232,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
             }
             Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
             Write-Host ""
-            Write-Host "Set-AGMLibSLA -everysla $command"
+            Write-Host "Set-AGMLibSLA -everysla$command"
             Write-Host ""
             Write-Host "1`: Run the command now and exit (default)"
             Write-Host "2`: Run the command now and then show the new settings"

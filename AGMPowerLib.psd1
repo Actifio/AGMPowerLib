@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.31'
+ModuleVersion = '0.0.0.32'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -73,12 +73,15 @@ RequiredModules = @('AGMPowerCLI')
 # NestedModules = @()
 
 # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-FunctionsToExport = @('Get-AGMLibActiveImage',
+FunctionsToExport = @('Export-AGMLibSLT',
+'Get-AGMLibActiveImage',
 'Get-AGMLibApplicationID',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibContainerYAML',
+'Get-AGMLibCredentialSrcID',
 'New-AGMLibGCPInstance',
 'Get-AGMLibHostID',
+'Get-AGMLibHostList',
 'Get-AGMLibImageDetails',
 'Get-AGMLibImageRange',
 'Get-AGMLibFollowJobStatus',
@@ -88,6 +91,8 @@ FunctionsToExport = @('Get-AGMLibActiveImage',
 'Get-AGMLibRunningJobs',
 'Get-AGMLibSLA',
 'Get-AGMLibWorkflowStatus',
+'Import-AGMLibOnVault',
+'Import-AGMLibSLT',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
@@ -137,7 +142,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @("Actifio","AGM","Sky","CDS","CDX","VDP")
+        Tags = @("Actifio","AGM","Sky","CDS","CDX","VDP","Actifio GO")
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Actifio/AGMPowerLib/blob/master/LICENSE'
@@ -150,6 +155,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.32] 2021-08-18
+        Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
+        Improved Start-AGMLibRansomwareRecovery
+
         ## [0.0.0.31] 2021-08-11
         Added Remove-AGMLibMount   Improved Start-AGMLibRansomwareRecovery
 

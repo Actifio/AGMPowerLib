@@ -114,48 +114,54 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "Make sure the hosts are on the same appliance name as the images"
         Write-host ""
         Write-Host "1`: Show me the hosts and I will select them "
-        Write-Host "2`: Exit"
+        write-host "2`: I have the list already, let me supply it"
+        Write-Host "3`: Exit"
         $userchoice2 = Read-Host "Please select from this list (1-3)"
-        if ($userchoice2 -eq "" -or $userchoice2 -eq 2) { return }
-        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
-        if ($appliancegrab.count -eq 0)
+        if ($userchoice2 -eq "" -or $userchoice2 -eq 3) { return }
+        if ($userchoice2 -eq 2)
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
-            return
+            [string]$hostselection = Read-Host "Please enter all hosts using their ID, comma separated"
+            $hostlist = @($hostselection)
         }
-        if ($appliancegrab.count -eq 1)
-        {
-            $mountapplianceid = $appliancegrab.clusterid
-        }
-        else
-        {
-            Clear-Host
-            write-host "Appliance selection menu - which Appliance will run these mounts"
-            Write-host ""
-            $i = 1
-            foreach ($appliance in $appliancegrab)
-            { 
-                Write-Host -Object "$i`: $($appliance.name)"
-                $i++
-            }
-            While ($true) 
+        else {   
+            $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+            if ($appliancegrab.count -eq 0)
             {
-                Write-host ""
-                $listmax = $appliancegrab.name.count
-                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
-                if ($appselection -lt 1 -or $appselection -gt $listmax)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                } 
-                else
-                {
-                    break
-                }
+                Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
+                return
             }
-            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
-        }
-        if ($userchoice2 -eq 1) 
-        {
+            if ($appliancegrab.count -eq 1)
+            {
+                $mountapplianceid = $appliancegrab.clusterid
+            }
+            else
+            {
+                Clear-Host
+                write-host "Appliance selection menu - which Appliance will run these mounts"
+                Write-host ""
+                $i = 1
+                foreach ($appliance in $appliancegrab)
+                { 
+                    Write-Host -Object "$i`: $($appliance.name)"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $appliancegrab.name.count
+                    [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                    if ($appselection -lt 1 -or $appselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            }
+    
             Clear-Host
             Write-Host "Are the scanning hosts Linux or Windows?"
             Write-host ""
@@ -182,7 +188,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
 
             Clear-Host
             Write-Host "Target host selection menu"
-            $hostgrab  | Select-Object id,hostname,ostype,{$_.appliance.name} | Format-Table
+            $hostgrab  | Select-Object id,hostname,ostype,@{N='appliancename'; E={$_.appliance.name}} | Format-Table
             write-host ""
             [string]$hostselection = Read-Host "Please select all hosts using their ID, comma separated"
             $hostlist = @($hostselection)
