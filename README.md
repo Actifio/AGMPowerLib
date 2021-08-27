@@ -1006,9 +1006,9 @@ To learn which Applications are suitable use this command:
 ```
 Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
 ```
-To learn which Cloud Credentials are available use this command (use the srcid as the credential ID):
+To learn which Cloud Credential srcids are available use this command:
 ```
-Get-AGMCredential
+Get-AGMLibCredentialSrcID
 ```
 To learn the image ID or image name, you could use this command:
 ```
@@ -1019,7 +1019,8 @@ There are many parameters that need to be supplied:
 -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
--credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
+-credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work but ideally switch to -srcid
+-srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application.  Note this parameter replaced -credentialid
 -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
 -projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
@@ -1047,7 +1048,7 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 ```
 This brings us to a command like this one:
 ```
-New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 ```
 
 ### Performing a multi-mount from file

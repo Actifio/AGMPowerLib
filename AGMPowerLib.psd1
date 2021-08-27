@@ -78,6 +78,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibApplicationID',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibContainerYAML',
+'Get-AGMLibCredentialSrcID',
 'New-AGMLibGCPInstance',
 'Get-AGMLibHostID',
 'Get-AGMLibHostList',
@@ -155,7 +156,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.32] 2021-08-18
-        Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList 
+        Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
         Improved Start-AGMLibRansomwareRecovery
 
         ## [0.0.0.31] 2021-08-11

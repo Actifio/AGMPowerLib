@@ -1,16 +1,16 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm) 
 {
     <#
     .SYNOPSIS
     Mounts a PD Snapshot as a new GCP Instance (VM)
 
     .EXAMPLE
-    New-AGMLibGCPInstance -imageid 56410933 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 
     This mounts the specified imageid 56410933
 
     .EXAMPLE
-    New-AGMLibGCPInstance -appid 1234 -credentialid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
+    New-AGMLibGCPInstance -appid 1234 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
 
     This mounts the most recent snapshot from appid 1234
 
@@ -18,8 +18,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     To learn which Applications are suitable use this command:
     Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname
 
-    To learn which Cloud Credentials are available use this command (use the srcid as the credential ID):
-    Get-AGMCredential
+    To learn which Cloud Credential srcids are available use this command:
+    Get-AGMLibCredentialSrcID
 
     To learn the image ID or image name, you could use this command:
     Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
@@ -29,7 +29,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
     -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
     -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
-    -credentialid    Learn this with Get-AGMCredential.  The credentialid is the srcid.
+    -credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work
+    -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
     -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
     -zone            This is the GCP Zone such as: australia-southeast1-c
@@ -137,9 +138,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         return
     }
 
+    if ($srcid) { $credentialid = $srcid}
     if (!($credentialid))
     {
-        Get-AGMErrorMessage -messagetoprint "Please specify a credential ID for the new instance with -credentialid"
+        Get-AGMErrorMessage -messagetoprint "Please specify a credential src ID for the new instance with -srcid.  Learn this with Get-AGMCredential"
         return
     }
 
