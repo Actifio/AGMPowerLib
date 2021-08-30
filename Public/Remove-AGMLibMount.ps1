@@ -50,8 +50,9 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         Read-Host -Prompt "Press enter to display the current mounts"
         Clear-Host
         $mountgrab = Get-AGMLibActiveImage 
-        if ($mountgrab.errormessage)
+        if (!($mountgrab.imagename))
         {
+            write-host "here"
             $mountgrab
             return
         }
@@ -83,7 +84,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         if ($printarray.imageid.count -eq 1)
         {
             write-host ""
-            Write-host "Only one image found, this is the one we will work"
+            Write-host "Only one image found, this is the one we will work with"
             $imageid = $printarray.imageid
             $apptype = $printarray.apptype
             $imagestate = $printarray.imagestate
