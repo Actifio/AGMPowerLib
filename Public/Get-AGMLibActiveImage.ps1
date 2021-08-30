@@ -26,15 +26,13 @@ Function Get-AGMLibActiveImage([string]$label,[string]$appid,[string]$jobclass,[
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
+    
     
     $fv = "characteristic=1&characteristic=2&apptype!nas"
     if ($unmount)

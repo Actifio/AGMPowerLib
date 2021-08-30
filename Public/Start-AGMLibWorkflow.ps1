@@ -51,14 +51,11 @@ Function Start-AGMLibWorkflow ([string]$workflowid,[string]$appid,[string]$image
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
     # if we get a workflow ID, lets learn the AppID.   We need AppID as part of the API

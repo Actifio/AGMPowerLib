@@ -30,6 +30,17 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
 
     #>
 
+    if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
+    {
+        Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
+        return
+    }
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
+    {
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
+    }
 
     if ((!($imagename)) -and (!($label)) -and (!($imageid)))
     {

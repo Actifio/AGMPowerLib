@@ -45,14 +45,11 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
     # handle hostlist vs hostid
@@ -254,7 +251,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host "New-AGMLibMultiMount -csvfile $filename -mountpoint `"$mountpoint`" -hostlist $hostselection -label `"$label`" $suffixoptions"  
+        Write-Host "New-AGMLibMultiMount -csvfile `"$filename`" -mountpoint `"$mountpoint`" -hostlist `"$hostselection`" -label `"$label`" $suffixoptions"  
         Write-Host ""
         Write-Host "1`: Run the command now"
         Write-Host "2`: Exit without running the command"
@@ -286,18 +283,18 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
 
     if ($csvfile)
     {
-        if ( Test-Path $filename )
+        if ( Test-Path $csvfile )
         {
-            $imagelist = Import-Csv -Path $filename
+            $imagelist = Import-Csv -Path $csvfile
             if (!($imagelist.backupname))
             {
-                Get-AGMErrorMessage -messagetoprint "The file named $filename does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
+                Get-AGMErrorMessage -messagetoprint "The file named $csvfile does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
                 return
             }
         }
         else
         {
-            Get-AGMErrorMessage -messagetoprint "The file named $filename could not be found."
+            Get-AGMErrorMessage -messagetoprint "The file named $csvfile could not be found."
             return
         }
     }
@@ -326,6 +323,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         $label = "MultiFS Recovery"
     }
 
+    $hostlist = $hostlist.Split(",")
     $hostcount = $hostlist.count
     $hostroundrobin = 0
     $lastappid = ""
@@ -400,6 +398,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             $json = $body | ConvertTo-Json -depth 4
             Write-Host "    Mounting AppName:" $image.appname " AppID:" $image.appid " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "to Host ID" $hostid "with mount point" $imagemountpoint           
             $imageid = $image.id
+            $json
             Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
             $hostroundrobin += 1
             if ($hostroundrobin -eq $hostcount )

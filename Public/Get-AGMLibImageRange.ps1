@@ -97,14 +97,11 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
     if ((!($appid)) -and (!($appname)) -and (!($fuzzyappname)) -and (!($apptype)) -and (!($sltname)) -and (!($every)))
@@ -402,7 +399,14 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($appuserchoice -eq 2) { return }
     }
 
-
+    if ($csvfile)
+    {
+        if ( Test-Path $csvfile )
+        {
+            Get-AGMErrorMessage -messagetoprint "Filename $csvfile already exists.  Please use a unique filename."
+            return
+        }
+    }
     # just to start fv off
     $fv = ""
     # normally I expect to have one of these three, but only one, not all three
@@ -605,6 +609,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             }
             else {
                 $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode | Export-Csv -Path $csvfile
+                write-host "Wrote" $imagegrab.id.count "images to file "$csvfile
             }
         }
         else 
@@ -615,6 +620,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             }
             else {
                 $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate | Export-Csv -Path $csvfile
+                write-host "Wrote" $imagegrab.id.count "images to file "$csvfile
             }
         }
     }
@@ -626,6 +632,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         }
         else {
             $imagegrab | Export-Csv -Path $csvfile
+            write-host "Wrote" $imagegrab.id.count "images to file "$csvfile
         }
     }
 }

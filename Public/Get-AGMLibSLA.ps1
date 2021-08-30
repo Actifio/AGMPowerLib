@@ -33,14 +33,11 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
     
     if ($slaid)

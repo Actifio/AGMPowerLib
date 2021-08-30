@@ -31,15 +31,13 @@ Function Set-AGMLibImage ([array]$imagelist,$filename,[string]$imagename,[string
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if (!($sessiontest.summary))
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
+    
     if ((!($imagelist)) -and (!($filename)) -and (!($imagename)))
     {
         Write-host "This function is used to label a large number of images in a single command.  This is done by supplying one of the following:
