@@ -78,8 +78,20 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "1`: I have the image list as a file"
         Write-Host "2`: I need to run Get-AGMLibImageRange to create the CSV file"
         Write-Host "3`: Exit"
-        $userchoice1 = Read-Host "Please select from this list (1-3)"
-        if ($userchoice1 -eq "" -or $userchoice1 -eq 3) { return }
+        While ($true) 
+        {
+            Write-host ""
+            $userchoice1 = Read-Host "Please select from this list (1-3)"
+            if ($userchoice1 -lt 1 -or $userchoice1 -gt 3)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-3]"
+            } 
+            else
+            {
+                break
+            }
+        }
+        if ($userchoice1 -eq 3) { return }
         if ($userchoice1 -eq 1)
         {
             [string]$filename = Read-Host "Supply the file name in CSV format"

@@ -52,7 +52,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         Write-host "Alternatively we can decide to have the appliance forget any previously imported images, rather than discover new ones"
         Write-host ""
 
-        $diskpoolgrab = Get-AGMDiskPool -filtervalue pooltype=vault -sort name:asc
+        $diskpoolgrab = Get-AGMDiskPool -filtervalue pooltype=vault | Sort-Object name
         if ($diskpoolgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any disk pools to list"
@@ -154,17 +154,24 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         write-host "Found the following images."
         $printarray | sort-object hostname,appname | Format-Table
 
-
+        Write-Host ""
+        Write-Host "Do you want to import these images?"
+        Write-Host ""
+        Write-Host "1`: Yes I want to import them (default)"
+        Write-Host "2`: Exit (this is not the disk pool I was looking for)"
+        $ownerchoice = Read-Host "Please select from this list (1-2)"
+        if ($ownerchoice -eq 2) { return }
         Write-Host ""
         Write-Host "Do you want to have the selected appliance take ownership of any images. "
         Write-Host ""
         Write-Host "1`: Don't take ownership (default)"
         Write-Host "2`: Take ownership of any imported images"
         write-host "3`: Forget any imported images (rather than importing new ones)"
+
         $ownerchoice = Read-Host "Please select from this list (1-3)"
         if ($ownerchoice -eq 2) { $owner = $true}
         if ($ownerchoice -eq 3) { $forget = $true}
-        
+
         Write-Host ""
         Write-Host "Do you want to monitor the import to completion. "
         Write-Host ""
@@ -269,10 +276,12 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         } until ($done -eq 1)
         if ($appid)
         {
+            Start-Sleep -seconds 10
             $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
         }
         else
         {
+            Start-Sleep -seconds 10
             $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&poolid=$diskpoolid"
         }
         Write-host "Image count after import:  $endcount"

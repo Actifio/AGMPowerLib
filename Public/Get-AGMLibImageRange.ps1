@@ -1,4 +1,4 @@
-Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,[switch]$every,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("o")]$onvault) 
+Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,[switch]$every,[string]$appname,[string]$clusterid,[string]$appliancename,[string]$apptype,[string]$fuzzyappname,[string]$sltname,[datetime]$consistencydate,[int]$newerlimit,[int]$olderlimit,[switch][alias("h")]$hours,[switch][alias("i")]$imported,[switch][alias("o")]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -155,24 +155,58 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         }
         $userchoice = ""
         Clear-Host
+        Write-host ""
+        Write-host "Do you want to work with local or imported images"
+        Write-host ""
+        Write-Host "1`: Imported images only (default)"
+        Write-Host "2`: Local images"
+        $impchoice = Read-Host "Please select from this list (1-2)"
+        if ($impchoice -eq "" -or $impchoice -eq "1")
+        {
+            $appliancefilter = ""
+            $imagefilter = ""
+            foreach ($appliance in $appliancegrab)
+            { 
+                $appliancefilter = $appliancefilter +"&sourcecluster!" +$appliance.clusterid 
+                $imagefilter = $imagefilter +"&sourceuds!" +$appliance.clusterid 
+            }
+            $appliancefilter = $appliancefilter.Substring(1) 
+            $imagefilter = $imagefilter.Substring(1) 
+            $imported = $true
+        }
+        else {
+            $appliancefilter = 'sourcecluster=' +$clusterid 
+        }
+
+
+        write-host ""
         Write-host "Search method"
         Write-host ""
         Write-Host "1`: appid"
         Write-Host "2`: appname"
         Write-Host "3`: apptype"
         Write-Host "4`: fuzzyappname"
-        Write-Host "5`: sltname"
+        Write-Host "5`: sltname (local apps only)"
         Write-Host "6`: give me everything"
-        $userchoice = Read-Host "Please select from this list (1-6)"
+        While ($true) 
+        {
+            Write-host ""
+            $userchoice = Read-Host "Please select from this list (1-6)"
+            if ($userchoice -lt 1 -or $userchoice -gt 6)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-6]"
+            } 
+            else
+            {
+                break
+            }
+        }
+
+
         if ($userchoice -eq 1) 
         {
-            if ($clusterid)
-            {
-                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
-            else {
-                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
+
+            $datagrab = Get-AGMApplication -filtervalue $appliancefilter -sort "hostname:asc,appname:asc,apptype:asc" 
             
             if ($datagrab.id.count -eq 0)
             {
@@ -198,8 +232,8 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             $listmax = $printarray.appid.count
             While ($true) 
             {
-                [int]$userchoice = Read-Host "Please select from this list (1-$listmax)"
-                if ($userchoice -lt 1 -or $userchoice -gt $listmax)
+                [int]$userchoice1 = Read-Host "Please select from this list (1-$listmax)"
+                if ($userchoice1 -lt 1 -or $userchoice1 -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                 } 
@@ -208,17 +242,12 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
                     break
                 }
             }
-            $appid = $printarray.appid[$userchoice-1]
+            $appid = $printarray.appid[$userchoice1-1]
         }
         if ($userchoice -eq 2) 
         {
-            if ($clusterid)
-            {
-                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
-            else {
-                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
+
+            $datagrab = Get-AGMApplication -filtervalue $appliancefilter -sort "hostname:asc,appname:asc,apptype:asc" 
             if ($datagrab.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Did not find any Applications"
@@ -243,8 +272,8 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             $listmax = $printarray.appid.count
             While ($true) 
             {
-                [int]$userchoice = Read-Host "Please select from this list (1-$listmax)"
-                if ($userchoice -lt 1 -or $userchoice -gt $listmax)
+                [int]$userchoice2 = Read-Host "Please select from this list (1-$listmax)"
+                if ($userchoice2 -lt 1 -or $userchoice2 -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                 } 
@@ -253,7 +282,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
                     break
                 }
             }
-            $appname = $printarray.appname[$userchoice-1]
+            $appname = $printarray.appname[$userchoice2-1]
         }
         if ($userchoice -eq 3) 
         {
@@ -274,18 +303,25 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             $userselection = ""
             Write-host ""
             $listmax = $datagrab.count
-            [int]$userselection = Read-Host "Please select an Application Type (1-$listmax)"
+            While ($true) 
+            {
+                [int]$userselection = Read-Host "Please select an Application Type (1-$listmax)"
+                if ($userselection -lt 1 -or $userselection -gt $listmax)
+                {
+                    Write-Host -Object "Please select a value between 1 and $listmax"
+                } 
+                else
+                {
+                    break
+                }
+            }
             $apptype=$datagrab[($userselection - 1)]
         }
         if ($userchoice -eq 4) 
         {
-            if ($clusterid)
-            {
-                $datagrab = Get-AGMApplication -clusterid $clusterid -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
-            else {
-                $datagrab = Get-AGMApplication -sort "hostname:asc,appname:asc,apptype:asc" 
-            }
+
+            $datagrab = Get-AGMApplication -filtervalue $appliancefilter -sort "hostname:asc,appname:asc,apptype:asc" 
+            
             if ($datagrab.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Did not find any Applications"
@@ -323,7 +359,16 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         }
         if ($userchoice -eq 5) 
         {
-            $datagrab = Get-AGMSLT -sort name:asc
+            #if ($imported)
+            #{
+            #    write-host ""
+            #    write-host "Learning SLTs (this will take some time)"
+            #    $sltgrab = Get-AGMImage -filtervalue $imagefilter | Select-Object sltname
+
+           # } else {
+                $datagrab = Get-AGMSLT -sort name:asc
+           # }
+            
             if ($datagrab.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Did not find any SLTs"
@@ -340,6 +385,18 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             Write-host ""
             $listmax = $datagrab.name.count
             [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
+            While ($true) 
+            {
+                [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
+                if ($userselection -eq "")
+                {
+                    Write-Host -Object "SLT choice cannot be blank"
+                } 
+                else
+                {
+                    break
+                }
+            }
             $sltname =  $datagrab.name[($userselection - 1)]
         }   
         Clear-Host
@@ -369,12 +426,14 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
 
         Write-host "We need to determine which jobclass to display."
         Write-host ""
-        Write-Host "1`: Snapshot only (default)"
+        Write-Host "1`: OnVault only (default)"
         Write-Host "2`: Snapshot and OnVault"
-        Write-Host "3`: OnVault only"
+        Write-Host "3`: Snapshot only"
         [int]$userchoice = Read-Host "Please select from this list (1-3)"
+        if ($userchoice -eq "") { $jobclass = "OnVault" }
+        if ($userchoice -eq 1) { $jobclass = "OnVault" } 
         if ($userchoice -eq 2) { $onvault = $true }
-        if ($userchoice -eq 3) { $jobclass = "OnVault" } 
+        
 
         [string]$csvfile = Read-Host "Please supply a file name to write out a CSV file (or press enter to display to the screen)"
         Clear-Host
@@ -392,6 +451,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($onvault) { write-host -nonewline " -onvault" }
         if ($csvfile) { write-host -nonewline " -csvfile $csvfile" }
         if ($clusterid) { write-host -nonewline " -clusterid $clusterid"}
+        if ($imported) { write-host -nonewline " -imported"}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Exit without running the command"
@@ -478,6 +538,16 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
     if ($clusterid) 
     {
         $fv = $fv + "&clusterid=$clusterid"
+    }
+
+    if ($imported)
+    {
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        foreach ($appliance in $appliancegrab)
+        { 
+            $fv = $fv +"&sourceuds!" +$appliance.clusterid 
+        }
+            
     }
     
     if ( (!($newerlimit)) -and (!($olderlimit)) )
