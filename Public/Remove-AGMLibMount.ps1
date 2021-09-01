@@ -52,7 +52,6 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         $mountgrab = Get-AGMLibActiveImage 
         if (!($mountgrab.imagename))
         {
-            write-host "here"
             $mountgrab
             return
         }

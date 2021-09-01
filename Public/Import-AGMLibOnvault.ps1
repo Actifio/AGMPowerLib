@@ -46,7 +46,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     {
 
         write-host ""
-        Write-Host "This function is used to import Onvault images into an Appliance."
+        Write-Host "This function is used to import OnVault images into an Appliance."
         Write-host "We need to determine which pool to import from and which appliance created the images to import"
         Write-host "If importing we also need to decide whether the importing appliance (which owns the selected pool) should take ownership of the imported images"
         Write-host "Alternatively we can decide to have the appliance forget any previously imported images, rather than discover new ones"

@@ -112,7 +112,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         }
         if ($userchoice1 -eq 2)
         {
-            Get-AGMLibImageRange6
+            Get-AGMLibImageRange
             
             return
         }
@@ -182,12 +182,12 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             if ($userchoice3 -eq 1)
             {
                 $ostype = "Linux"
-                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($userchoice3 -eq 2)
             {
                 $ostype = "Win32"
-                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($hostgrab.id.count -eq 0)
             {
@@ -410,7 +410,6 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             $json = $body | ConvertTo-Json -depth 4
             Write-Host "    Mounting AppName:" $image.appname " AppID:" $image.appid " Jobclass:" $image.jobclass " ImageName:" $image.backupname " ConsistencyDate:" $image.consistencydate "to Host ID" $hostid "with mount point" $imagemountpoint           
             $imageid = $image.id
-            $json
             Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
             $hostroundrobin += 1
             if ($hostroundrobin -eq $hostcount )

@@ -80,6 +80,32 @@ function Start-AGMLibRansomwareRecovery
             return    
         }
     }
+    function importagmsltsgc
+    {
+        Clear-Host
+        Write-Host "Import AGM SLTs"  
+        Write-Host ""
+        Write-Host "The function you need to run is:   Import-AGMLibSLT"
+        Write-Host ""
+        Write-Host "1`: Run it now (default)"
+        Write-Host "2`: Take me back to the previous menu"
+        Write-Host "3`: Exit, I will run this later "
+        [int]$userselection1 = Read-Host "Please select from this list [1-3]"
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
+        {
+            Import-AGMLibSLT
+            Read-Host -Prompt "Press enter to continue"
+            gcpactions
+        } 
+        elseif  ($userselection1 -eq 2) 
+        {
+            gcpactions
+        }
+        else 
+        {
+            return    
+        }
+    }
     function schedulercheck
    {  
         Clear-Host
@@ -351,7 +377,7 @@ function Start-AGMLibRansomwareRecovery
             }
         }
         if ($userselection2 -eq 1) { logingcp }
-        if ($userselection2 -eq 2) { importagmslts }
+        if ($userselection2 -eq 2) { importagmsltsgc }
         if ($userselection2 -eq 3) { importonvaultimages }
         if ($userselection2 -eq 4) { createimagelist }
         if ($userselection2 -eq 5) { createhostlist }
@@ -371,11 +397,11 @@ function Start-AGMLibRansomwareRecovery
         clear-host
         Write-Host "This function is designed to help you learn which functions to run before or during a ransomware attack."
         Write-Host ""
-        Write-host "We are either running this from On-Premises or in the Google Cloud."
+        Write-host "We are either running this from the Production site or the DR Site."
         Write-Host "Which site are you working with?"
         Write-Host ""
-        write-host "1`: On-Premises"
-        Write-Host "2`: Google Cloud"
+        write-host "1`: Production Site"
+        Write-Host "2`: DR Site"
         if ($sessiontest.errormessage)
         {
             Write-Host ""

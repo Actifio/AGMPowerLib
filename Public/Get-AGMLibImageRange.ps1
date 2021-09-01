@@ -158,7 +158,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         Write-host ""
         Write-host "Do you want to work with local or imported images"
         Write-host ""
-        Write-Host "1`: Imported images only (default)"
+        Write-Host "1`: Imported OnVault images only (default)"
         Write-Host "2`: Local images"
         $impchoice = Read-Host "Please select from this list (1-2)"
         if ($impchoice -eq "" -or $impchoice -eq "1")
@@ -192,10 +192,10 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         While ($true) 
         {
             Write-host ""
-            $userchoice = Read-Host "Please select from this list (1-6)"
+            $userchoice = Read-Host "Please select from this list (1-7)"
             if ($userchoice -lt 1 -or $userchoice -gt 7)
             {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-6]"
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-7]"
             } 
             else
             {
@@ -431,6 +431,10 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             }
             $sltname =  $datagrab.sltname[($userselection - 1)]
         }  
+        if ($userchoice -eq 7) 
+        {
+            $every = $true
+        }
         Clear-Host
         Write-host "We need to determine what time period method we use to find images."
         Write-host ""
@@ -484,6 +488,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         if ($csvfile) { write-host -nonewline " -csvfile $csvfile" }
         if ($clusterid) { write-host -nonewline " -clusterid $clusterid"}
         if ($imported) { write-host -nonewline " -imported"}
+        if ($every) { write-host -nonewline " -every"}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Exit without running the command"

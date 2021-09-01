@@ -75,12 +75,12 @@ Function Get-AGMLibHostList
     if ($userchoice3 -eq 1)
     {
         $ostype = "Linux"
-        $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+        $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
     }
     if ($userchoice3 -eq 2)
     {
         $ostype = "Win32"
-        $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+        $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
     }
     if ($hostgrab.id.count -eq 0)
     {
