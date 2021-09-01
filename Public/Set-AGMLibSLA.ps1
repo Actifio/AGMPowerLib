@@ -30,7 +30,7 @@ Function Set-AGMLibSLA ([string]$appid,[string]$slaid,[string]$logicalgroupid,[s
         return
     }
     $sessiontest = Get-AGMVersion
-    if (!($sessiontest.summary))
+    if ($sessiontest.errormessage)
     {
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return

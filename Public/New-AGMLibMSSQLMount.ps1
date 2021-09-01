@@ -97,7 +97,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         return
     }
     $sessiontest = Get-AGMVersion
-    if (!($sessiontest.summary))
+    if ($sessiontest.errormessage)
     {
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return

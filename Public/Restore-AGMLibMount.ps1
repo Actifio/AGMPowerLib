@@ -47,7 +47,7 @@ Function Restore-AGMLibMount ([string]$imageid,[string]$imagename,[string]$appna
         return
     }
     $sessiontest = Get-AGMVersion
-    if (!($sessiontest.summary))
+    if ($sessiontest.errormessage)
     {
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
