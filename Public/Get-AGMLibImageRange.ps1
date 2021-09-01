@@ -186,13 +186,14 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         Write-Host "2`: appname"
         Write-Host "3`: apptype"
         Write-Host "4`: fuzzyappname"
-        Write-Host "5`: sltname (local apps only)"
-        Write-Host "6`: give me everything"
+        Write-Host "5`: sltname (known locally)"
+        Write-Host "6`: sltname (unknown locally - this can be very slow)"
+        Write-Host "7`: give me everything"
         While ($true) 
         {
             Write-host ""
             $userchoice = Read-Host "Please select from this list (1-6)"
-            if ($userchoice -lt 1 -or $userchoice -gt 6)
+            if ($userchoice -lt 1 -or $userchoice -gt 7)
             {
                 Write-Host -Object "Invalid selection. Please enter a number in range [1-6]"
             } 
@@ -359,16 +360,7 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         }
         if ($userchoice -eq 5) 
         {
-            #if ($imported)
-            #{
-            #    write-host ""
-            #    write-host "Learning SLTs (this will take some time)"
-            #    $sltgrab = Get-AGMImage -filtervalue $imagefilter | Select-Object sltname
-
-           # } else {
-                $datagrab = Get-AGMSLT -sort name:asc
-           # }
-            
+            $datagrab = Get-AGMSLT -sort name:asc
             if ($datagrab.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Did not find any SLTs"
@@ -384,13 +376,12 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             $userselection = ""
             Write-host ""
             $listmax = $datagrab.name.count
-            [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
             While ($true) 
             {
                 [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
-                if ($userselection -eq "")
+                if ($userselection -lt 1 -or $userselection -gt $listmax)
                 {
-                    Write-Host -Object "SLT choice cannot be blank"
+                    Write-Host -Object "Please select a value between 1 and $listmax"
                 } 
                 else
                 {
@@ -398,7 +389,48 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
                 }
             }
             $sltname =  $datagrab.name[($userselection - 1)]
-        }   
+        } 
+        if ($userchoice -eq 6) 
+        {
+            # learn all known SLT names and create filter list to exclude them
+            $sltnamegrab = Get-AGMSLT -sort name:asc
+            foreach ($slt in $sltnamegrab)
+            {
+                $sltfilter = $sltfilter + "&sltname!" + $slt.name
+            }
+
+            # chunk through all images that have unknown slt names.   This can take a while but is how we learn SLT names of imported images without known SLT names.
+            $sltgrab = Get-AGMImage -filtervalue $sltfilter | select-object sltname
+            if ($sltgrab.sltname.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Did not find any SLTs"
+                return
+            }
+            $datagrab = $sltgrab | sort-object sltname | Get-Unique -asstring
+            Clear-Host
+            $i = 1
+            foreach ($name in $datagrab.sltname)
+            { 
+                Write-Host -Object "$i`: $name"
+                $i++
+            }
+            $userselection = ""
+            Write-host ""
+            $listmax = $datagrab.sltname.count
+            While ($true) 
+            {
+                [int]$userselection = Read-Host "Please select an SLT (1-$listmax)"
+                if ($userselection -lt 1 -or $userselection -gt $listmax)
+                {
+                    Write-Host -Object "Please select a value between 1 and $listmax"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $sltname =  $datagrab.sltname[($userselection - 1)]
+        }  
         Clear-Host
         Write-host "We need to determine what time period method we use to find images."
         Write-host ""
@@ -669,16 +701,17 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
                 consistencydate = $id.consistencydate
                 endpit = $id.endpit
                 label = $id.label
+                sltname = $id.sltname
             }
         }
         if ($onvault)
         {
             if (!($csvfile))
             {
-                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode
+                $AGMArray | Select-Object apptype, appliancename, sltname,ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode
             }
             else {
-                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode | Export-Csv -Path $csvfile
+                $AGMArray | Select-Object apptype, appliancename, sltname, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate,jobclasscode | Export-Csv -Path $csvfile
                 write-host "Wrote" $imagegrab.id.count "images to file "$csvfile
             }
         }
@@ -686,10 +719,10 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
         {
             if (!($csvfile))
             {
-                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate
+                $AGMArray | Select-Object apptype, appliancename, sltname, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate
             }
             else {
-                $AGMArray | Select-Object apptype, appliancename, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate | Export-Csv -Path $csvfile
+                $AGMArray | Select-Object apptype, appliancename, sltname, ostype, hostname, appname, appid, jobclass, jobclasscode, backupname, id, consistencydate, endpit, label | sort-object hostname,appname,consistencydate | Export-Csv -Path $csvfile
                 write-host "Wrote" $imagegrab.id.count "images to file "$csvfile
             }
         }

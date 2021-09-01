@@ -324,21 +324,22 @@ function Start-AGMLibRansomwareRecovery
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
         Write-Host "What do you need to do?"
         Write-Host ""
-        write-host "1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
-        write-host "2`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in GCP?"
-        Write-Host "3`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
-        Write-Host "4`: Create a host list      Do you want to create a list of hosts that you will mount your backups to ?"
-        Write-Host "5`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
-        Write-Host "6`: Unmount your images     Do you want to unmount the images we mounted in step 5"
-        write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
-        write-host "8`: Back                    Take me back to the previous menu"
-        write-host "9`: Exit                    Take me back to the command line"
+        write-host " 1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
+        write-host " 2`: Import AGM SLTs         Do you want to import Policy Templates from the source AGM?  Note you need to have a file of exported SLTs to do this"
+        write-host " 3`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in GCP?"
+        Write-Host " 4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
+        Write-Host " 5`: Create a host list      Do you want to create a list of hosts that you will mount your backups to ?"
+        Write-Host " 6`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
+        Write-Host " 7`: Unmount your images     Do you want to unmount the images we mounted in step 5"
+        write-host " 8`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
+        write-host " 9`: Back                    Take me back to the previous menu"
+        write-host "10`: Exit                    Take me back to the command line"
         Write-Host ""
         # ask the user to choose
         While ($true) 
         {
             Write-host ""
-            $listmax = 9
+            $listmax = 10
             [int]$userselection2 = Read-Host "Please select from this list [1-$listmax]"
             if ($userselection2 -lt 1 -or $userselection2 -gt $listmax)
             {
@@ -350,14 +351,15 @@ function Start-AGMLibRansomwareRecovery
             }
         }
         if ($userselection2 -eq 1) { logingcp }
-        if ($userselection2 -eq 2) { importonvaultimages }
-        if ($userselection2 -eq 3) { createimagelist }
-        if ($userselection2 -eq 4) { createhostlist }
-        if ($userselection2 -eq 5) { mountyourimagelist }
-        if ($userselection2 -eq 6) { unmountyourimages }
-        if ($userselection2 -eq 7) { setimagelabels }
-        if ($userselection2 -eq 8) { mainmenu }  
-        if ($userselection2 -eq 9) { return }
+        if ($userselection2 -eq 2) { importagmslts }
+        if ($userselection2 -eq 3) { importonvaultimages }
+        if ($userselection2 -eq 4) { createimagelist }
+        if ($userselection2 -eq 5) { createhostlist }
+        if ($userselection2 -eq 6) { mountyourimagelist }
+        if ($userselection2 -eq 7) { unmountyourimages }
+        if ($userselection2 -eq 8) { setimagelabels }
+        if ($userselection2 -eq 9) { mainmenu }  
+        if ($userselection2 -eq 10) { return }
 
     }
 
