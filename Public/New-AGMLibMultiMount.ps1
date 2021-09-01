@@ -122,11 +122,11 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "You now need to supply a list of host IDs to mount to.  These hosts need to have the same OS (either Linux or Win32)"
         Write-Host "Make sure the hosts are on the same appliance name as the images"
         Write-host ""
-        Write-Host "1`: Show me the hosts and I will select them "
+        Write-Host "1`: Show me the hosts and I will select them (default)"
         write-host "2`: I have the list already, let me supply it"
         Write-Host "3`: Exit"
         $userchoice2 = Read-Host "Please select from this list (1-3)"
-        if ($userchoice2 -eq "" -or $userchoice2 -eq 3) { return }
+        if ($userchoice2 -eq 3) { return }
         if ($userchoice2 -eq 2)
         {
             [string]$hostselection = Read-Host "Please enter all hosts using their ID, comma separated"

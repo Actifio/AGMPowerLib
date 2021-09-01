@@ -93,22 +93,22 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         {
             write-host ""
             Write-host "Unmount selection method:"
-            Write-Host "a`: Select one image by ImageName (default)"
-            Write-Host "b`: Select a label"
+            Write-Host "1`: Select one image by ImageName"
+            Write-Host "2`: Select a label"
         
             While ($true) 
             {
-                $userchoice = Read-Host "Please select from this list (a or b)"
-                if ($userchoice -ne "a" -and $userchoice -ne "b")
+                $userchoice = Read-Host "Please select from this list [1-2]"
+                if ($userchoice -lt "1" -or $userchoice -gt "2")
                 {
-                    Write-Host -Object "Invalid selection. Please enter either a or b"
+                    Write-Host -Object "Invalid selection. Please enter either 1 or 2"
                 } 
                 else
                 {
                     break
                 }
             }
-            if ($userchoice -eq "a") 
+            if ($userchoice -eq "1") 
             {        
                 While ($true) 
                 {
@@ -129,12 +129,12 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                 $imagename = $printarray.imagename[($userselection1 - 1)]
             }
             
-            if ($userchoice -eq "b") 
+            if ($userchoice -eq "2") 
             { 
                 While ($true) 
                 {
                     $listmax = $printarray.count
-                    [int]$userselection2 = Read-Host "Please select the ID of one image in the list.  All images with the matching label will be unmounted(1-$listmax)"
+                    [int]$userselection2 = Read-Host "Please select the ID of one image in the list.  All images with the matching label will be unmounted (1-$listmax)"
                     if ($userselection2 -lt 1 -or $userselection2 -gt $listmax)
                     {
                         Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax)]"
@@ -149,10 +149,22 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         }
         Write-Host ""
         Write-host "Delete setting"
-        Write-Host "1`: Unmount only (default)"
-        Write-Host "2`: Unmount and delete"
-        [int]$userchoice = Read-Host "Please select from this list (1-2)"
-        if ($userchoice -eq 2) { $delete = $true }
+        Write-Host "1`: Unmount and delete"
+        Write-Host "2`: Unmount"
+        $userchoice = ""
+        While ($true) 
+        {
+            [int]$userchoice = Read-Host "Please select from this list (1-2)"
+            if ($userchoice -lt 1 -or $userchoice -gt 2)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-2)]"
+            } 
+            else
+            {
+                break
+            }
+        }
+        if ($userchoice -eq 1) { $delete = $true }
         write-host ""
         Write-host "Force setting"
         Write-Host "1`: Do not force the unmount if host side commands do not release the disk (default)"
@@ -162,7 +174,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         if (($apptype -eq "GCPInstance") -or ($label))
         {
             write-host ""
-            Write-host "Preserve VM setting"
+            Write-host "Preserve VM setting (this only applies to GCE mounts in Google Cloud)"
             Write-Host "1`: Delete the VM on both the GCP side and the Actifio Side (default)"
             Write-Host "2`: Preserve the VM on the GCP side"
             [int]$userchoice = Read-Host "Please select from this list (1-2)"
