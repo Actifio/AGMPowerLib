@@ -365,6 +365,9 @@ function Start-AGMLibRansomwareRecovery
 
     function mainmenu
     {
+        $sessiontest = Get-AGMVersion
+
+        
         clear-host
         Write-Host "This function is designed to help you learn which functions to run before or during a ransomware attack."
         Write-Host ""
@@ -373,6 +376,11 @@ function Start-AGMLibRansomwareRecovery
         Write-Host ""
         write-host "1`: On-Premises"
         Write-Host "2`: Google Cloud"
+        if ($sessiontest.errormessage)
+        {
+            Write-Host ""
+            Write-Host "**** NOTE!   You are not logged into AGM, so please do that first ****"
+        }
         while ($true) 
         {
             Write-host ""
