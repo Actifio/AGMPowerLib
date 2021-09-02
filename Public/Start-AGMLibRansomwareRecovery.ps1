@@ -364,7 +364,7 @@ function Start-AGMLibRansomwareRecovery
    function onpremisesactions
    {  
         Write-Host ""
-        Write-host "On-Premises actions for ransomware protection"
+        Write-host "Production site actions for ransomware protection"
         write-host ""    
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
         Write-Host "What do you need to do?"
@@ -403,14 +403,14 @@ function Start-AGMLibRansomwareRecovery
    function gcpactions
    {  
         Write-Host ""
-        Write-host "Google Cloud Platorm actions for ransomware protection"
+        Write-host "DR Site actions for ransomware recovery"
         Write-Host ""
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
         Write-Host "What do you need to do?"
         Write-Host ""
         write-host " 1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
         write-host " 2`: Import AGM SLTs         Do you want to import Policy Templates from the source AGM?  Note you need to have a file of exported SLTs to do this"
-        write-host " 3`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in GCP?"
+        write-host " 3`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in the DR Site?"
         Write-Host " 4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
         Write-Host " 5`: Create a host list      Do you want to create a list of hosts that you will mount your backups to ?"
         Write-Host " 6`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"

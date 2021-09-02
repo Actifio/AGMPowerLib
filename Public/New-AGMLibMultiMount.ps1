@@ -236,7 +236,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-host " 3)  You can specify -i and the Image Name will be used as part of the mount point"
         Write-host " 4)  You can specify -c and the Consistency Date will be used as part of the mountpoint"
         write-host
-        $hostoptiongrab = Read-Host "Do you want to use the hostname as part of the mount point (y/Y)"
+        $hostoptiongrab = Read-Host "Do you want to use the host name as part of the mount point (y/Y)"
         if ($hostoptiongrab -eq "y" -or $hostoptiongrab -eq "Y ") 
         { 
             $hostnamesuffix = $true 
@@ -248,7 +248,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             $appnamesuffix = $true 
             $suffixoptions = $suffixoptions +" -appnamesuffix"
         }
-        $imageoptiongrab = Read-Host "Do you want to use imagename as part of the mount point (y/Y)"
+        $imageoptiongrab = Read-Host "Do you want to use image name as part of the mount point (y/Y)"
         if ($imageoptiongrab -eq "y" -or $imageoptiongrab -eq "Y ") 
         { 
             $imagesuffix = $true 
@@ -265,10 +265,9 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host ""
         Write-Host "New-AGMLibMultiMount -csvfile `"$filename`" -mountpoint `"$mountpoint`" -hostlist `"$hostselection`" -label `"$label`" $suffixoptions"  
         Write-Host ""
-        Write-Host "1`: Run the command now"
+        Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
-        if ($appuserchoice -eq "") { $appuserchoice = 2}
         if ($appuserchoice -eq 2)
         {
             return
