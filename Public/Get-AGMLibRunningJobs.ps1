@@ -1,4 +1,4 @@
-Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]$queue,[string]$jobclass,[string]$sltname,[switch][alias("m")]$monitor)
+Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[string]$jobclass,[int]$refresh,[string]$sltname,[switch][alias("m")]$monitor)
 {
     <#
     .SYNOPSIS
@@ -12,18 +12,15 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
     Get-AGMLibRunningJobs -e
     Displays all queued or running jobs
 
-    .EXAMPLE
-    Get-AGMLibRunningJobs -q
-    Displays all queued jobs
 
     .DESCRIPTION
     A function to find running jobs
     By default it will only show running jobs
-    -queue will show only queued jobs
     -every will show eery job
     -sltname will filter on template name
     -jobclass will filter on jobclass.   Multiple jobclasses can be entered comma separated
     -monitor will run the function continuously checking every 10 seconds
+    -refresh xx    will change refresh rate
 
     #>
 
@@ -40,10 +37,6 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
     }
 
     $fv = "&status=running"
-    if ($queue)
-    {
-        $fv = "&status=queued"
-    }
     if ($every)
     {
         $fv = "&"
@@ -55,7 +48,7 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
     }
     if ($jobclass)
     {
-        foreach ($class in $jobclass.split[","])
+        foreach ($class in $jobclass.split(","))
         {
             $fv = $fv + "&jobclass=" +$class
         }
@@ -64,9 +57,13 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
     $fv = $fv.Substring(1)
 
     
+    if (!($refresh))
+    {
+        $refresh = 10
+    }
+
     if ($monitor)
     {
-        $done = 0
         do 
         {
             Clear-Host
@@ -96,17 +93,28 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
             }
             $AGMArray | select-object jobname,jobclass,hostname,appname,appliancename,status,startdate,progress,targethost,duration  | Format-Table
             
+		    
 
             write-host ""
-            $n=10
+            $n=$refresh
             do
-            {
-            Write-Host -NoNewLine "`rRefreshing in $n "
-            start-Sleep -s 1
-            $n = $n-1
+            {   
+                # this lets the user break out
+                if ([Console]::KeyAvailable)
+                {
+                    # read the key, and consume it so it won't
+                    # be echoed to the console:
+                    $keyInfo = [Console]::ReadKey($true)
+                    # exit loop
+                    return
+                }
+                # this counts down 10 to 1
+                start-Sleep -s 1
+                $n = $n-1
+                Write-Host -NoNewLine "`rRefreshing in $n seconds (Press any key to exit)"
             } until ($n -eq 0)
             
-        } until ($done -eq 1)
+        } while ($true)
     } 
     else 
     {   
