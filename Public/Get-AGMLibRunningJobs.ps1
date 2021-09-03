@@ -1,4 +1,4 @@
-Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]$queue)
+Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]$queue,[string]$jobclass,[string]$sltname,[switch][alias("m")]$monitor)
 {
     <#
     .SYNOPSIS
@@ -18,6 +18,12 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
 
     .DESCRIPTION
     A function to find running jobs
+    By default it will only show running jobs
+    -queue will show only queued jobs
+    -every will show eery job
+    -sltname will filter on template name
+    -jobclass will filter on jobclass.   Multiple jobclasses can be entered comma separated
+    -monitor will run the function continuously checking every 10 seconds
 
     #>
 
@@ -33,52 +39,108 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[switch][alias("q")]
         return
     }
 
-    $fv = "status=running"
+    $fv = "&status=running"
+    if ($queue)
+    {
+        $fv = "&status=queued"
+    }
+    if ($every)
+    {
+        $fv = "&"
+    }
     # we allow filtering on temp
     if ($sltname)
     {
-        $fv = $fv + "$sltname=" + $sltname
+        $fv = $fv + "&sltname=" + $sltname
     }
-    if ($queue)
+    if ($jobclass)
     {
-        $outputgrab = Get-AGMJob | where-object { $_.status -like "queued" } 
-    }       
-    elseif ($every)
-    {
-        $outputgrab = Get-AGMJob 
-    }
-    else 
-    {
-        $outputgrab = Get-AGMJob -filtervalue "status=running" 
-    }
-    if ($outputgrab.id)
-    {
-        $AGMArray = @()
-
-        Foreach ($id in $outputgrab)
-        { 
-            $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.appliance.name
-            $AGMArray += [pscustomobject]@{
-
-                jobname = $id.jobname
-                jobclass = $id.jobclass
-                apptype = $id.apptype
-                hostname = $id.hostname
-                appname = $id.appname
-                appid = $id.appid
-                appliancename = $id.appliancename
-                status = $id.status
-                queuedate = $id.queuedate
-                startdate = $id.startdate
-                progress = $id.progress
-                targethost = $id.targethost
-                duration = $id.duration
-            }
+        foreach ($class in $jobclass.split[","])
+        {
+            $fv = $fv + "&jobclass=" +$class
         }
-        $AGMArray 
     }
-    else
+    # get rid of the leading &
+    $fv = $fv.Substring(1)
+
+    
+    if ($monitor)
     {
-        $outputgrab
+        $done = 0
+        do 
+        {
+            Clear-Host
+            $outputgrab = Get-AGMJob -filtervalue $fv
+  
+            $AGMArray = @()
+
+            Foreach ($id in $outputgrab)
+            { 
+                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.appliance.name
+                $AGMArray += [pscustomobject]@{
+
+                    jobname = $id.jobname
+                    jobclass = $id.jobclass
+                    apptype = $id.apptype
+                    hostname = $id.hostname
+                    appname = $id.appname
+                    appid = $id.appid
+                    appliancename = $id.appliancename
+                    status = $id.status
+                    queuedate = $id.queuedate
+                    startdate = $id.startdate
+                    progress = $id.progress
+                    targethost = $id.targethost
+                    duration = $id.duration
+                }
+            }
+            $AGMArray | select-object jobname,jobclass,hostname,appname,appliancename,status,startdate,progress,targethost,duration  | Format-Table
+            
+
+            write-host ""
+            $n=10
+            do
+            {
+            Write-Host -NoNewLine "`rRefreshing in $n "
+            start-Sleep -s 1
+            $n = $n-1
+            } until ($n -eq 0)
+            
+        } until ($done -eq 1)
+    } 
+    else 
+    {   
+        $outputgrab = Get-AGMJob -filtervalue $fv
+        if ($outputgrab.id)
+        {
+            $AGMArray = @()
+
+            Foreach ($id in $outputgrab)
+            { 
+                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.appliance.name
+                $AGMArray += [pscustomobject]@{
+
+                    jobname = $id.jobname
+                    jobclass = $id.jobclass
+                    apptype = $id.apptype
+                    hostname = $id.hostname
+                    appname = $id.appname
+                    appid = $id.appid
+                    appliancename = $id.appliancename
+                    status = $id.status
+                    queuedate = $id.queuedate
+                    startdate = $id.startdate
+                    progress = $id.progress
+                    targethost = $id.targethost
+                    duration = $id.duration
+                }
+            }
+            $AGMArray 
+        }
+        else
+        {
+            $outputgrab
+        }    
     }
+    
 }

@@ -296,7 +296,7 @@ function Start-AGMLibRansomwareRecovery
         Clear-Host
         Write-Host "Monitor your mounts"
         Write-Host ""
-        Write-Host "The function you need to run is:    Get-AGMLibRunningJobs"
+        Write-Host "The function you need to run is:    Get-AGMLibRunningJobs -jobclass mount -m"
         Write-Host ""
         Write-Host "1`: Run it now (default)"
         Write-Host "2`: Take me back to the previous menu"
@@ -304,8 +304,7 @@ function Start-AGMLibRansomwareRecovery
         [int]$userselection1 = Read-Host "Please select from this list [1-3]"
         if ($userselection1 -eq 1 -or $userselection1 -eq "")
         {
-            Get-AGMLibRunningJobs
-            Read-Host -Prompt "Press enter to continue"
+            Get-AGMLibRunningJobs -jobclass mount -m
             gcpactions
         } 
         elseif  ($userselection1 -eq 2) 
