@@ -1,4 +1,4 @@
-Function Get-AGMLibLatestImage([string]$id, [string]$appid,[string]$jobclass) 
+Function Get-AGMLibLatestImage([string]$id,[string]$appid,[string]$jobclass) 
 {
     <#
     .SYNOPSIS
