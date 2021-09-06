@@ -22,6 +22,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
     -wait     This will wait up to 2 minutes for the job to start, checking every 15 seconds to show you the job name
     -monitor  Same as -wait but will also run Get-AGMLibFollowJobStatus to monitor the job to completion 
+    -appid  xxxx  Will mount the latest snapshot for appid xxxx rather than requiring the user to supply an image name/id
+    -onvault true  Will use the latest OnVault image rather than latest snapshot image when used with -appid 
 
     #>
 

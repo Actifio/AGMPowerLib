@@ -10,6 +10,11 @@ Function Set-AGMLibImage ([array]$imagelist,$filename,[string]$imagename,[string
 
     .EXAMPLE
     Set-AGMLibImage -imagelist $imagelist 
+    Uses the $imagelist variable that you need to create beforehand that lists imagname, image ID and new label and sets the label specified for each image
+
+    .EXAMPLE
+    Set-AGMLibImage -filename fileofimages.csv
+    Loads the CSV file fileofimages.csv and then for each image in the file, sets the label specified for that image in that file
 
     .DESCRIPTION
     We can create an imagelist several ways.   This method literally gets every image
@@ -41,9 +46,9 @@ Function Set-AGMLibImage ([array]$imagelist,$filename,[string]$imagename,[string
     if ((!($imagelist)) -and (!($filename)) -and (!($imagename)))
     {
         Write-host "This function is used to label a large number of images in a single command.  This is done by supplying one of the following:
--- A list of images to label, normally created with New-AGMLibImageRange.  We then use -imagelist <imagelist>
--- A CSV file contained a list of images with new labels.  The file needs to have at least id,backupname,label as headings.  You could use New-AGMLibImageRange to create this file.  Then use:  -filename <filename.csv>
--- An imagename.   You could learn this in the AGM Web GUI.   Then use:  -imagename <imagename> -label <newlabel>"
+-- A list of images to label, normally created with New-AGMLibImageRange.  We then use:   Set-AGMLibImage -imagelist <imagelist>
+-- A CSV file contained a list of images with new labels.  The file needs to have at least id,backupname,label as headings.  You could use New-AGMLibImageRange to create this file.  Then use:  Set-AGMLibImage -filename <filename.csv>
+-- An imagename.   You could learn this in the AGM Web GUI.   Then use:  Set-AGMLibImage -imagename <imagename> -label <newlabel>"
     }
     if ($filename)
     {
