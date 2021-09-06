@@ -160,6 +160,7 @@ PrivateData = @{
         Made pre-session check more demanding to ensure we always have a good session before starting a composite function
         Improved RansomWare Recovery flow
         New-AGMLibVM  will work with OnVault, added  New-AGMVMMultiMount
+        Teach New-AGMLibSystemStateToVM to handle stacked OnVault images
 
         ## [0.0.0.32] 2021-08-18
         Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
