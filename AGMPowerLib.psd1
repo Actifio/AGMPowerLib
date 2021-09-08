@@ -143,7 +143,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = @("Actifio","AGM","Sky","CDS","CDX","VDP","Actifio GO")
+        Tags = @("Actifio","AGM","Sky","CDS","CDX","VDP","ActifioGO")
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/Actifio/AGMPowerLib/blob/master/LICENSE'
@@ -163,7 +163,7 @@ PrivateData = @{
         Taught New-AGMLibSystemStateToVM to handle stacked OnVault images
         Added  New-AGMVMMultiMount
         
-        ## [0.0.0.32] 2021-08-18
+        ## [0.0.0.32] 2021-08-27
         Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
         Improved Start-AGMLibRansomwareRecovery
 
