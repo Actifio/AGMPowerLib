@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.32'
+ModuleVersion = '0.0.0.33'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -104,6 +104,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
 'New-AGMLibVM',
+'New-AGMLibVMMultiMount',
 'New-AGMLibMultiVM',
 'New-AGMLibOracleMount',
 'New-AGMLibMSSQLMigrate',
@@ -155,6 +156,13 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.33] 2021-09-08
+        Made pre-session check more demanding to ensure we always have a good session before starting a composite function
+        Improved RansomWare Recovery flow
+        Taught New-AGMLibVM  will work with OnVault
+        Taught New-AGMLibSystemStateToVM to handle stacked OnVault images
+        Added  New-AGMVMMultiMount
+        
         ## [0.0.0.32] 2021-08-27
         Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
         Improved Start-AGMLibRansomwareRecovery

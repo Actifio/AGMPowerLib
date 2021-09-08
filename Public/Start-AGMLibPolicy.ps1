@@ -36,16 +36,12 @@ function Start-AGMLibPolicy ([string]$policyid,[string]$logicalgroupid,[string]$
        Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
        return
    }
-   else 
+   $sessiontest = Get-AGMVersion
+   if ($sessiontest.errormessage)
    {
-       $sessiontest = (Get-AGMSession).session_id
-       if ($sessiontest -ne $AGMSESSIONID)
-       {
-           Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-           return
-       }
+       Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+       return
    }
-
    # will need this later to handle DBs.
    if ($capturetype)
    {

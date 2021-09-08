@@ -45,14 +45,11 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if ($sessiontest.errormessage)
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
     # handle hostlist vs hostid
@@ -81,8 +78,20 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "1`: I have the image list as a file"
         Write-Host "2`: I need to run Get-AGMLibImageRange to create the CSV file"
         Write-Host "3`: Exit"
-        $userchoice1 = Read-Host "Please select from this list (1-3)"
-        if ($userchoice1 -eq "" -or $userchoice1 -eq 3) { return }
+        While ($true) 
+        {
+            Write-host ""
+            $userchoice1 = Read-Host "Please select from this list (1-3)"
+            if ($userchoice1 -lt 1 -or $userchoice1 -gt 3)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-3]"
+            } 
+            else
+            {
+                break
+            }
+        }
+        if ($userchoice1 -eq 3) { return }
         if ($userchoice1 -eq 1)
         {
             [string]$filename = Read-Host "Supply the file name in CSV format"
@@ -103,7 +112,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         }
         if ($userchoice1 -eq 2)
         {
-            Get-AGMLibImageRange6
+            Get-AGMLibImageRange
             
             return
         }
@@ -113,11 +122,11 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-Host "You now need to supply a list of host IDs to mount to.  These hosts need to have the same OS (either Linux or Win32)"
         Write-Host "Make sure the hosts are on the same appliance name as the images"
         Write-host ""
-        Write-Host "1`: Show me the hosts and I will select them "
+        Write-Host "1`: Show me the hosts and I will select them (default)"
         write-host "2`: I have the list already, let me supply it"
         Write-Host "3`: Exit"
         $userchoice2 = Read-Host "Please select from this list (1-3)"
-        if ($userchoice2 -eq "" -or $userchoice2 -eq 3) { return }
+        if ($userchoice2 -eq 3) { return }
         if ($userchoice2 -eq 2)
         {
             [string]$hostselection = Read-Host "Please enter all hosts using their ID, comma separated"
@@ -173,12 +182,12 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             if ($userchoice3 -eq 1)
             {
                 $ostype = "Linux"
-                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($userchoice3 -eq 2)
             {
                 $ostype = "Win32"
-                $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+                $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
             }
             if ($hostgrab.id.count -eq 0)
             {
@@ -227,7 +236,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Write-host " 3)  You can specify -i and the Image Name will be used as part of the mount point"
         Write-host " 4)  You can specify -c and the Consistency Date will be used as part of the mountpoint"
         write-host
-        $hostoptiongrab = Read-Host "Do you want to use the hostname as part of the mount point (y/Y)"
+        $hostoptiongrab = Read-Host "Do you want to use the host name as part of the mount point (y/Y)"
         if ($hostoptiongrab -eq "y" -or $hostoptiongrab -eq "Y ") 
         { 
             $hostnamesuffix = $true 
@@ -239,7 +248,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
             $appnamesuffix = $true 
             $suffixoptions = $suffixoptions +" -appnamesuffix"
         }
-        $imageoptiongrab = Read-Host "Do you want to use imagename as part of the mount point (y/Y)"
+        $imageoptiongrab = Read-Host "Do you want to use image name as part of the mount point (y/Y)"
         if ($imageoptiongrab -eq "y" -or $imageoptiongrab -eq "Y ") 
         { 
             $imagesuffix = $true 
@@ -254,12 +263,11 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host "New-AGMLibMultiMount -csvfile $filename -mountpoint `"$mountpoint`" -hostlist $hostselection -label `"$label`" $suffixoptions"  
+        Write-Host "New-AGMLibMultiMount -csvfile `"$filename`" -mountpoint `"$mountpoint`" -hostlist `"$hostselection`" -label `"$label`" $suffixoptions"  
         Write-Host ""
-        Write-Host "1`: Run the command now"
+        Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
-        if ($appuserchoice -eq "") { $appuserchoice = 2}
         if ($appuserchoice -eq 2)
         {
             return
@@ -286,18 +294,18 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
 
     if ($csvfile)
     {
-        if ( Test-Path $filename )
+        if ( Test-Path $csvfile )
         {
-            $imagelist = Import-Csv -Path $filename
+            $imagelist = Import-Csv -Path $csvfile
             if (!($imagelist.backupname))
             {
-                Get-AGMErrorMessage -messagetoprint "The file named $filename does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
+                Get-AGMErrorMessage -messagetoprint "The file named $csvfile does not contain an backupname column and cannot be used.  Was it created with Get-AGMLibImageRange?"
                 return
             }
         }
         else
         {
-            Get-AGMErrorMessage -messagetoprint "The file named $filename could not be found."
+            Get-AGMErrorMessage -messagetoprint "The file named $csvfile could not be found."
             return
         }
     }
@@ -326,6 +334,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
         $label = "MultiFS Recovery"
     }
 
+    $hostlist = $hostlist.Split(",")
     $hostcount = $hostlist.count
     $hostroundrobin = 0
     $lastappid = ""

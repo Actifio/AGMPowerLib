@@ -80,6 +80,32 @@ function Start-AGMLibRansomwareRecovery
             return    
         }
     }
+    function importagmsltsgc
+    {
+        Clear-Host
+        Write-Host "Import AGM SLTs"  
+        Write-Host ""
+        Write-Host "The function you need to run is:   Import-AGMLibSLT"
+        Write-Host ""
+        Write-Host "1`: Run it now (default)"
+        Write-Host "2`: Take me back to the previous menu"
+        Write-Host "3`: Exit, I will run this later "
+        [int]$userselection1 = Read-Host "Please select from this list [1-3]"
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
+        {
+            Import-AGMLibSLT
+            Read-Host -Prompt "Press enter to continue"
+            gcpactions
+        } 
+        elseif  ($userselection1 -eq 2) 
+        {
+            gcpactions
+        }
+        else 
+        {
+            return    
+        }
+    }
     function schedulercheck
    {  
         Clear-Host
@@ -236,6 +262,63 @@ function Start-AGMLibRansomwareRecovery
             return    
         }
    }
+
+   function listmounts
+   {
+        Clear-Host
+        Write-Host "List your mounts"
+        Write-Host ""
+        Write-Host "The function you need to run is:   Get-AGMLibActiveImage"
+        Write-Host ""
+        Write-Host "1`: Run it now (default)"
+        Write-Host "2`: Take me back to the previous menu"
+        Write-Host "3`: Exit, I will run this later "
+        [int]$userselection1 = Read-Host "Please select from this list [1-3]"
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
+        {
+            Get-AGMLibActiveImage | Select-Object id,imagename,apptype,appliancename,hostname,appname,mountedhost,consumedsize_gib,label,imagestate | Format-Table
+            Read-Host -Prompt "Press enter to continue"
+            gcpactions
+        } 
+        elseif  ($userselection1 -eq 2) 
+        {
+            gcpactions
+        }
+        else 
+        {
+            return    
+        }
+   }
+
+   function  monitormounts
+
+   {
+        Clear-Host
+        Write-Host "Monitor your mounts"
+        Write-Host ""
+        Write-Host "The function you need to run is:    Get-AGMLibRunningJobs -jobclass mount -m"
+        Write-Host ""
+        Write-Host "1`: Run it now (default)"
+        Write-Host "2`: Take me back to the previous menu"
+        Write-Host "3`: Exit, I will run this later "
+        [int]$userselection1 = Read-Host "Please select from this list [1-3]"
+        if ($userselection1 -eq 1 -or $userselection1 -eq "")
+        {
+            Get-AGMLibRunningJobs -jobclass mount -m
+            gcpactions
+        } 
+        elseif  ($userselection1 -eq 2) 
+        {
+            gcpactions
+        }
+        else 
+        {
+            return    
+        }
+   }
+
+
+
    function unmountyourimages
    {  
         Clear-Host
@@ -280,7 +363,7 @@ function Start-AGMLibRansomwareRecovery
    function onpremisesactions
    {  
         Write-Host ""
-        Write-host "On-Premises actions for ransomware protection"
+        Write-host "Production site actions for ransomware protection"
         write-host ""    
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
         Write-Host "What do you need to do?"
@@ -319,26 +402,29 @@ function Start-AGMLibRansomwareRecovery
    function gcpactions
    {  
         Write-Host ""
-        Write-host "Google Cloud Platorm actions for ransomware protection"
+        Write-host "DR Site actions for ransomware recovery"
         Write-Host ""
         Write-host "Note that if you have not connected to AGM yet with Connect-AGM, then do this first before proceeding"
         Write-Host "What do you need to do?"
         Write-Host ""
-        write-host "1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
-        write-host "2`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in GCP?"
-        Write-Host "3`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
-        Write-Host "4`: Create a host list      Do you want to create a list of hosts that you will mount your backups to ?"
-        Write-Host "5`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
-        Write-Host "6`: Unmount your images     Do you want to unmount the images we mounted in step 5"
-        write-host "7`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
-        write-host "8`: Back                    Take me back to the previous menu"
-        write-host "9`: Exit                    Take me back to the command line"
+        write-host " 1`: Login to AGM            Do you need to login to AGM with Connect-AGM?"
+        write-host " 2`: Import AGM SLTs         Do you want to import Policy Templates from the source AGM?  Note you need to have a file of exported SLTs to do this"
+        write-host " 3`: Import OnVault images   Do you want to import (or forget) the latest images from an OnVault pool so they can be used in the DR Site?"
+        Write-Host " 4`: Create an image list    Do you want to create a list of images that you could use to identify which backups to use?"
+        Write-Host " 5`: Create a host list      Do you want to create a list of hosts that you will mount your backups to ?"
+        Write-Host " 6`: Mount your image list   Do you have a list of backups (from step 4) and you want to mount all of them at once?"
+        Write-Host " 7`: Monitor your mounts     Do you want to monitor running mount jobs"
+        Write-Host " 8`: List your mounts        Do you want to list the current mounts"
+        Write-Host " 9`: Unmount your images     Do you want to unmount the images we mounted in step 6"
+        write-host "10`: Set image labels        Do you want to apply a label to an image or images to better tag that image?"
+        write-host "11`: Back                    Take me back to the previous menu"
+        write-host "12`: Exit                    Take me back to the command line"
         Write-Host ""
         # ask the user to choose
         While ($true) 
         {
             Write-host ""
-            $listmax = 9
+            $listmax = 12
             [int]$userselection2 = Read-Host "Please select from this list [1-$listmax]"
             if ($userselection2 -lt 1 -or $userselection2 -gt $listmax)
             {
@@ -350,27 +436,38 @@ function Start-AGMLibRansomwareRecovery
             }
         }
         if ($userselection2 -eq 1) { logingcp }
-        if ($userselection2 -eq 2) { importonvaultimages }
-        if ($userselection2 -eq 3) { createimagelist }
-        if ($userselection2 -eq 4) { createhostlist }
-        if ($userselection2 -eq 5) { mountyourimagelist }
-        if ($userselection2 -eq 6) { unmountyourimages }
-        if ($userselection2 -eq 7) { setimagelabels }
-        if ($userselection2 -eq 8) { mainmenu }  
-        if ($userselection2 -eq 9) { return }
+        if ($userselection2 -eq 2) { importagmsltsgc }
+        if ($userselection2 -eq 3) { importonvaultimages }
+        if ($userselection2 -eq 4) { createimagelist }
+        if ($userselection2 -eq 5) { createhostlist }
+        if ($userselection2 -eq 6) { mountyourimagelist }
+        if ($userselection2 -eq 7) { monitormounts }
+        if ($userselection2 -eq 8) { listmounts }
+        if ($userselection2 -eq 9) { unmountyourimages }
+        if ($userselection2 -eq 10) { setimagelabels }
+        if ($userselection2 -eq 11) { mainmenu }  
+        if ($userselection2 -eq 12) { return }
 
     }
 
     function mainmenu
     {
+        $sessiontest = Get-AGMVersion
+
+        
         clear-host
         Write-Host "This function is designed to help you learn which functions to run before or during a ransomware attack."
         Write-Host ""
-        Write-host "We are either running this from On-Premises or in the Google Cloud."
+        Write-host "We are either running this from the Production site or the DR Site."
         Write-Host "Which site are you working with?"
         Write-Host ""
-        write-host "1`: On-Premises"
-        Write-Host "2`: Google Cloud"
+        write-host "1`: Production Site"
+        Write-Host "2`: DR Site"
+        if ($sessiontest.errormessage)
+        {
+            Write-Host ""
+            Write-Host "**** NOTE!   You are not logged into AGM, so please do that first ****"
+        }
         while ($true) 
         {
             Write-host ""

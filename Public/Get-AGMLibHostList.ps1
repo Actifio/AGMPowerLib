@@ -19,14 +19,11 @@ Function Get-AGMLibHostList
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if ($sessiontest.errormessage)
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
     $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
@@ -78,12 +75,12 @@ Function Get-AGMLibHostList
     if ($userchoice3 -eq 1)
     {
         $ostype = "Linux"
-        $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+        $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
     }
     if ($userchoice3 -eq 2)
     {
         $ostype = "Win32"
-        $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&ostype=$ostype" -sort "name:asc"
+        $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid&ostype=$ostype" -sort "name:asc"
     }
     if ($hostgrab.id.count -eq 0)
     {

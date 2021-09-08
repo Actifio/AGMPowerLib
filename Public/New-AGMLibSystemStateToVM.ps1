@@ -55,14 +55,11 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if ($sessiontest.errormessage)
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
 
 
@@ -201,7 +198,7 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         if (!($imageid))
         {
             write-host "Fetching Image list from AGM for Appid $appid"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool | Sort-Object consistencydate
+            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=dedupasync&jobclass=StreamSnap&jobclass=OnVault&clusterid=$mountapplianceid"  | Sort-Object consistencydate
             if ($imagelist.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -240,7 +237,16 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
                     break
                 }
             }
-            $imageid =  $imagelist[($imageselection - 1)].id   
+            # onvault images get stacked
+            if ($imagelist[($imageselection - 1)].copies)
+            {
+                $copies = $imagelist[($imageselection - 1)].copies
+                $imageid = ($copies | where-object {$_.targetuds -eq $mountapplianceid}).id
+            }
+            else {
+                $imageid =  $imagelist[($imageselection - 1)].id 
+            }
+              
         }
     }
 
@@ -268,15 +274,15 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
     {
         Clear-Host
         #using the image we learn which appliance it is on.  We need this so we can list only the vCenters known to that appliance
-        $clusterid = (Get-AGMImage -id $imageid).clusterid
-        if (!($clusterid))
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to find details about $imageid"
-            return
-        }
+        #$clusterid = (Get-AGMImage -id $imageid).clusterid
+        #if (!($clusterid))
+        #{
+        ##    Get-AGMErrorMessage -messagetoprint "Failed to find details about $imageid"
+         #   return
+        #}
         
-        # we now learn what vcenters are on that appliance and build a list, if there is more than 1
-        $vclist = Get-AGMHost -filtervalue "clusterid=$clusterid&isvcenterhost=true&hosttype=vcenter" | select-object -Property name, srcid, id | Sort-Object name
+        # we now learn what vcenters are on that appliance and build a list, if there is more than 1    We were using cluster ID from image, but that can point to source cluster, 
+        $vclist = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&isvcenterhost=true&hosttype=vcenter" | select-object -Property name, srcid, id | Sort-Object name
 
         if ($vclist.name.count -eq 0)
         {
@@ -287,10 +293,11 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         {
             $vcenterid = ($vclist).id
             $srcid =  ($vclist).srcid
+            write-host "Only one vCenter found, using "$vclist.name
         }
         else
         {
-            Clear-Host
+            write-host ""
             Write-Host "vCenter list"
             $i = 1
             foreach
@@ -325,10 +332,11 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         elseif ($esxlist.name.count -eq 1)
         {
             $esxhostid =  ($esxlist).id
+            write-host "Only one ESXi host found, using "$esxlist.name
         } 
         else
         {
-            Clear-Host
+            write-host ""
             Write-Host "ESX Server list"
             $i = 1
             foreach
@@ -364,10 +372,11 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         elseif ($dslist.count -eq 1) 
         {
             $datastore =  ($dslist).name
+            write-host "Only one Datastore found, using "$dslist.name
         }
         else
         {
-            Clear-Host
+            write-host ""
             Write-Host "Datastore list"
             $i = 1
             foreach ($item in $dslist)
@@ -394,6 +403,7 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
             $datastore =  $dslist[($userselection - 1)].name
         }
     
+        Write-host ""
         Write-Host "Power off after recovery?"
         Write-Host "1`: Do not power off after recovery(default)"
         Write-Host "2`: Power off after recovery"

@@ -1,4 +1,4 @@
-Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -22,6 +22,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
     -wait     This will wait up to 2 minutes for the job to start, checking every 15 seconds to show you the job name
     -monitor  Same as -wait but will also run Get-AGMLibFollowJobStatus to monitor the job to completion 
+    -appid  xxxx  Will mount the latest snapshot for appid xxxx rather than requiring the user to supply an image name/id
+    -onvault true  Will use the latest OnVault image rather than latest snapshot image when used with -appid 
 
     #>
 
@@ -30,16 +32,12 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
-    else 
+    $sessiontest = Get-AGMVersion
+    if ($sessiontest.errormessage)
     {
-        $sessiontest = (Get-AGMSession).session_id
-        if ($sessiontest -ne $AGMSESSIONID)
-        {
-            Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
-            return
-        }
+        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        return
     }
-
 
     # if the user gave us nothing to start work, then ask for a VMware VM name
     if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
@@ -131,6 +129,32 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             $imageid = $imagegrab.id
         }
     }
+
+
+    if ($appid)
+    {
+        if ($onvault -eq "true")
+        {
+            $imagecheck = Get-AGMLibLatestImage -jobclass OnVault -appid $appid
+        }
+        else 
+        {
+            $imagecheck = Get-AGMLibLatestImage -appid $appid
+        }
+        
+        if (!($imagecheck.backupname))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage"
+            return
+        }   
+        else {
+            $imagegrab = Get-AGMImage -id $imagecheck.id
+            $imagename = $imagegrab.backupname                
+            $imageid = $imagegrab.id
+            $consistencydate = $imagegrab.consistencydate
+            $restorableobjects = $imagegrab.restorableobjects
+        }
+    }
     
 
 
@@ -142,15 +166,32 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             Clear-Host
             Write-Host "Image selection"
             Write-Host "1`: Use the latest snapshot(default)"
-            Write-Host "2`: Select an image"
+            Write-Host "2`: Use the latest OnVault"
+            Write-Host "3`: Select an image"
             Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            [int]$userselection = Read-Host "Please select from this list (1-3)"
             if (($userselection -eq "") -or ($userselection -eq 1))
             {
-                $imagecheck = Get-AGMLibLatestImage $appid
+                $imagecheck = Get-AGMLibLatestImage -appid $appid
                 if (!($imagecheck.backupname))
                 {
-                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage $appid"
+                    Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage -appid $appid"
+                    return
+                }   
+                else {
+                    $imagegrab = Get-AGMImage -id $imagecheck.id
+                    $imagename = $imagegrab.backupname                
+                    $imageid = $imagegrab.id
+                    $consistencydate = $imagegrab.consistencydate
+                    $restorableobjects = $imagegrab.restorableobjects
+                }
+            }
+            elseif  ($userselection -eq 2)
+            {
+                $imagecheck = Get-AGMLibLatestImage -jobclass OnVault -appid $appid
+                if (!($imagecheck.backupname))
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to find OnVault for AppID using:  Get-AGMLibLatestImage -jobclass Onvault -appid $appid"
                     return
                 }   
                 else {
