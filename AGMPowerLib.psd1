@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.33'
+ModuleVersion = '0.0.0.34'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -156,6 +156,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.34] 2021-09-13
+        Added appcount to Get-AGMLibPolicies
+
         ## [0.0.0.33] 2021-09-08
         Made pre-session check more demanding to ensure we always have a good session before starting a composite function
         Improved RansomWare Recovery flow
