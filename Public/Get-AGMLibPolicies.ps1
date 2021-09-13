@@ -33,7 +33,6 @@ Function Get-AGMLibPolicies ([string]$appid,[string]$sltid)
     }
 
 
-
     if ($sltid)
     {
         $sltgrab = Get-AGMSLT -id $sltid | select-object id,name | sort-object name
@@ -71,6 +70,8 @@ Function Get-AGMLibPolicies ([string]$appid,[string]$sltid)
 
     foreach ($slt in $sltgrab)
     {
+        $sltname = $slt.name
+        $appcount = Get-AGMApplicationCount -filtervalue sltname=$sltname
         $policygrab = Get-AGMSLTpolicy -id $slt.id
         foreach ($policy in $policygrab)
         {
@@ -102,7 +103,8 @@ Function Get-AGMLibPolicies ([string]$appid,[string]$sltid)
                 $et = [timespan]::fromseconds($policy.endtime)
                 $policy.endtime = $et.ToString("hh\:mm")
             }
+            $policy | Add-Member -NotePropertyName appcount -NotePropertyValue $appcount
         }
-        $policygrab | select-object sltid,sltname,policyid,name,operation,priority,retention,starttime,endtime,rpo
+        $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority
     }  
 }
