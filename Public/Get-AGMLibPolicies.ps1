@@ -1,4 +1,4 @@
-Function Get-AGMLibPolicies ([string]$appid,[string]$sltid) 
+Function Get-AGMLibPolicies([string]$appid,[string]$sltid) 
 {
     <#
     .SYNOPSIS
