@@ -84,7 +84,7 @@ Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
 Then re-run the installer.  The installer will unblock the remaining files.
 
-##### Silent Manul install
+##### Silent Manual install
 
 You can run the installer silently by adding **-silentinstall** to the Install command.  Here is an example:
 ```
