@@ -84,6 +84,19 @@ Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
 Then re-run the installer.  The installer will unblock the remaining files.
 
+##### Silent Manul install
+
+You can run the installer silently by adding **-silentinstall** to the Install command.  Here is an example:
+```
+PS /Users/avw> ./AGMPowerLib/Install-AGMPowerLib.ps1 -silentinstall
+Detected PowerShell version:    7
+Downloaded AGMPowerLib version: 0.0.0.35
+Found AGMPowerLib version:      0.0.0.35
+Installed AGMPowerLib version:  0.0.0.35
+PS /Users/avw>
+```
+
+
 ## Guided Wizards
 
 The following functions have guided wizards to help you create commands.   Simply run these commands without any options to start the wizard.   Once you have created a typical command, you can use it build more commands or automation.

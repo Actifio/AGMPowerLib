@@ -1,4 +1,4 @@
-function GetAGMPowerLibInstall
+function GetAGMPowerLibInstall 
 {
   # Returns the known installation locations for the AGMPowerLib Module
   return Get-Module -ListAvailable -Name AGMPowerLib -ErrorAction SilentlyContinue | Select-Object -Property Name, Version, ModuleBase
@@ -76,7 +76,7 @@ function CreateModuleContent
 {
   # Attempts to create a new folder and copy over the AGMPowerLib Module contents
   try
-  {
+  { 
     $platform=$PSVersionTable.platform
     if ( $platform -notmatch "Unix" )
     {
@@ -85,8 +85,14 @@ function CreateModuleContent
     $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
     $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
     $null = Test-Path -Path $InstallPath -ErrorAction Stop
-    
-    Write-Host -Object "`nInstallation successful."
+    $commandcheck = get-command -module AGMPowerLib
+    if (!($commandcheck))
+    {
+      Write-Host -Object "`nInstallation failed."
+    }
+    else {
+      Write-Host -Object "`nInstallation successful."
+    }
   }
   catch 
   {
@@ -112,10 +118,67 @@ if ( $hostVersionInfo -lt "5" )
     break
 }
 
+$commandcheck = get-command -module AGMPowerCLI
+if (!($commandcheck))
+{
+  Write-Host -Object "`nAGMPowerCLI not installed.  Install this first"
+  Write-Host ""
+  exit
+}
+
+
 Import-LocalizedData -BaseDirectory $PSScriptRoot\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
+
+function silentinstall
+{
+  Write-host 'Detected PowerShell version:   ' $hostVersionInfo
+  Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
+  # if we find an install then we upgrade it
+  [Array]$ActInstall = GetAGMPowerLibInstall
+  if ($ActInstall.name.count -gt 1)
+  {
+    Write-Host -Object "`nMultipe installations detected.  Silent Installation failed."
+  }
+  if ($ActInstall.name.count -eq 1)
+  {
+    $InstallPath = $ActInstall.ModuleBase
+    Write-host 'Found AGMPowerLib version:     ' $ActInstall.Version
+    Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$false
+  }
+  else 
+  {
+    $InstallPathList = GetPSModulePath
+    $InstallPath = $InstallPathList[0]
+    $InstallPath = $InstallPath + '\AGMPowerLib\'
+  }
+  $platform=$PSVersionTable.platform
+  if ( $platform -notmatch "Unix" )
+  {
+    $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
+  }
+  $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
+  $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
+  $null = Test-Path -Path $InstallPath -ErrorAction Stop
+  $commandcheck = get-command -module AGMPowerLib
+  if (!($commandcheck))
+  {
+    Write-Host 'Silent Installation failed.'
+  }
+  else {
+    Write-Host 'Installed AGMPowerLib version: ' $ActModuleData.ModuleVersion
+  }
+  exit
+}
+
+if ($args[0] -eq "-silentinstall")
+{
+  silentinstall
+}
+
 Write-host 'Detected PowerShell version:   ' $hostVersionInfo
-Write-host 'Downloaded ActPowerCLI version:' $ActModuleData.ModuleVersion
+Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
 Write-host ""
+
 
 
 [Array]$ActInstall = GetAGMPowerLibInstall
