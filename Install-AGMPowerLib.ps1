@@ -129,16 +129,18 @@ if (!($commandcheck))
 
 Import-LocalizedData -BaseDirectory $PSScriptRoot\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
 
-function silentinstall
+function silentinstall([int]$ReqInstallPath)
 {
+  $InstallPathList = GetPSModulePath
   Write-host 'Detected PowerShell version:   ' $hostVersionInfo
   Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
   # if we find an install then we upgrade it
   [Array]$ActInstall = GetAGMPowerLibInstall
   if ($ActInstall.name.count -gt 1)
   {
-    Write-Host -Object "`nMultipe installations detected.  Silent Installation failed."
+    Write-Host -Object "`nMultiple installations detected.  Silent Installation failed."
   }
+  # if it is installed, uninstall it, but keep the install path to re-use, otherwise use the second module path by default
   if ($ActInstall.name.count -eq 1)
   {
     $InstallPath = $ActInstall.ModuleBase
@@ -147,10 +149,16 @@ function silentinstall
   }
   else 
   {
-    $InstallPathList = GetPSModulePath
-    $InstallPath = $InstallPathList[0]
-    $InstallPath = $InstallPath + '\AGMPowerLib\'
+    $InstallPath = $InstallPathList[0] + '\AGMPowerLib\'
   }
+  #if user specified a number then use it
+  if ($ReqInstallPath)
+  {
+    $InstallPath = $InstallPathList[$ReqInstallPath] + '\AGMPowerLib\'
+  }
+
+    
+  
   $platform=$PSVersionTable.platform
   if ( $platform -notmatch "Unix" )
   {
@@ -170,9 +178,22 @@ function silentinstall
   exit
 }
 
+
 if ($args[0] -eq "-silentinstall")
 {
-  silentinstall
+  if ($args[1]) {
+    if ($args[1] -lt 0 -or $args[1] -gt 2)
+    {
+      Write-Host 'Specify a value between 0 and 2 which matches a known module install path from $env:PSModulePath'
+      exit
+    } else {
+      
+    }
+    silentinstall -ReqInstallPath $args[1]
+  } else {
+    silentinstall 
+  }
+  
 }
 
 Write-host 'Detected PowerShell version:   ' $hostVersionInfo
