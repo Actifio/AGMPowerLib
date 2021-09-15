@@ -198,7 +198,7 @@ if ($args[0] -eq "-silentuninstall")
 
 
 
-
+Clear-Host
 Write-host 'Detected PowerShell version:   ' $hostVersionInfo
 Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
 Write-host ""
