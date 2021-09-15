@@ -108,7 +108,7 @@ function ReportAGMPowerLib
 }
 
 ### Code
-Clear-Host
+
 
 $hostVersionInfo = (get-host).Version.Major
 if ( $hostVersionInfo -lt "5" )
@@ -129,11 +129,12 @@ if (!($commandcheck))
 
 Import-LocalizedData -BaseDirectory $PSScriptRoot\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
 
-function silentinstall([int]$ReqInstallPath)
+function silentinstall
 {
-  $InstallPathList = GetPSModulePath
   Write-host 'Detected PowerShell version:   ' $hostVersionInfo
   Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
+  $InstallPathList = GetPSModulePath
+  $platform=$PSVersionTable.platform
   # if we find an install then we upgrade it
   [Array]$ActInstall = GetAGMPowerLibInstall
   if ($ActInstall.name.count -gt 1)
@@ -144,22 +145,22 @@ function silentinstall([int]$ReqInstallPath)
   if ($ActInstall.name.count -eq 1)
   {
     $InstallPath = $ActInstall.ModuleBase
-    Write-host 'Found AGMPowerLib version:     ' $ActInstall.Version
+    Write-host 'Found AGMPowerLib version:     ' $ActInstall.Version 'in ' $InstallPath 
     Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$false
   }
   else 
   {
-    $InstallPath = $InstallPathList[0] + '\AGMPowerLib\'
+    if ( $platform -notmatch "Unix" )
+    {
+      $InstallPath = $InstallPathList[1] + '\AGMPowerLib\'
+    }
+    else 
+    {
+      $InstallPath = $InstallPathList[1] + '/AGMPowerLib/'
+    }
   }
-  #if user specified a number then use it
-  if ($ReqInstallPath)
-  {
-    $InstallPath = $InstallPathList[$ReqInstallPath] + '\AGMPowerLib\'
-  }
-
-    
   
-  $platform=$PSVersionTable.platform
+  
   if ( $platform -notmatch "Unix" )
   {
     $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
@@ -173,7 +174,7 @@ function silentinstall([int]$ReqInstallPath)
     Write-Host 'Silent Installation failed.'
   }
   else {
-    Write-Host 'Installed AGMPowerLib version: ' $ActModuleData.ModuleVersion
+    Write-Host 'Installed AGMPowerLib version: ' $ActModuleData.ModuleVersion 'in ' $InstallPath
   }
   exit
 }
@@ -181,20 +182,22 @@ function silentinstall([int]$ReqInstallPath)
 
 if ($args[0] -eq "-silentinstall")
 {
-  if ($args[1]) {
-    if ($args[1] -lt 0 -or $args[1] -gt 2)
-    {
-      Write-Host 'Specify a value between 0 and 2 which matches a known module install path from $env:PSModulePath'
-      exit
-    } else {
-      
-    }
-    silentinstall -ReqInstallPath $args[1]
-  } else {
     silentinstall 
-  }
-  
 }
+
+if ($args[0] -eq "-silentuninstall")
+{
+  [Array]$ActInstall = GetAGMPowerLibInstall
+  foreach ($Location in ([Array]$ActInstall = GetAGMPowerLibInstall).ModuleBase)
+        {
+        $InstallPath = $Location
+        Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$false   
+        }
+      exit
+}
+
+
+
 
 Write-host 'Detected PowerShell version:   ' $hostVersionInfo
 Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion

@@ -88,32 +88,40 @@ Then re-run the installer.  The installer will unblock the remaining files.
 
 You can run the installer silently by adding **-silentinstall** to the Install command.  
 If the module is already installed, then the existing module will be replaced by the one you are installing, using the same module path.
-If the module is not installed, then by default it will be installed into the system path.   If you want to specify a path, then learn the default module paths like this:
+If the module is not installed, then by default it will be installed into path 1
+```
+PS C:\Windows\system32>  $env:PSModulePath.split(';')
+C:\Users\avw\Documents\WindowsPowerShell\Modules <-- this is 0
+C:\Program Files (x86)\WindowsPowerShell\Modules <-- this is 1
+PS C:\Windows\system32>
+```
+Or for Unix:
 ```
 PS /Users/avw> $env:PSModulePath.Split(':')
 /Users/avw/.local/share/powershell/Modules    <-- this is 0
 /usr/local/share/powershell/Modules           <-- this is 1
-/usr/local/microsoft/powershell/7/Modules     <-- this is 2
 ```
-Then use the location number 0, 1 or 2.   If you specify nothing, then path 1 will be used.
+Here is an example of a silent install:
+```
+PS C:\Windows\system32> C:\Users\avw\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 -silentinstall 
+Detected PowerShell version:    5
+Downloaded AGMPowerLib version: 0.0.0.35
+Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib\
+```
+Here is an example of a silent upgrade:
+```
+PS C:\Windows\system32> C:\Users\avw\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 -silentinstall 
+Detected PowerShell version:    5
+Downloaded AGMPowerLib version: 0.0.0.34
+Found AGMPowerLib version:      0.0.0.34 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
+Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
+PS C:\Windows\system32>
+```
 
-Here is an example of an upgrade:
-```
-PS /Users/avw> ./AGMPowerLib/Install-AGMPowerLib.ps1 -silentinstall
-Detected PowerShell version:    7
-Downloaded AGMPowerLib version: 0.0.0.35
-Found AGMPowerLib version:      0.0.0.35
-Installed AGMPowerLib version:  0.0.0.35
-PS /Users/avw>
-```
-Here is an example of an install into path 0
-```
-PS /Users/avw> ./AGMPowerLib/Install-AGMPowerLib.ps1 -silentinstall 0
-Detected PowerShell version:    7
-Downloaded AGMPowerLib version: 0.0.0.35
-Installed AGMPowerLib version:  0.0.0.35
-PS /Users/avw>
-```
+##### Silent Uninstall
+
+You can uninstall the module silently by adding **-silentuninstall** to the Install command.  
+
 
 
 ## Guided Wizards
