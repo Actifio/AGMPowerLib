@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm,[string]$retainlabel) 
 {
     <#
     .SYNOPSIS
@@ -37,7 +37,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
     -machinetype     This is the GCP instance machine type such as:  e2-micro
     -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
-    -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "dog:cat,sheep:cow"
+    -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
+    -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance
     -nic0network     The network name in URL format for nic0
     -nic0subnet      The subnet name in URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
@@ -188,7 +189,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     # disktype 
     if ($disktype)
     {
-        $disktypegrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=existingmount"
+        $disktypegrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
         if (!($disktypegrab.fields))
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find data for image ID $imageid.  Please check this is a valid image ID with Get-AGMImage -id $imageid"
@@ -209,6 +210,16 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         $diskjson = $gcpdata.fields | where-object { $_.name -eq "volumeselection" } | ConvertTo-json -depth 5 -compress
     }
 
+    if ($retainlabel -eq "true")
+    {
+        if ($disktypegrab)
+        {
+            $originallabels = ($disktypegrab.fields | where-object { $_.name -eq "tagsgroup" }).children.choices
+        } else {
+            $labelgrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
+            $originallabels = ($labelgrab.fields | where-object { $_.name -eq "tagsgroup" }).children.choices
+        }
+    }
 
     # cloud credentials
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$credentialid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
@@ -242,7 +253,23 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     # labels   
     if (!($labels))
     {
-        $json = $json + '{"displayName":"","name":"tagsgroup","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"Labels","name":"tag","helpId":1265,"type":"tagselection","description":"","modified":true,"minimum":1,"maximum":50,"choices":[],"validation":""}],"groupType":"layout"},'
+        if ($originallabels.key)
+        {
+            $json = $json + '{"displayName":"","name":"tagsgroup","helpId":1265,"type":"group","description":"","required":true,"modified":true,"children":[{"displayName":"Labels","name":"tag","helpId":1265,"type":"tagselection","description":"","modified":true,"minimum":1,"maximum":50,"choices":['
+            $labelgroup = ""
+            foreach ($label in $originallabels)
+            {   
+                if ($label.selected -eq "True")
+                {
+                    $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'
+                }
+            }
+            $json = $json + $labelgroup.TrimEnd(",")
+            $json = $json + '],"validation":""}],"groupType":"layout"},'
+
+        } else {
+            $json = $json + '{"displayName":"","name":"tagsgroup","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"Labels","name":"tag","helpId":1265,"type":"tagselection","description":"","modified":true,"minimum":1,"maximum":50,"choices":[],"validation":""}],"groupType":"layout"},'
+        }
     } else {
         $json = $json + '{"displayName":"","name":"tagsgroup","helpId":1265,"type":"group","description":"","required":true,"modified":true,"children":[{"displayName":"Labels","name":"tag","helpId":1265,"type":"tagselection","description":"","modified":true,"minimum":1,"maximum":50,"choices":['
         $labelgroup = ""
@@ -251,6 +278,16 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             $key = $label.Split(":") | Select-object -First 1
             $value = $label.Split(":") | Select-object -skip 1
             $labelgroup = $labelgroup + '{"selected":true,"key":"' +$key +'","value":"' +$value +'"},'
+        }
+        if ($originallabels.key)
+        {
+            foreach ($label in $originallabels)
+            {   
+                if ($label.selected -eq "True")
+                {
+                    $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'
+                }
+            }
         }
         $json = $json + $labelgroup.TrimEnd(",")
         $json = $json + '],"validation":""}],"groupType":"layout"},'
@@ -326,7 +363,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
     # imagename
     $json = $json + '"version":1,"formtype":"newmount","image":"' +$imagename +'","cloudtype":"GCP"}}'
-    
+
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 
     if ($newgcp.fields)

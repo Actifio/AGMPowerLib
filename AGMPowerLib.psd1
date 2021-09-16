@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.35'
+ModuleVersion = '0.0.0.36'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -156,6 +156,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.36] 2021-09-16
+        Teach New-AGMLibGCPInstance to show existing labels with -retainlabel true
+
         ## [0.0.0.35] 2021-09-13
         Allow silent install
 
