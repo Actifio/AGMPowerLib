@@ -38,7 +38,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -machinetype     This is the GCP instance machine type such as:  e2-micro
     -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
     -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
-    -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance
+    -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance.   Partial label retention is not supported.
     -nic0network     The network name in URL format for nic0
     -nic0subnet      The subnet name in URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
