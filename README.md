@@ -1088,9 +1088,14 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 ```
 -disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
-You can specify any labels you want to supply for this new GCE VM with -label, for instance **-label "pet:cat,drink:milk"**
+You can specify any labels you want to supply for this new GCE VM with -label, for instance:
+ **-label "pet:cat,drink:milk"**
 However if you add **-retainlabel true** then any labels that were used the GCE Instance when the snapshot was created will be applied to the new VM.
-Lets imagine the original VM had a label:  **bird:parrot** and we specify the following:   **-retainlabel true -label "pet:cat,drink:milk"**  then the new VM will have all three labels (the two new ones and the retained one from the original VM).
+Lets imagine the original VM had a label:  
+**bird:parrot** 
+and we specify the following:   
+**-retainlabel true -label "pet:cat,drink:milk"**  
+then the new VM will have all three labels (the two new ones and the retained one from the original VM).
 
 This brings us to a command like this one:
 ```
