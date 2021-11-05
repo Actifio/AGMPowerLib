@@ -1,4 +1,4 @@
-Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault) 
+Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[string]$label,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault) 
 {
     <#
     .SYNOPSIS
@@ -13,7 +13,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
     New-AGMLibVM -imageid 53773979 -vmname avtestvm9 -datastore "ORA-RAC-iSCSI" -vcenterid 5552150 -esxhostid 5552164 -mountmode nfs 
 
     In this example we mount image ID 53773979 as a new VM called avtestvm9 to the specified vCenter/ESX host.  
-    Valid values for mountmode are:   nfs, vrdm or prdm with vrdm being the default if nothing is selected.
+    Valid values for mountmode are:   nfs, vrdm or prdm with nfs being the default if nothing is selected.
 
     .DESCRIPTION
     A function to create new VMs using a mount job
@@ -46,10 +46,10 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Clear-Host
         write-host "VM Selection menu"
         Write-host ""
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no Managed VMware apps to list"
+            Get-AGMErrorMessage -messagetoprint "There are no VMware apps to list"
             return
         }
         if ($vmgrab.count -eq 1)
@@ -139,12 +139,13 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         }
         else 
         {
-            $imagecheck = Get-AGMLibLatestImage -appid $appid
+            $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=OnVault" -sort "jobclasscode:asc,consistencydate:desc" -limit 1
+            #$imagecheck = Get-AGMLibLatestImage -appid $appid
         }
         
         if (!($imagecheck.backupname))
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to find snapshot for AppID using:  Get-AGMLibLatestImage"
+            Get-AGMErrorMessage -messagetoprint "Failed to any images for selected VM"
             return
         }   
         else {
@@ -386,15 +387,15 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         #   VRDM FOR NEW MOUNTS IS ALWAYS THE DEFAULT!   Don't change this unless AGM changes...
         Clear-Host
         Write-Host "Mount mode"
-        Write-Host "1`: vrdm (default)"
-        Write-Host "2`: prdm"
-        Write-Host "3`: nfs"
+        Write-Host "1`: nfs (default)"
+        Write-Host "2`: vrdm"
+        Write-Host "3`: prdm"
         Write-Host ""
         [int]$userselection = Read-Host "Please select from this list (1-3)"
         if ($userselection -eq "") { $userselection = 1 }
-        if ($userselection -eq 1) {  $mountmode = "vrdm"  }
-        if ($userselection -eq 2) {  $mountmode = "prdm"  }
-        if ($userselection -eq 3) {  $mountmode = "nfs"  }
+        if ($userselection -eq 1) {  $mountmode = "nfs"  }
+        if ($userselection -eq 2) {  $mountmode = "vrdm"  }
+        if ($userselection -eq 3) {  $mountmode = "prdm"  }
 
         # map to all ESX host 
         Clear-Host
@@ -514,8 +515,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
     if (!($mountmode))
     {
-        $physicalrdm = 0
-        $rdmmode = "independentvirtual"
+        $physicalrdm = 2
+        $rdmmode = "nfs"
     }
     else 
     {

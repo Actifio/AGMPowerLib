@@ -97,6 +97,8 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
                     appid = $sla.application.id
                     scheduler = $scheduler
                     expiration = $expiration
+                    sltname = $sla.slt.name
+                    slpname = $sla.slp.name
                     logicalgroupname = $groupname
                     logicalgroupid = $groupid
                 }
@@ -112,6 +114,8 @@ Function Get-AGMLibSLA  ([string]$appid,[string]$slaid,[string]$logicalgroupid)
                 appid = $sla.application.id
                 scheduler = $scheduler
                 expiration = $expiration
+                sltname = $sla.slt.name
+                slpname = $sla.slp.name
                 logicalgroupname = $groupname
                 logicalgroupid = $groupid
             }

@@ -13,13 +13,19 @@ Function New-AGMLibVMMultiMount ([string]$filename)
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
     appid,vmname,datastore,vcenterid,esxhostid,mountmode,poweronvm,onvault,label
-    156338,centos2-rec,vsanDatastore,200000,200004,nfs,true,true,multimount
-    156215,ubuntu-rec,vsanDatastore,200000,200006,nfs,true,true,multimount
-    89091,windows-rec,vsanDatastore,200000,200008,nfs,true,true,multimount
+    296433,centos2-rec,vsanDatastore,296400,296404,nfs,true,true,multimount
+    377723,ubuntu-rec,vsanDatastore,296400,296406,nfs,true,true,multimount
+    89091,windows-rec,vsanDatastore,296400,296408,nfs,true,true,multimount
 
+    To get the ingredients for the CSV file, these three commands will let you gather what you need:
 
+    To get the appid use this command:   The VMname is the 'new' name, but clearly you might want it to be a child of the appname:
     Get-AGMApplication -filtervalue apptype=VMBackup | select id,appname,managed
+
+    To get the vCenterID use this command:
     Get-AGMHost -filtervalue isvcenterhost=true | select id,name
+
+    To get the esxhostid use this command.   Consider using a round-robin distribution with the ESX hosts in the list:
     Get-AGMHost -filtervalue isesxhost=true | select id,name
     #>
 

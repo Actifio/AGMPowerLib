@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.36'
+ModuleVersion = '0.0.0.37'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -156,6 +156,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.37] 2021-11-05
+        Teach New-AGMLibVM to handle imported images and OnVault images without being prompted.  Switch default mount mode to nfs. Fixed bug where labels were not being assigned
+        Teach Get-AGMLibSLA to know about SLT name and SLP name
+
         ## [0.0.0.36] 2021-09-16
         Teach New-AGMLibGCPInstance to show existing labels with -retainlabel true
 
