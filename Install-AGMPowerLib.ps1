@@ -129,6 +129,55 @@ if (!($commandcheck))
 
 Import-LocalizedData -BaseDirectory $PSScriptRoot\ -FileName AGMPowerLib.psd1 -BindingVariable ActModuleData
 
+
+function silentinstall0
+{
+  Write-host 'Detected PowerShell version:   ' $hostVersionInfo
+  Write-host 'Downloaded AGMPowerLib version:' $ActModuleData.ModuleVersion
+  $InstallPathList = GetPSModulePath
+  $platform=$PSVersionTable.platform
+  # if we find an install then we upgrade it
+  [Array]$ActInstall = GetAGMPowerLibInstall
+  if ($ActInstall.name.count -gt 1)
+  {
+    Write-Host -Object "`nMultiple installations detected.  Silent Installation failed."
+  }
+  # if it is installed, uninstall it, but keep the install path to re-use, otherwise use the second module path by default
+  if ($ActInstall.name.count -eq 1)
+  {
+    $InstallPath = $ActInstall.ModuleBase
+    Write-host 'Found AGMPowerLib version:     ' $ActInstall.Version 'in ' $InstallPath 
+    Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$false
+  }
+  else 
+  {
+    if ( $platform -notmatch "Unix" )
+    {
+      $InstallPath = $InstallPathList[0] + '\AGMPowerLib\'
+    }
+    else 
+    {
+      $InstallPath = $InstallPathList[0] + '/AGMPowerLib/'
+    }
+  }  
+  if ( $platform -notmatch "Unix" )
+  {
+    $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
+  }
+  $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
+  $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
+  $null = Test-Path -Path $InstallPath -ErrorAction Stop
+  $commandcheck = get-command -module AGMPowerLib
+  if (!($commandcheck))
+  {
+    Write-Host 'Silent Installation failed.'
+  }
+  else {
+    Write-Host 'Installed AGMPowerLib version: ' $ActModuleData.ModuleVersion 'in ' $InstallPath
+  }
+  exit
+}
+
 function silentinstall
 {
   Write-host 'Detected PowerShell version:   ' $hostVersionInfo
@@ -158,9 +207,7 @@ function silentinstall
     {
       $InstallPath = $InstallPathList[1] + '/AGMPowerLib/'
     }
-  }
-  
-  
+  }  
   if ( $platform -notmatch "Unix" )
   {
     $null = Get-ChildItem -Path $PSScriptRoot\* -Recurse | Unblock-File
@@ -179,13 +226,17 @@ function silentinstall
   exit
 }
 
+if (($args[0] -eq "-silentinstall0") -or ($args[0] -eq "-s0"))
+{
+  silentinstall0
+}
 
-if ($args[0] -eq "-silentinstall")
+if (($args[0] -eq "-silentinstall") -or ($args[0] -eq "-s"))
 {
     silentinstall 
 }
 
-if ($args[0] -eq "-silentuninstall")
+if (($args[0] -eq "-silentuninstall")  -or ($args[0] -eq "-u"))
 {
   [Array]$ActInstall = GetAGMPowerLibInstall
   foreach ($Location in ([Array]$ActInstall = GetAGMPowerLibInstall).ModuleBase)
