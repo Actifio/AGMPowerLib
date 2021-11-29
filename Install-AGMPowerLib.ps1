@@ -167,6 +167,7 @@ function silentinstall0
   $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
   $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
   $null = Test-Path -Path $InstallPath -ErrorAction Stop
+  Import-Module AGMPowerLib -Force
   $commandcheck = get-command -module AGMPowerLib
   if (!($commandcheck))
   {
@@ -215,6 +216,7 @@ function silentinstall
   $null = New-Item -ItemType Directory -Path $InstallPath -Force -ErrorAction Stop
   $null = Copy-Item $PSScriptRoot\* $InstallPath -Force -Recurse -ErrorAction Stop
   $null = Test-Path -Path $InstallPath -ErrorAction Stop
+  Import-Module AGMPowerLib -Force
   $commandcheck = get-command -module AGMPowerLib
   if (!($commandcheck))
   {
@@ -231,7 +233,7 @@ if (($args[0] -eq "-silentinstall0") -or ($args[0] -eq "-s0"))
   silentinstall0
 }
 
-if (($args[0] -eq "-silentinstall") -or ($args[0] -eq "-s"))
+if (($args[0] -eq "-silentinstall") -or ($args[0] -eq "-s") -or ($args[0] -eq "-s1"))
 {
     silentinstall 
 }
@@ -283,6 +285,7 @@ if ($ActInstall.Length -gt 0)
     {
         RemoveModuleContent
         CreateModuleContent
+        Import-Module AGMPowerLib -Force
     }
     }
     else
