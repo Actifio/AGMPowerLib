@@ -1,4 +1,4 @@
-Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]$all) 
+Function Export-AGMLibSLT([string]$sltids,[string]$filename,[string]$bucket,[string]$objectname,[switch][alias("a")]$all) 
 {
     <#
     .SYNOPSIS
@@ -11,6 +11,11 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
     .EXAMPLE
     Export-AGMLibSLT -sltids "1234,5678" -filename outfile.json
     Exports the SLTs with IDS 1234 and 5678 to a file called outfile.json
+
+    .EXAMPLE
+    Export-AGMLibSLT -sltids "1234,5678" -filename outfile.json -bucket avwlab2testbucket -objectname outfile.json
+    Exports the SLTs with IDS 1234 and 5678 to a file called outfile.json in a GCS bucket called avwlab2testbucket as an object named outfile.json  
+    This presumes the Google Cloud Tools for PowerShell Module has been installed and that the user has access to the bucket
 
     .DESCRIPTION
     A function to export Policy Templates
@@ -114,12 +119,24 @@ Function Export-AGMLibSLT([string]$sltids,[string]$filename,[switch][alias("a")]
     $json = '{ "ids" : [' +$sltids  +']}'
     $sltexportgrab = Post-AGMAPIData  -endpoint /slt/export -body $json
 
+    # if we don't have a filename just blurt it out onto the screen
     if (!($filename))
     {
         $sltexportgrab | Convertto-Json -depth 7 
     }
     else {
-        $sltexportgrab | Convertto-Json -depth 7 | Out-File -FilePath $filename 
+        # if we have a bucket then we create the file and then upload it as an object
+        if ($bucket)
+        {
+            if (!($objectname))
+            { $objectname = $filename }
+            $sltexportgrab | Convertto-Json -depth 7 | Out-File -FilePath $filename
+            New-GcsObject -bucket $bucket -objectname $objectname -file $filename
+        }
+        else 
+        {
+            $sltexportgrab | Convertto-Json -depth 7 | Out-File -FilePath $filename 
+        }
     }
 
 

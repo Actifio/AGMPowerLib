@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.37'
+ModuleVersion = '0.0.0.38'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -97,6 +97,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
 'New-AGMLibFSMount',
+'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
 'New-AGMLibGCPVM',
@@ -156,6 +157,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.38] 2021-11-29
+        Teach Import and Export AGMLibSLT about GCS Buckets.   Improve Installer
+        Add New-AGMLibGCVEfailover   Added label to sample command in  New-AGMLibVM 
+
         ## [0.0.0.37] 2021-11-05
         Teach New-AGMLibVM to handle imported images and OnVault images without being prompted.  Switch default mount mode to nfs. Fixed bug where labels were not being assigned
         Teach Get-AGMLibSLA to know about SLT name and SLP name

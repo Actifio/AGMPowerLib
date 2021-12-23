@@ -481,7 +481,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host "New-AGMLibVM -imageid $imageid -vmname $vmname -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts -poweronvm $poweronvm -volumes `'$uservolumelistfinal`'"
+        Write-Host -nonewline "New-AGMLibVM -imageid $imageid -vmname $vmname -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts -poweronvm $poweronvm -volumes `'$uservolumelistfinal`'"
+        if ($label) { Write-Host -nonewline " -label $label" }
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
