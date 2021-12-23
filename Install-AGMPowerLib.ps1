@@ -25,7 +25,6 @@ function GetPSModulePath
         return $env:PSModulePath.Split(';') -notmatch "WindowsPowerShell"
       }
     }
-
 }
 
 function InstallMenu 
