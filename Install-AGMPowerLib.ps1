@@ -103,7 +103,7 @@ function CreateModuleContent
 function ReportAGMPowerLib
 {
   # Removes the AGMPowerLib Module from the active session and displays a list of all current install locations
-  Remove-Module -Name AGMPowerLib -ErrorAction SilentlyContinue
+  # Remove-Module -Name AGMPowerLib -ErrorAction SilentlyContinue
   GetAGMPowerLibInstall
 }
 
