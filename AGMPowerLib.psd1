@@ -97,6 +97,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
 'New-AGMLibFSMount',
+'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
 'New-AGMLibGCPVM',
@@ -158,7 +159,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.38] 2021-11-29
         Teach Import and Export AGMLibSLT about GCS Buckets.   Improve Installer
-        Start work on GCVE recovery tool
+        Add New-AGMLibGCVEfailover   Fix issue with New-AGMLibVM not using label
 
         ## [0.0.0.37] 2021-11-05
         Teach New-AGMLibVM to handle imported images and OnVault images without being prompted.  Switch default mount mode to nfs. Fixed bug where labels were not being assigned

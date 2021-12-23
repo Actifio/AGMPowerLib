@@ -1,4 +1,4 @@
-Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[switch][alias("n")]$network) 
+Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase) 
 {
     <#
     .SYNOPSIS
@@ -18,16 +18,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[switch][alias("n
     2,Centos1,centos1-rec,phase2,avtest
     2,Centos2,centos2-red,phase2,avtest
 
-    To get the ingredients for the CSV file, these three commands will let you gather what you need:
 
-    To get the appid use this command:   The VMname is the 'new' name, but clearly you might want it to be a child of the appname:
-    Get-AGMApplication -filtervalue apptype=VMBackup | select id,appname,managed
-
-    To get the vCenterID use this command:
-    Get-AGMHost -filtervalue isvcenterhost=true | select id,name
-
-    To get the esxhostid use this command.   Consider using a round-robin distribution with the ESX hosts in the list:
-    Get-AGMHost -filtervalue isesxhost=true | select id,name
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -57,30 +48,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[switch][alias("n
         Get-AGMErrorMessage -messagetoprint "VM list: $filename could not be opened."
         return;
     }
-    # phases
-    if (!($phase))
-    {
-        $phase = 1
-    }
-
-    if ($network)
-    {
-        # now we enable the interfaces in the desired interface 
-        foreach ($app in $recoverylist)
-        {
-            if ($app.phase -eq $phase)
-            {
-                if ($app.networkname.length -gt 0)
-                {      
-                    write-host "Enabling " $app.targetvmname "in network " $app.networkname
-                    get-vm $app.targetvmname  | Get-NetworkAdapter | Set-NetworkAdapter -NetworkName $app.networkname -Connected:$false -StartConnected:$true -Confirm:$false
-                    Get-VM $app.targetvmname | Get-NetworkAdapter | Select-Object @{N="VM";E={$_.Parent.Name}},@{N="NIC";E={$_.Name}},@{N="Network";E={$_.NetworkName}},@{N="Connected";E={$_.ConnectionState}}
-                }
-            }
-        }
-        return
-    }
-
+    
 
     #  The user can give us a vcenter ID,  but given this is GCVE, we expect we will have only one vCenter.  If we find more than one then we need to know which one
     if (!($vcenterid))
