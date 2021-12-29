@@ -110,7 +110,7 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         }
         
 
-        write-host "Fetching SystemState list from AGM for $mountappliancename"
+        write-host "Fetching SystemState list from AGM for $mountappliancename with appliance ID $mountapplianceid"
         $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
