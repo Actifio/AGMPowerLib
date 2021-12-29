@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.38'
+ModuleVersion = '0.0.0.39'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -157,6 +157,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.39] 2021-12-29
+        Teach New-AGMLibSystemStateToVM to work with imported apps
+
         ## [0.0.0.38] 2021-11-29
         Teach Import and Export AGMLibSLT about GCS Buckets.   Improve Installer
         Add New-AGMLibGCVEfailover   Added label to sample command in  New-AGMLibVM 
