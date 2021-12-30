@@ -12,11 +12,11 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    phase,sourcevmname,targetvmname,label,networkname
-    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest
-    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest
-    2,Centos1,centos1-rec,phase2,avtest
-    2,Centos2,centos2-red,phase2,avtest
+    phase,sourcevmname,targetvmname,label,networkname,poweronvm,macaddress
+    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest,true,
+    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest,false,
+    2,Centos1,centos1-rec,phase2,avtest,true,
+    2,Centos2,centos2-red,phase2,avtest,false
 
 
     #>
@@ -132,6 +132,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
             $esxhostid = $esxgrab.id[$esxroundrobin]
             $mountcommand = 'New-AGMLibVM -appname ' +$app.sourcevmname  +' -vmname ' +$app.targetvmname +' -datastore ' +$datastore +' -vcenterid ' +$vcenterid +' -esxhostid ' +$esxhostid +' -mountmode nfs  -onvault true'
             if ($app.label) { $mountcommand = $mountcommand + ' -label "' +$app.Label +'"' } 
+            if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 
             write-host "Running $mountcommand"
             Invoke-Expression $mountcommand 
             # we add one to our ESX round robin.   If we hit the hostcount we have gone too far, so 3 hosts means index 0,1,2   so when we get to 3 then we go back to 0

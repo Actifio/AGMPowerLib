@@ -158,7 +158,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.39] 2021-12-29
-        Teach New-AGMLibSystemStateToVM to work with imported apps
+        Teach New-AGMLibSystemStateToVM to work with imported apps, was previously restricting to only managed apps which meant imported apps never appeared in guided menu
 
         ## [0.0.0.38] 2021-11-29
         Teach Import and Export AGMLibSLT about GCS Buckets.   Improve Installer
