@@ -110,8 +110,8 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
         }
         
 
-        write-host "Fetching SystemState list from AGM for $mountappliancename"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&managed=True&clusterid=$mountapplianceid" | sort-object appname
+        write-host "Fetching SystemState list from AGM for $mountappliancename with appliance ID $mountapplianceid"
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "There are no Managed System State apps to list"
