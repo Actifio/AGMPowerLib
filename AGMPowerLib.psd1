@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.39'
+ModuleVersion = '0.0.0.40'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -157,6 +157,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.40] 2022-01-
+        New-AGMLibGCVEfailover was ignoring power settings
+
         ## [0.0.0.39] 2021-12-29
         Teach New-AGMLibSystemStateToVM to work with imported apps, was previously restricting to only managed apps which meant imported apps never appeared in guided menu
 

@@ -42,6 +42,8 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
     if ( Test-Path $filename )
     {
         $recoverylist = Import-Csv -Path $filename
+        if (!($recoverylist.phase)) { Get-AGMErrorMessage -messagetoprint "Could not find the phase column in the CSV file, which is mandatory"; return }
+        if (!($recoverylist.sourcevmname)) { Get-AGMErrorMessage -messagetoprint "Could not find the sourcevmname column in the CSV file, which is mandatory"; return }
     }
     else
     {
@@ -141,7 +143,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
             if ($app.label) { $mountcommand = $mountcommand + ' -label "' +$app.Label +'"' } 
             # if user asked for a MAC address, then we better keep power off the VM
             if ($app.targetmacaddress.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm false' }
-            elseif ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 
+            elseif ($app.poweronvm.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 
             write-host "Running $mountcommand"
             Invoke-Expression $mountcommand 
             # we add one to our ESX round robin.   If we hit the hostcount we have gone too far, so 3 hosts means index 0,1,2   so when we get to 3 then we go back to 0
