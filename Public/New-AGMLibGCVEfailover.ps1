@@ -142,7 +142,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
             $mountcommand = 'New-AGMLibVM -appname ' +$app.sourcevmname  +' -vmname ' +$mountvmname +' -datastore ' +$datastore +' -vcenterid ' +$vcenterid +' -esxhostid ' +$esxhostid +' -mountmode nfs  -onvault true'
             if ($app.label) { $mountcommand = $mountcommand + ' -label "' +$app.Label +'"' } 
             # if user asked for a MAC address, then we better keep power off the VM
-            if ($app.targetmacaddress.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm false' }
+            if ($app.targetmacaddress.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "false"' }
             elseif ($app.poweronvm.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 
             write-host "Running $mountcommand"
             Invoke-Expression $mountcommand 
