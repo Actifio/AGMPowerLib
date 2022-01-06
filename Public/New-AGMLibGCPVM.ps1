@@ -155,7 +155,9 @@ Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
         if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no System State or VMBackup apps to list"
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed System State or VMware apps to list." }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged System State or VMware apps to list." }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported System State or VMware apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
         if ($vmgrab.count -eq 1)
