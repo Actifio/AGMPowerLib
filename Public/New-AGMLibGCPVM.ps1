@@ -145,10 +145,10 @@ Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
         
 
         write-host "Fetching VM and SystemState list from AGM for $mountappliancename"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&managed=True&clusterid=$mountapplianceid" | sort-object appname
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no Managed System State or VMBackup apps to list"
+            Get-AGMErrorMessage -messagetoprint "There are no System State or VMBackup apps to list"
             return
         }
         if ($vmgrab.count -eq 1)
