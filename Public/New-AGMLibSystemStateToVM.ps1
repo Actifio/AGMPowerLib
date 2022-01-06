@@ -150,7 +150,7 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
             {
                 Write-host ""
                 $listmax = $vmgrab.appname.count
-                [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
+                [int]$vmselection = Read-Host "Please select an application (1-$listmax)"
                 if ($vmselection -lt 1 -or $vmselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
