@@ -142,15 +142,16 @@ Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
             $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
             $mountappliancename =  $appliancegrab.name[($appselection - 1)]
         }
-        
-        write-host "VM and SystemState list from AGM for $mountappliancename"
+        Write-host ""
+        write-host "Select application status for VMWare/SystemState apps with images on $mountappliancename"
+        Write-host ""
         Write-Host "1`: Managed local apps(default)"
         Write-Host "2`: Unmanaged local apps"
         Write-Host "3`: Imported apps (from other Appliances)"
         Write-Host ""
-        [int]$userselectionapps = Read-Host "Please select from this list (1-3"
+        [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
         if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname }
-        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=SystemState&apptype=VMBackup&sourcecluster=$mountapplianceid" | sort-object appname  }
         if ($userselectionapps -eq 3) {  vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
