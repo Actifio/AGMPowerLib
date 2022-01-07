@@ -86,10 +86,10 @@ Function New-AGMLibVMExisting ([string]$appid,[string]$appname,[string]$targetho
         Clear-Host
         Write-host "VM source selection menu"
         Write-host ""
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&managed=True" | sort-object appname
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup" | sort-object appname
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no Managed VMware apps to list"
+            Get-AGMErrorMessage -messagetoprint "There are no VMware apps to list"
             return
         }
         if ($vmgrab.count -eq 1)

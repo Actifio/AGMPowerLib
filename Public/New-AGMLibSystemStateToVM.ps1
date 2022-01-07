@@ -109,12 +109,22 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
             $mountappliancename =  $appliancegrab.name[($appselection - 1)]
         }
         
-
-        write-host "Fetching SystemState list from AGM for $mountappliancename with appliance ID $mountapplianceid"
-        $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&clusterid=$mountapplianceid" | sort-object appname
+        Write-host ""
+        write-host "Select application status for SystemState apps with images on $mountappliancename"
+        Write-host ""
+        Write-Host "1`: Managed local apps(default)"
+        Write-Host "2`: Unmanaged local apps"
+        Write-Host "3`: Imported apps (from other Appliances)"
+        Write-Host ""
+        [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&clusterid=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=SystemState&&sourcecluster=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no Managed System State apps to list"
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed System State apps to list." }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged System State apps to list." }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported System State apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
         if ($vmgrab.count -eq 1)
@@ -140,7 +150,7 @@ Function New-AGMLibSystemStateToVM ([string]$appid,[string]$mountapplianceid,[st
             {
                 Write-host ""
                 $listmax = $vmgrab.appname.count
-                [int]$vmselection = Read-Host "Please select a protected VM (1-$listmax)"
+                [int]$vmselection = Read-Host "Please select an application (1-$listmax)"
                 if ($vmselection -lt 1 -or $vmselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
