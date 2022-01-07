@@ -160,6 +160,7 @@ PrivateData = @{
         ## [0.0.0.40] 2022-01-
         New-AGMLibGCVEfailover was ignoring power settings  
         New-AGMLibGCPVM needs to show unmanaged apps or imported images dont show up.  Guided mode now lets you choose managed, unmanaged or imported apps
+        New-AGMLibVMExisting, New-AGMLibSystemStateToVM will also stop insisting source app is managed.
 
         ## [0.0.0.39] 2021-12-29
         Teach New-AGMLibSystemStateToVM to work with imported apps, was previously restricting to only managed apps which meant imported apps never appeared in guided menu
