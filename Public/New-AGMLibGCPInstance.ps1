@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$poweronvm,[string]$retainlabel) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
 {
     <#
     .SYNOPSIS
@@ -47,7 +47,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                      There is no need to specify: -poweronvm true 
   
 
-    Optionally you can request a second NIC:
+    Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
     -nic1network     The network name in URL format for nic1
     -nic1subnet      The subnet name in URL format for nic1
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
@@ -183,6 +183,28 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     if ((!($nic1subnet)) -and ($nic1network))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic1 for the new instance with -nic1subnet"
+        return
+    }
+    # optionally handle nic2
+    if ((!($nic2network)) -and ($nic2subnet))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify a network for nic2 for the new instance with -nic2network"
+        return
+    }
+    if ((!($nic2subnet)) -and ($nic2network))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic2 for the new instance with -nic2subnet"
+        return
+    }
+        # optionally handle nic3
+    if ((!($nic3network)) -and ($nic3subnet))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify a network for nic3 for the new instance with -nic3network"
+        return
+    }
+    if ((!($nic3subnet)) -and ($nic3network))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic3 for the new instance with -nic3subnet"
         return
     }
 
@@ -341,6 +363,58 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         }
     }
     ########## nic1   END ########
+    ########## nic2   BEGIN ########
+    if (($nic2network) -and ($nic2subnet)) 
+    {
+        $json = $json + ',{"displayName":"nic2","name":"nic2","helpId":1265,"type":"nic","description":"","required":true,"modified":true,"children":['
+        # network
+        $json = $json + '{"displayName":"NETWORK","name":"vpc","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"default (default)","name":"' +$nic2network +'","selected":true}],"_getchoices":"getVpcs#handle,cloudcredential,region,project,resourcegroup,zone","_dependent":["subnet","privateips"],"_default":"network","parentName":"nic2"},'
+        # subnet
+        $json = $json + '{"displayName":"SUBNET","name":"subnet","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"default (default)","name":"' +$nic2subnet +'","selected":true}],"_getchoices":"getSubnets#handle,cloudcredential,region,vpc,project,zone","_dependent":["privateips"],"_default":"subnet","parentName":"nic2"},'
+        # external IP    unless user asks for auto we default to none
+        if ($nic2externalip -eq "auto")
+        {
+            $json = $json + '{"displayName":"EXTERNAL IPV4 IP","name":"externalip","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"choices":[{"displayName":"Auto Assign","name":"0.0.0.0","selected":true},{"displayName":"None","name":"None"}],"_getchoices":"getElasticIPs#handle,project,region,zone,cloudcredential","_default":"None","parentName":"nic2"},'
+        } else {
+            $json = $json + '{"displayName":"EXTERNAL IPV4 IP","name":"externalip","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"choices":[{"displayName":"Auto Assign","name":"0.0.0.0"},{"displayName":"None","name":"None","selected":true}],"_getchoices":"getElasticIPs#handle,project,region,zone,cloudcredential","_default":"None","parentName":"nic2"},'
+        }                                                                                                                    
+        # internal IP   The default is auto
+        if ($nic2internalip)
+        {
+            $json = $json + '{"displayName":"INTERNAL IPV4 IP","name":"internalip","helpId":1265,"type":"internalipaddress","description":"","modified":true,"children":[{"displayName":"Auto Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":false,"parentName":"nic2","modified":false},{"displayName":"Manual Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":true,"parentName":"nic2","modified":true},{"name":"privateips","helpId":1265,"type":"ipaddress","modified":true,"minimum":1,"maximum":2,"_getchoices":"getCIDRBlock#handle,cloudcredential,zone,project,vpc,subnet","values":["' +$nic2internalip +'"],"disabled":true,"validation":"","parentName":"nic2"}],"parentName":"nic2"}]}'
+        } else {
+            $json = $json + '{"displayName":"INTERNAL IPV4 IP","name":"internalip","helpId":1265,"type":"internalipaddress","description":"","modified":false,"children":[{"displayName":"Auto Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":true,"parentName":"nic2"},{"displayName":"Manual Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":false,"parentName":"nic2"},{"name":"privateips","helpId":1265,"type":"ipaddress","modified":true,"minimum":1,"maximum":2,"_getchoices":"getCIDRBlock#handle,cloudcredential,zone,project,vpc,subnet","values":[],"disabled":true,"validation":"","parentName":"nic2"}],"parentName":"nic2"}]}'
+            
+        }
+    }
+    ########## nic2   END ########
+    ########## nic3   BEGIN ########
+    if (($nic2network) -and ($nic2subnet)) 
+    {
+        $json = $json + ',{"displayName":"nic3","name":"nic3","helpId":1265,"type":"nic","description":"","required":true,"modified":true,"children":['
+        # network
+        $json = $json + '{"displayName":"NETWORK","name":"vpc","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"default (default)","name":"' +$nic3network +'","selected":true}],"_getchoices":"getVpcs#handle,cloudcredential,region,project,resourcegroup,zone","_dependent":["subnet","privateips"],"_default":"network","parentName":"nic3"},'
+        # subnet
+        $json = $json + '{"displayName":"SUBNET","name":"subnet","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"default (default)","name":"' +$nic3subnet +'","selected":true}],"_getchoices":"getSubnets#handle,cloudcredential,region,vpc,project,zone","_dependent":["privateips"],"_default":"subnet","parentName":"nic3"},'
+        # external IP    unless user asks for auto we default to none
+        if ($nic3externalip -eq "auto")
+        {
+            $json = $json + '{"displayName":"EXTERNAL IPV4 IP","name":"externalip","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"choices":[{"displayName":"Auto Assign","name":"0.0.0.0","selected":true},{"displayName":"None","name":"None"}],"_getchoices":"getElasticIPs#handle,project,region,zone,cloudcredential","_default":"None","parentName":"nic3"},'
+        } else {
+            $json = $json + '{"displayName":"EXTERNAL IPV4 IP","name":"externalip","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"choices":[{"displayName":"Auto Assign","name":"0.0.0.0"},{"displayName":"None","name":"None","selected":true}],"_getchoices":"getElasticIPs#handle,project,region,zone,cloudcredential","_default":"None","parentName":"nic3"},'
+        }                                                                                                                    
+        # internal IP   The default is auto
+        if ($nic3internalip)
+        {
+            $json = $json + '{"displayName":"INTERNAL IPV4 IP","name":"internalip","helpId":1265,"type":"internalipaddress","description":"","modified":true,"children":[{"displayName":"Auto Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":false,"parentName":"nic3","modified":false},{"displayName":"Manual Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":true,"parentName":"nic3","modified":true},{"name":"privateips","helpId":1265,"type":"ipaddress","modified":true,"minimum":1,"maximum":2,"_getchoices":"getCIDRBlock#handle,cloudcredential,zone,project,vpc,subnet","values":["' +$nic3internalip +'"],"disabled":true,"validation":"","parentName":"nic3"}],"parentName":"nic3"}]}'
+        } else {
+            $json = $json + '{"displayName":"INTERNAL IPV4 IP","name":"internalip","helpId":1265,"type":"internalipaddress","description":"","modified":false,"children":[{"displayName":"Auto Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":true,"parentName":"nic3"},{"displayName":"Manual Assign","name":"internalipassign","helpId":1265,"type":"radiobutton","checked":false,"parentName":"nic3"},{"name":"privateips","helpId":1265,"type":"ipaddress","modified":true,"minimum":1,"maximum":2,"_getchoices":"getCIDRBlock#handle,cloudcredential,zone,project,vpc,subnet","values":[],"disabled":true,"validation":"","parentName":"nic3"}],"parentName":"nic3"}]}'
+            
+        }
+    }
+    ########## nic3   END ########
+
+    
 
     # end networking  
     $json = $json + '],"groupType":"layout"},'

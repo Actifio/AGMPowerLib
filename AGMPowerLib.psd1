@@ -157,7 +157,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.40] 2022-01-
+        ## [0.0.0.41] 2022-02-08
+        Teach New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount to allow for 4 NICs per GCE instance rather than 2
+       
+        ## [0.0.0.40] 2022-01-07
         New-AGMLibGCVEfailover was ignoring power settings  
         New-AGMLibGCPVM needs to show unmanaged apps or imported images dont show up.  Guided mode now lets you choose managed, unmanaged or imported apps
         New-AGMLibVMExisting, New-AGMLibSystemStateToVM will also stop insisting source app is managed.
