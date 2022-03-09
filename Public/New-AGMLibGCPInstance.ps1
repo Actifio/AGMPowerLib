@@ -414,7 +414,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
     ########## nic2   END ########
     ########## nic3   BEGIN ########
-    if (($nic2network) -and ($nic2subnet)) 
+    if (($nic3network) -and ($nic3subnet)) 
     {
         $json = $json + ',{"displayName":"nic3","name":"nic3","helpId":1265,"type":"nic","description":"","required":true,"modified":true,"children":['
         # network
