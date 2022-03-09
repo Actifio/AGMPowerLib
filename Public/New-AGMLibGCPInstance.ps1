@@ -321,7 +321,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                         # go through each user label and if there is a matching original label, set check value to true
                         foreach ($userlabel in $labels.Split(","))
                         {   
-                            $userkey = $label.Split(":") | Select-object -First 1
+                            $userkey = $userlabel.Split(":") | Select-object -First 1
                             if ( $userkey -eq $label.key )
                             {
                                 $matchinglabel = $true
