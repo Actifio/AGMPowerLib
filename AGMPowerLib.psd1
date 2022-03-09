@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.40'
+ModuleVersion = '0.0.0.41'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -157,7 +157,11 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.40] 2022-01-
+        ## [0.0.0.41] 2022-02-08
+        Teach New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount to allow for 4 NICs per GCE instance rather than 2
+        Teach New-AGMLibGCPInstance to prefer user set label to retained label and not force duplicate key error when the user defines a label key that already existed
+       
+        ## [0.0.0.40] 2022-01-07
         New-AGMLibGCVEfailover was ignoring power settings  
         New-AGMLibGCPVM needs to show unmanaged apps or imported images dont show up.  Guided mode now lets you choose managed, unmanaged or imported apps
         New-AGMLibVMExisting, New-AGMLibSystemStateToVM will also stop insisting source app is managed.
