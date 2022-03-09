@@ -159,6 +159,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.41] 2022-02-08
         Teach New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount to allow for 4 NICs per GCE instance rather than 2
+        Teach New-AGMLibGCPInstance to prefer user set label to retained label and not force duplicate key error when the user defines a label key that already existed
        
         ## [0.0.0.40] 2022-01-07
         New-AGMLibGCVEfailover was ignoring power settings  

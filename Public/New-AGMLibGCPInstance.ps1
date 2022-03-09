@@ -39,6 +39,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
     -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
     -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance.   Partial label retention is not supported.
+                     If a label is specified that already exists in the source VM, then the user specified key value will be prefered over the retained label from the source
     -nic0network     The network name in URL format for nic0
     -nic0subnet      The subnet name in URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
@@ -307,7 +308,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             {   
                 if ($label.selected -eq "True")
                 {
-                    $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'
+                    # we need to validate that the user has not asked for the same key because if they have  we will get duplicate key and fail the job.    
+                    #  if we retaining labels AND setting labels, then the user supplied key should win  If no user labels then no need to worry
+                    if (!($labels))
+                    {
+                        $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'
+                    }
+                    else 
+                    {
+                        # set check value to false
+                        $matchinglabel = $false
+                        # go through each user label and if there is a matching original label, set check value to true
+                        foreach ($userlabel in $labels.Split(","))
+                        {   
+                            $userkey = $label.Split(":") | Select-object -First 1
+                            if ( $userkey -eq $label.key )
+                            {
+                                $matchinglabel = $true
+                            }
+                        }
+                        # if after checking all original labels to user labels we didnt get a match, then we can add the original label
+                        if ($matchinglabel -eq $false)
+                        {
+                            $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'
+                        }
+                    }
                 }
             }
         }
