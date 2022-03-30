@@ -109,7 +109,11 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         else
         {
             Clear-Host
-            write-host "Credential Selection menu.   Ensure you select the credential on the correct appliance since this will determine which appliance runs the jobs"
+            write-host "Welcome to the Guided Menu for System Recovery. "
+            write-host "You will be offered selections to build a command to run a System Recovery that will create a new GCE Instance, either from a VMware VM or System State Backup"
+            write-host ""
+            write-host "Credential Selection menu"
+            write-host "The Credential is used to authenticate GCE commands.  Ensure you select the credential on the correct appliance since this will determine which appliance runs the recovery job"
             Write-host ""
             $credarray | Format-Table
             While ($true)
@@ -137,7 +141,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Write-host ""
         Write-Host "1`: Managed local apps(default)"
         Write-Host "2`: Unmanaged local apps"
-        Write-Host "3`: Imported apps (from other Appliances)"
+        Write-Host "3`: Imported apps (from other Appliances).  Use this in a DR situation. You may need to import from OnVault first."
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
         if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname }
@@ -245,7 +249,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             # prefered sourcce
             [int]$userselection = ""
             write-host ""
-            Write-Host "Prefered source?"
+            Write-Host "Prefered source?   Use this to determine which storage pool will be examined to find source images"
             Write-Host "1`: Any source(default)"
             Write-Host "2`: snapshot"
             Write-Host "3`: streamsnap"
@@ -430,9 +434,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         {
             if ($machinetypelist.name)
             {
-                $bestfit = ($machinetypelist | where-object {$_.groupType -eq "Best Fit"}).name
                 write-host ""
-                write-host "Machine Type Selection"
+                write-host "Machine Type Selection."
                 write-host ""
                 $i = 1
                 foreach ($machine in $machinetypelist.displayName)
@@ -444,7 +447,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
                 {
                     Write-host ""
                     $listmax = $machinetypelist.count
-                    [int]$machselection = Read-Host "Please select a machine type (1-$listmax).  Best fit is $bestfit"
+                    [int]$machselection = Read-Host "Please select a machine type (1-$listmax)."
                     if ($machselection -lt 1 -or $machselection -gt $listmax)
                     {
                         Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
