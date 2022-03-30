@@ -12,8 +12,8 @@ Function New-AGMLibGCPSystemRecoveryMulti ([string]$instancelist)
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource
-    391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,https,true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault
+    srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
+    391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,https,true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
      
     #>
 
@@ -65,6 +65,7 @@ Function New-AGMLibGCPSystemRecoveryMulti ([string]$instancelist)
         if ($app.poweronvm -eq "true") { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
         if ($app.migratevm -eq "true") { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
         if ($app.preferedsource) { $mountcommand = $mountcommand + ' -preferedsource ' +$app.preferedsource } 
+        if ($app.disktype) { $mountcommand = $mountcommand + ' -disktype ' +$app.disktype } 
         Invoke-Expression $mountcommand 
     }
 }

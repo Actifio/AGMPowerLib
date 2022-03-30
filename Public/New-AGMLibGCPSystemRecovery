@@ -1,4 +1,4 @@
-Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm,[string]$preferedsource) 
+Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm,[string]$preferedsource,[string]$disktype) 
 {
     <#
     .SYNOPSIS
@@ -77,32 +77,34 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         $guided = $TRUE
         write-host "Running guided mode"
         write-host ""
-        $credentialgrab = Get-AGMCredential  | Select-Object sources
-        if ($credentialgrab.sources)
+        $credentialgrab = Get-AGMLibCredentialSrcID
+        if ($credentialgrab.credentialid)
         {
             $credarray = @()
             $i = 1
-            foreach ($source in $credentialgrab.sources)
+            foreach ($credential in $credentialgrab)
             {
-                $appliancename = $source.appliance 
                 $credarray += [pscustomobject]@{
                     id = $i
-                    credentialname = $source.name
-                    appliancename = $appliancename.name
-                    applianceid = $appliancename.clusterid
-                    srcid = $source.srcid
+                    appliancename = $credential.appliancename
+                    applianceid = $credential.applianceid
+                    credentialname = $credential.credentialname
+                    credentialid = $credential.credentialid
+                    srcid = $credential.srcid
                 }
                 $i++
             }
         }
-        if ($credarray.count -eq 0)
+        
+        if ($credarray.credentialid.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no Credentials for this applicance.  Please add a credential"
+            Get-AGMErrorMessage -messagetoprint "There are no Credentials.  Please add a credential"
             return
         }
-        if ($credarray.count -eq 1)
+        if ($credarray.credentialid.count -eq 1)
         {
             $srcid =  $credarray.srcid
+            $credentialid = $credarray.credentialid
         }
         else
         {
@@ -127,6 +129,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             $srcid = $credarray.srcid[($credselection - 1)]
             $mountapplianceid = $credarray.applianceid[($credselection - 1)]
             $mountappliancename = $credarray.appliancename[($credselection - 1)]
+            $credentialid =$credarray.credentialid[($credselection - 1)]
         }
 
         Write-host ""
@@ -248,7 +251,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             Write-Host "3`: streamsnap"
             Write-Host "4`: onvault"
             Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-3)"
+            [int]$userselection = Read-Host "Please select from this list (1-4)"
             if ($userselection -eq 2) {  $preferedsource = "snapshot" }
             if ($userselection -eq 3) {  $preferedsource = "streamsnap" }
             if ($userselection -eq 4) {  $preferedsource = "onvault" }
@@ -320,10 +323,52 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
             $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
         }
+        # system recovery data grab
+        write-host "Getting image data, this may take a few seconds"
+        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+        if ($recoverygrab.fields)
+        {
+            $recoverydata = $recoverygrab.fields
+            $projectlist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
+            $regionlist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
+            $machinetypelist = (($recoverydata | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
+            $serviceaccountgrab = (($recoverydata | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue 
+        }
+
         # project name
         if (!($projectname))
         {
-            While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
+            if ($projectlist.name)
+            {
+                write-host ""
+                write-host "Project Name Selection"
+                write-host ""
+                $i = 1
+                foreach ($project in $projectlist.name)
+                { 
+                    Write-Host -Object "$i`: $project"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $projectlist.count
+                    [int]$projselection = Read-Host "Please select a project (1-$listmax)"
+                    if ($projselection -lt 1 -or $projselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $projectname =  $projectlist.name[($projselection - 1)]
+            }
+            else {
+                While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
+            }
+            
         }
 
         # host project ID
@@ -335,7 +380,37 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # region
         if (!($region))
         {
-            While ($true)  { if ($region -eq "") { [string]$region= Read-Host "Region" } else { break } }
+            if ($regionlist.name)
+            {
+                write-host ""
+                write-host "Region Name Selection"
+                write-host ""
+                $i = 1
+                foreach ($reg in $regionlist.name)
+                { 
+                    Write-Host -Object "$i`: $reg"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $regionlist.count
+                    [int]$rejselection = Read-Host "Please select a region (1-$listmax)"
+                    if ($rejselection -lt 1 -or $rejselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $region =  $regionlist.name[($rejselection - 1)]
+            }
+            else 
+            {
+                While ($true)  { if ($region -eq "") { [string]$region= Read-Host "Region" } else { break } }
+            }
         }
 
         #zone
@@ -353,12 +428,44 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # machine type
         if (!($machinetype))
         {
-            While ($true)  { if ($machinetype -eq "") { [string]$machinetype= Read-Host "Machine Type" } else { break } }
+            if ($machinetypelist.name)
+            {
+                write-host ""
+                write-host "Machine Type Selection"
+                write-host ""
+                $i = 1
+                foreach ($machine in $machinetypelist.name)
+                { 
+                    Write-Host -Object "$i`: $machine"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $machinetypelist.count
+                    [int]$machselection = Read-Host "Please select a machine type (1-$listmax)"
+                    if ($machselection -lt 1 -or $machselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $machinetype =  $machinetypelist.name[($machselection - 1)]
+            }
+            else 
+            {
+                While ($true)  { if ($machinetype -eq "") { [string]$machinetype= Read-Host "Machine Type" } else { break } }
+            }
         }
 
         # service account
         if (!($serviceaccount))
         {
+            if ($serviceaccountgrab) 
+            { write-host "Suggested service account is: $serviceaccountgrab" }
             While ($true)  { if ($serviceaccount -eq "") { [string]$serviceaccount= Read-Host "Service Account" } else { break } }
         }
         
@@ -455,6 +562,49 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             if ($userselection -eq 2) { [string]$nic1internalip = Read-Host "IP address" }
         }
 
+        #disk selection
+        $volumelist = ($recoverydata | where-object { $_.name -eq "volumes" })
+
+
+        if ($volumelist)
+        {
+            if (!($disktype))
+            {
+                Write-Host ""
+                Write-Host "Disk type Selection"
+                Write-Host "1`: pd-balanced (default)"
+                Write-Host "2`: pd-extreme"
+                Write-Host "3`: pd-ssd"
+                Write-Host "4`: pd-standard"
+                Write-Host ""
+                [int]$diskselection = Read-Host "Please select from this list (1-4)"
+                if ($diskselection -eq "") { $diskselection -eq 1 }
+                if ($diskselection -eq 1) { $disktype = "pd-balanced" }
+                if ($diskselection -eq 2) { $disktype = "pd-extreme" }
+                if ($diskselection -eq 3) { $disktype = "pd-ssd" }
+                if ($diskselection -eq 4) { $disktype = "pd-standard" }
+            }
+
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.selected -eq "True")
+                {
+                    $row.selected = ""
+                }
+            }
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.name -eq $disktype)
+                {
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
+                }
+            }
+            $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
+        }
+    
+
+
+
+
+
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
@@ -475,6 +625,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
+        if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -497,7 +648,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
         if ($credgrab.clusterid.count -eq 1)
         {
-            $mountapplianceid = $credgrab.clusterid
+            $mountapplianceid = $credgrab.applianceid
+            $credentialid = $credgrab.credentialid
         }
         else 
         {
@@ -540,6 +692,33 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch a $preferedsource Image for appid $appid on appliance with clusterID $mountapplianceid"
             } 
             return
+        }
+        if ($disktype)
+        {
+            $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+            if ($recoverygrab.fields)
+            {
+                $recoverydata = $recoverygrab.fields
+            }
+            #disk selection
+            $volumelist = ($recoverydata | where-object { $_.name -eq "volumes" }) 
+
+            if ($volumelist)
+            {
+                foreach ($row in ($volumelist.children.rows.disktype)) {
+                    if ($row.selected -eq "True")
+                    {
+                        $row.selected = ""
+                    }
+                }
+                foreach ($row in ($volumelist.children.rows.disktype)) {
+                    if ($row.name -eq $disktype)
+                    {
+                        $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
+                    }
+                }
+                $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
+            }
         }
     }
 
@@ -725,16 +904,27 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
  
         }
     }
-     # NETWORK ENDS
-     $json = $json + '],"groupType":"layout"},'
+    # NETWORK ENDS
+    $json = $json + '],"groupType":"layout"},'
      # volumes
-     $json = $json + '{"displayName":"Select Volumes to Mount","name":"volumes","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"","name":"volumeselection","helpId":1014,"type":"volumeselectiontable","description":"","required":true,"modified":false,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"CAPACITY","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"UNIQUE ID","name":"volumeid","type":"text"},{"displayName":"VOLUME TYPE","name":"devicetype","type":"text"},{"displayName":"TARGET","name":"deviceindex","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"rows":[{"size":"40 GB","volumeid":"vmvol:6000C296-dd6e-9635-bb5f-70f2453cb47a","devicename":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","disktype":[{"displayName":"Balanced Persistent Disk(DiskSizeGb: 100)","name":"pd-balanced","selected":true},{"displayName":"Extreme Persistent Disk(DiskSizeGb: 1000)","name":"pd-extreme"},{"displayName":"SSD Persistent Disk(DiskSizeGb: 100)","name":"pd-ssd"},{"displayName":"Standard Persistent Disk(DiskSizeGb: 500)","name":"pd-standard"}],"sourcemountpath":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","devicetype":"BOOT","deviceindex":"cloud:6122EAC43B_286","selected":true,"disabled":true,"disktypeDisabled":false}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"}],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
+    if ($diskjson)
+    {
+        $json = $json + $diskjson
+    } 
+    else
+    {
+        # this line might need to be edited to remove the disk row that this is there 
+        $json = $json + '{"displayName":"Select Volumes to Mount","name":"volumes","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"","name":"volumeselection","helpId":1014,"type":"volumeselectiontable","description":"","required":true,"modified":false,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"CAPACITY","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"UNIQUE ID","name":"volumeid","type":"text"},{"displayName":"VOLUME TYPE","name":"devicetype","type":"text"},{"displayName":"TARGET","name":"deviceindex","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"rows":[{"size":"40 GB","volumeid":"vmvol:6000C296-dd6e-9635-bb5f-70f2453cb47a","devicename":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","disktype":[{"displayName":"Balanced Persistent Disk(DiskSizeGb: 100)","name":"pd-balanced","selected":true},{"displayName":"Extreme Persistent Disk(DiskSizeGb: 1000)","name":"pd-extreme"},{"displayName":"SSD Persistent Disk(DiskSizeGb: 100)","name":"pd-ssd"},{"displayName":"Standard Persistent Disk(DiskSizeGb: 500)","name":"pd-standard"}],"sourcemountpath":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","devicetype":"BOOT","deviceindex":"cloud:6122EAC43B_286","selected":true,"disabled":true,"disktypeDisabled":false}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"}'
+    }
+    # end part
+    $json = $json + '],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
     # diag info
     write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
     if ($jsonprint -eq "yes")
     {   
         $json  
+        return
     }
     # launch the command and check output
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
