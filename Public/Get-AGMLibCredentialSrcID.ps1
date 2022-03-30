@@ -37,6 +37,7 @@ Function Get-AGMLibCredentialSrcID
             $printarray += [pscustomobject]@{
                 credentialname = $source.name
                 appliancename = $appliancename.name
+                clusterid = $source.clusterid
                 srcid = $source.srcid
             }
        }

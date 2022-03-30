@@ -1,4 +1,4 @@
-Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm) 
+Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm,[string]$preferedsource) 
 {
     <#
     .SYNOPSIS
@@ -41,6 +41,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
     -poweroffvm      By default the new GCE Instance will be powered on.   If you want it to be created but then powered off, then specify this.
     -migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all drives into GCE PD, then specify this.
+    -preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
 
     Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
     -nic1network     The network name in URL format for nic1
@@ -55,9 +56,6 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
     
-    If you need either of these, please open an issue in Github.
-    
-
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -207,11 +205,6 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     }
 
     
-    # learn name of new VM
-    if (!($instancename))
-    {
-        While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
-    }
 
     # learn about the image
     if ($imagename)
@@ -246,11 +239,48 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     {
         if (!($imagename))
         {
+            # prefered sourcce
+            [int]$userselection = ""
+            write-host ""
+            Write-Host "Prefered source?"
+            Write-Host "1`: Any source(default)"
+            Write-Host "2`: snapshot"
+            Write-Host "3`: streamsnap"
+            Write-Host "4`: onvault"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-3)"
+            if ($userselection -eq 2) {  $preferedsource = "snapshot" }
+            if ($userselection -eq 3) {  $preferedsource = "streamsnap" }
+            if ($userselection -eq 4) {  $preferedsource = "onvault" }
+
+
             write-host "Fetching Image list from AGM"
-            $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+            if ($preferedsource -eq "snapshot")
+            {
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+            }
+            elseif ($preferedsource -eq "streamsnap")
+            {
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=StreamSnap&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+            }
+            elseif ($preferedsource -eq "onvault")
+            {
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+            }
+            else 
+            {
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+            }
             if ($imagelist.id.count -eq 0)
             {
-                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                if (!($preferedsource))
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                }
+                else 
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any $preferedsource Images for appid $appid"
+                }
                 return
             }
 
@@ -291,8 +321,177 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
             $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
+        # project name
+        if (!($projectname))
+        {
+            While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
+        }
+
+        # host project ID
+        if (!($sharedvpcprojectid))
+        {
+            [string]$sharedvpcprojectid= Read-Host "Host Project ID (optional, needed if $projectname is a service project)" 
+        }
+
+        # region
+        if (!($region))
+        {
+            While ($true)  { if ($region -eq "") { [string]$region= Read-Host "Region" } else { break } }
+        }
+
+        #zone
+        if (!($zone))
+        {
+            While ($true)  { if ($zone -eq "") { [string]$zone= Read-Host "Zone" } else { break } }
+        }
+
+        # learn name of new VM
+        if (!($instancename))
+        {
+            While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+        }
+
+        # machine type
+        if (!($machinetype))
+        {
+            While ($true)  { if ($machinetype -eq "") { [string]$machinetype= Read-Host "Machine Type" } else { break } }
+        }
+
+        # service account
+        if (!($serviceaccount))
+        {
+            While ($true)  { if ($serviceaccount -eq "") { [string]$serviceaccount= Read-Host "Service Account" } else { break } }
+        }
+        
+
+        # sole tenant name
+        if (!($nodegroup))
+        {
+            [string]$nodegroup= Read-Host "Sole Tenant Name or Node Group (optional, needed if mounting into a Node Group)" 
+        }
+
+        #network tags
+        if (!($networktags))
+        {
+            [string]$networktags= Read-Host "Network tags (optional)" 
+        }
+
+        # poweroff after recovery
+        [int]$userselection = ""
+        Write-Host "Power off after recovery?"
+        Write-Host "1`: Do not power off after recovery(default)"
+        Write-Host "2`: Power off after recovery"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  $poweroffvm = $TRUE  }
+
+        # migrate VM
+        [int]$userselection = ""
+        Write-Host "Migrate VM?"
+        Write-Host "1`: Do not migrate VM(default)"
+        Write-Host "2`: Migrate the VM to Persistent Disk"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  [switch]$migratevm = $TRUE }
+
+        # labels
+        if (!($labels))
+        {
+            [string]$labels= Read-Host "Labels (optional).  Separate key and value  with colon, and each pair with a comma, for instance:   pet:cat,food:fish" 
+        }
+
+
+        #networks
+
+        Write-Host "Network Interfaces?"
+        Write-Host "1`: One Nic (default)"
+        Write-Host "2`: Two Nics"
+        Write-Host ""
+        [int]$niccount = Read-Host "Please select from this list (1-2)"
+     
+        write-host ""
+        Write-host "NIC0 settings"
+        Write-Host ""
+
+        While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
+        While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
+        [int]$userselection = ""
+        Write-Host "NIC0 External IP?"
+        Write-Host "1`: None (default)"
+        Write-Host "2`: Auto Assign"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  [string]$nic0externalip = "auto" }
+        [int]$userselection = ""
+        Write-Host ""
+        Write-Host "NIC0 Internal IP?"
+        Write-Host "1`: Auto Assign (default)"
+        Write-Host "2`: Manual Assign"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) { [string]$nic0internalip = Read-Host "IP address" }
+
+        if ($niccount -eq 2)
+        {
+            write-host ""
+            Write-host "NIC1 settings"
+            Write-Host ""
+    
+            While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID (mandatory)" } else { break } }
+            While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID (mandatory)" } else { break } }
+            [int]$userselection = ""
+            Write-Host "NIC1 External IP?"
+            Write-Host "1`: None (default)"
+            Write-Host "2`: Auto Assign"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) {  [string]$nic1externalip = "auto" }
+            [int]$userselection = ""
+            Write-Host ""
+            Write-Host "NIC1 Internal IP?"
+            Write-Host "1`: Auto Assign (default)"
+            Write-Host "2`: Manual Assign"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) { [string]$nic1internalip = Read-Host "IP address" }
+        }
+
+        Clear-Host
+        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host ""
+        Write-Host -nonewline "New-AGMLibGCPSystemRecovery -srcid $srcid -imageid $imageid -appid $appid -projectname `"$projectname`""
+        if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
+        Write-Host -nonewline " -region `"$region`" -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`" -serviceaccount `"$serviceaccount`""
+        if ($nodegroup) { Write-Host -nonewline " -nodegroup `"$nodegroup`"" } 
+        if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
+        if ($poweroffvm) { Write-Host -nonewline " -poweroffvm" }
+        if ($migratevm) { Write-Host -nonewline " -migratevm" }
+        if ($labels) { Write-Host -nonewline " -labels `"$labels`"" } 
+        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network`""}
+        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
+        if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
+        if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
+        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
+        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
+        if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
+        if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
+        if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
+        Write-Host ""
+        Write-Host "1`: Run the command now (default)"
+        Write-Host "2`: Show the JSON used to run this command, but don't run it"
+        Write-Host "3`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-3)"
+        if ($userchoice -eq 2)
+        {
+            $jsonprint = "yes"
+        }
+        if ($userchoice -eq 3)
+        {
+            return
+        }
     }
 
+    # if we are not running guided mode, but the user has supplied a srcid and appid then we need to find the latest image either in any storage class or user selected class
     if (($appid) -and ($srcid) -and (!($imageid)))
     {
         # if we don't know the mountapplianceID then we don't know which appliance to kick this off from
@@ -308,24 +507,47 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         }
 
         # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
-        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+       
+        if ($preferedsource -eq "snapshot")
+        {
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+        }
+        elseif ($preferedsource -eq "streamsnap")
+        {
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=StreamSnap" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+        }
+        elseif ($preferedsource -eq "onvault")
+        {
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+        }
+        else 
+        {
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+        }
         if ($imagegrab.count -eq 1)
         {   
             $imageid = $imagegrab.id
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            if (!($preferedsource))
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            }   
+            else 
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch a $preferedsource Image for appid $appid on appliance with clusterID $mountapplianceid"
+            } 
             return
         }
     }
 
+    # if we didnt run guided mode then complain about missing fields, no interaction here
     if (!($srcid))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a credential src ID for the new instance with -srcid.  Learn this with Get-AGMCredential"
         return
     }
-
     if (!($projectname))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a project for the new instance with -projectname"
@@ -351,7 +573,6 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Get-AGMErrorMessage -messagetoprint "Please specify a machinetype for the new instance with -machinetype"
         return
     }
-
    if (!($nic0network))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a network for nic0 for the new instance with -nic0network"
@@ -362,7 +583,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic0 for the new instance with -nic0subnet"
         return
     }
-    # optionally handle nic1
+    # optionally check nic1
     if ((!($nic1network)) -and ($nic1subnet))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a network for nic1 for the new instance with -nic1network"
@@ -374,7 +595,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         return
     }
 
-
+    # Now we built the JSON
     # cloud credentials
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$srcid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","region","zone","machinetype","vpc","subnet","privateips","externalip"],"disabled":true,"hidden":true},'
     # project name
@@ -436,20 +657,20 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     # labels
     if ($labels)
     {
-        $json = $json + '{"displayName":"Labels","name":"tag","helpId":1014,"type":"tagselection","description":"Labels are key-value pairs that helps you organize your Google Cloud instances.","modified":false,"minimum":1,"maximum":50,"choices":['
+        $json = $json + '{"displayName":"Labels","name":"tag","helpId":1014,"type":"tagselection","description":"","modified":true,"minimum":1,"maximum":50,"choices":['
         $labelgroup = ""
         foreach ($label in $labels.Split(","))
         {   
             $key = $label.Split(":") | Select-object -First 1
             $value = $label.Split(":") | Select-object -skip 1
-            $labelgroup = $labelgroup + '{"selected":true,"key":"' +$label.key +'","value":"' +$label.value +'"},'   
+            $labelgroup = $labelgroup + '{"selected":true,"key":"' +$key +'","value":"' +$value +'"},'   
         }
         $json = $json + $labelgroup.TrimEnd(",")
         $json = $json + '],"validation":""}],"groupType":"layout"},'
     }
     else 
     {
-        $json = $json + '{"displayName":"Labels","name":"tag","helpId":1014,"type":"tagselection","description":"Labels are key-value pairs that helps you organize your Google Cloud instances.","modified":false,"minimum":1,"maximum":50,"choices":[],"validation":""}],"groupType":"layout"},'
+        $json = $json + '{"displayName":"Labels","name":"tag","helpId":1014,"type":"tagselection","description":"","modified":false,"minimum":1,"maximum":50,"choices":[],"validation":""}],"groupType":"layout"},'
     }
     # network starter
      $json = $json + '{"displayName":"Network Interfaces","name":"networksettings","helpId":1014,"type":"networkinterfaces","description":"","required":true,"modified":false,"minimum":1,"maximum":2,"children":['
@@ -508,8 +729,13 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
      # volumes
      $json = $json + '{"displayName":"Select Volumes to Mount","name":"volumes","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"","name":"volumeselection","helpId":1014,"type":"volumeselectiontable","description":"","required":true,"modified":false,"title":"Select Volumes to Mount","header":[{"displayName":"DEVICE NAME","name":"devicename","type":"text"},{"displayName":"CAPACITY","name":"size","type":"text"},{"displayName":"SOURCE MOUNT PATH","name":"sourcemountpath","type":"text"},{"displayName":"UNIQUE ID","name":"volumeid","type":"text"},{"displayName":"VOLUME TYPE","name":"devicetype","type":"text"},{"displayName":"TARGET","name":"deviceindex","type":"text"},{"displayName":"DISK TYPE","name":"disktype","type":"selection"}],"rows":[{"size":"40 GB","volumeid":"vmvol:6000C296-dd6e-9635-bb5f-70f2453cb47a","devicename":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","disktype":[{"displayName":"Balanced Persistent Disk(DiskSizeGb: 100)","name":"pd-balanced","selected":true},{"displayName":"Extreme Persistent Disk(DiskSizeGb: 1000)","name":"pd-extreme"},{"displayName":"SSD Persistent Disk(DiskSizeGb: 100)","name":"pd-ssd"},{"displayName":"Standard Persistent Disk(DiskSizeGb: 500)","name":"pd-standard"}],"sourcemountpath":"[vsanDatastore] d625b860-bc45-51c1-03f5-0c42a10e6a68/Centos2_1.vmdk","devicetype":"BOOT","deviceindex":"cloud:6122EAC43B_286","selected":true,"disabled":true,"disktypeDisabled":false}],"_getchoices":"getVolumeTypes#handle,cloudcredential,region,zone,project,machinetype"}],"groupType":"wizard"}],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
+    # diag info
     write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
-    $json  
+    if ($jsonprint -eq "yes")
+    {   
+        $json  
+    }
+    # launch the command and check output
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 
     if ($newgcp.fields)

@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.42'
+ModuleVersion = '0.0.0.43'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -157,6 +157,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.43] 2022-03-30
+        Teach Get-AGMLibCredentialSrcID to show clusterid
+        Add New-AGMLibGCPSystemRecovery and New-AGMLibGCPSystemRecoveryMulti 
+
         ## [0.0.0.42] 2022-03-08
         Fixed typo
 
