@@ -71,7 +71,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     }
 
 
-    # if the user gave us nothing to start work, then ask for a VMware VM name
+    # GUIDED MODE kicks in if we dont have an image or app preference
     if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
     {
         $guided = $TRUE
@@ -319,7 +319,6 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             $copygrab = $imagelist[($imageselection - 1)].copies
             $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
             $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
-            $jobclass = $imagelist[($imageselection - 1)].jobclass
         }
         # project name
         if (!($projectname))
@@ -526,7 +525,9 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         }
         if ($imagegrab.count -eq 1)
         {   
-            $imageid = $imagegrab.id
+            $copygrab = $imagegrab.copies
+            $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+            $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
         }
         else 
         {
