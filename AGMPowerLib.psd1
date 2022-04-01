@@ -158,7 +158,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.43] 2022-03-30
-        Teach Get-AGMLibCredentialSrcID to show clusterid
+        Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
         Add New-AGMLibGCPSystemRecovery and New-AGMLibGCPSystemRecoveryMulti 
 
         ## [0.0.0.42] 2022-03-08

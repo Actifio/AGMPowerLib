@@ -1,4 +1,4 @@
-Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[string]$label,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault) 
+Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[string]$label,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault,[string]$perfoption) 
 {
     <#
     .SYNOPSIS
@@ -17,6 +17,11 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
     .DESCRIPTION
     A function to create new VMs using a mount job
+
+    * Mount options:
+    -appid         If you specify this, then don't specify appname, imagename or imageid.   We will find the most recent imaage and mount that as a new VM.
+    -perfoption    You can specify either:  StorageOptimized, Balanced, PerformanceOptimized or MaximumPerformance
+                   Note if you run this option when mounting a snapshot image, the mount will fail
 
     * Monitoring options:
 
@@ -39,7 +44,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         return
     }
 
-    # if the user gave us nothing to start work, then ask for a VMware VM name
+    # if the user gave us nothing to start work, then offer a guided menu to select a VM
     if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
     {
         $guided = $true
@@ -87,26 +92,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             $appid = $vmgrab.id[($vmselection - 1)]
         }
     }
-    else 
-    {
-        if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
-        {
-            $appname = read-host "AppName of the source VM"
-        }
-    }
 
-    if ( ($appname) -and (!($appid)) )
-    {
-        $appgrab = Get-AGMApplication -filtervalue "appname=$appname&apptype=VMBackup"
-        if ($appgrab.id.count -ne 1)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid VMBackup app.  Use Get-AGMLibApplicationID and try again specifying -appid."
-            return
-        }
-        else {
-            $appid = $appgrab.id
-        }
-    }
 
     
     # learn name of new VM
@@ -115,8 +101,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         [string]$vmname= Read-Host "Name of New VM you want to create using an image of $appname"
     }
 
-    # learn about the image
-    if ($imagename)
+    # if we got just an an imagename, we can work with this.  First check that it exists and then learn the image ID of that imagename
+    if ($imagename) 
     {
         $imagegrab = Get-AGMImage -filtervalue backupname=$imagename
         if ($imagegrab.count -eq 0)
@@ -131,7 +117,24 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
     }
 
 
-    if ($appid)
+    # if we got appname but no appid, we need to learn the appid
+    if (($appname) -and (!($appid)))
+    {
+        $vmgrab = Get-AGMApplication -filtervalue "apptype=VMBackup&appname=$appname" | sort-object appname
+        if ($vmgrab.appname.count -eq 1)
+        {
+            $appid = $vmgrab.id
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find a unique appid for appname $appname"
+            return
+        }
+    }
+
+
+    # if we got an appid and we are not in guided mode, then we need to find the latest image
+    if (($appid) -and (!($guided)))
     {
         if ($onvault -eq "true")
         {
@@ -139,27 +142,25 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         }
         else 
         {
-            $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=OnVault" -sort "jobclasscode:asc,consistencydate:desc" -limit 1
-            #$imagecheck = Get-AGMLibLatestImage -appid $appid
+            $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=OnVault&jobclass=StreamSnap" -sort "jobclasscode:asc,consistencydate:desc" -limit 1
         }
         
         if (!($imagecheck.backupname))
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to any images for selected VM"
+            Get-AGMErrorMessage -messagetoprint "Failed to any images for $appname ($appid)"
             return
         }   
         else {
             $imagegrab = Get-AGMImage -id $imagecheck.id
             $imagename = $imagegrab.backupname                
             $imageid = $imagegrab.id
-            $consistencydate = $imagegrab.consistencydate
             $restorableobjects = $imagegrab.restorableobjects
         }
     }
     
 
 
-    # this if for guided menu
+    # this if for guided menu.  We previously used guided menu to find an appid/appname.   Now we find an image
     if ($guided)
     {
         if (!($imagename))
@@ -183,7 +184,6 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
                     $imagegrab = Get-AGMImage -id $imagecheck.id
                     $imagename = $imagegrab.backupname                
                     $imageid = $imagegrab.id
-                    $consistencydate = $imagegrab.consistencydate
                     $restorableobjects = $imagegrab.restorableobjects
                 }
             }
@@ -199,9 +199,23 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
                     $imagegrab = Get-AGMImage -id $imagecheck.id
                     $imagename = $imagegrab.backupname                
                     $imageid = $imagegrab.id
-                    $consistencydate = $imagegrab.consistencydate
                     $restorableobjects = $imagegrab.restorableobjects
                 }
+                write-host ""
+                Write-Host "Performance and Consumption Options"
+                Write-Host "1`: Storage Optimized (performance depends on network, least storage consumption)"
+                Write-Host "2`: Balanced (more performance, more storage consumption)(default)"
+                Write-Host "3`: Performance Optimized (higher performance, highest storage consumption)"
+                Write-Host "4`: Maximum Performance (delay before mount, highest performance, highest storage consumption)"
+                Write-Host ""
+                [int]$perfselection = Read-Host "Please select from this list (1-4)"
+                if ($perfselection -eq "1") { $perfoption = "StorageOptimized" }
+                if (($perfselection -eq "2") -or ($perfselection -eq "")) { $perfoption = "Balanced" }
+                if ($perfselection -eq "3") { $perfoption = "PerformanceOptimized" }
+                if ($perfselection -eq "4") { $perfoption = "MaximumPerformance" }
+
+
+
             }
             else
             {
@@ -215,7 +229,6 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
                 {
                     $imagegrab = Get-AGMImage -id ($imagelist).id
                     $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
                     $restorableobjects = $imagegrab.restorableobjects
                 } 
                 else
@@ -245,7 +258,6 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
                     $imageid =  $imagelist[($imageselection - 1)].id
                     $imagegrab = Get-AGMImage -id $imageid
                     $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate 
                     $restorableobjects = $imagegrab.restorableobjects
                 }
             }
@@ -483,6 +495,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Write-Host ""
         Write-Host -nonewline "New-AGMLibVM -imageid $imageid -vmname $vmname -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts -poweronvm $poweronvm -volumes `'$uservolumelistfinal`'"
         if ($label) { Write-Host -nonewline " -label $label" }
+        if ($perfoption) { Write-Host -nonewline " -perfoption $perfoption" }
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -583,8 +596,8 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             poweronvm = "$poweronvm";
             physicalrdm = $physicalrdm;
             rdmmode = $rdmmode;
-            migratevm = "false";
         }
+        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
     }
     else 
     {
@@ -604,12 +617,13 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             hostname = $vmname;
             poweronvm = "$poweronvm";
             physicalrdm = $physicalrdm;
-            rdmmode = $rdmmode
+            rdmmode = $rdmmode;
             selectedobjects = @(
                 $selectedobjects
             )
-            migratevm = "false";
         }
+        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
+        
     }
 
 
