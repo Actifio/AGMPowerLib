@@ -336,7 +336,12 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             $projectlist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
             $regionlist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
             $machinetypelist = (($recoverydata | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
-            $serviceaccountgrab = (($recoverydata | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue 
+            $serviceaccountgrab = (($recoverydata | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
+            $zonelist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+            $selectedproject = ((($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
+            $selectedregion = ((($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | where-object { $_.selected -eq $true }).name
+            $networklist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+            $selectednetwork = (((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
         }
 
         # project name
@@ -420,7 +425,67 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         #zone
         if (!($zone))
         {
-            While ($true)  { if ($zone -eq "") { [string]$zone= Read-Host "Zone" } else { break } }
+            if ($region -ne $selectedregion)
+            {
+                $zonelist = ""
+                if ($recoverygrab.fields)
+                {
+                    write-host "Fetching zone list because selected $region changed from $selectedregion"
+                    # we need to send a modified packet backto learn the zones in the users selected region
+                    foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                    {
+                        $row.modified = $false
+                    }
+                    (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.selected -eq $true}).selected = $false
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                    if ($project -ne $selectedproject)
+                    {
+                        ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $project}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                    }
+                    $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
+                    $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    $recoverygrab1 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                    $recoverydata = $recoverygrab1.fields
+                    write-host ""
+                    $zonelist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+                    $networklist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+                    $subnetlist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+                    $selectednetwork = (((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                }
+            }
+            if ($zonelist)
+            {
+                write-host ""
+                write-host "Zone Name Selection"
+                write-host ""
+                $i = 1
+                foreach ($zon in $zonelist.name)
+                { 
+                    Write-Host -Object "$i`: $zon"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $zonelist.count
+                    [int]$zonselection = Read-Host "Please select a zone (1-$listmax)"
+                    if ($zonselection -lt 1 -or $zonselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $zone =  $zonelist.name[($zonselection - 1)]
+            }
+            else 
+            {
+                While ($true)  { if ($zone -eq "") { [string]$zone= Read-Host "Zone" } else { break } }
+            }
+           
         }
 
         # learn name of new VM
@@ -523,8 +588,120 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Write-host "NIC0 settings"
         Write-Host ""
 
-        While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
-        While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
+
+        if ($networklist.name)
+        {
+            write-host ""
+            write-host "Network Selection."
+            write-host ""
+            $i = 1
+            foreach ($net in $networklist.displayName)
+            { 
+                Write-Host -Object "$i`: $net"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $networklist.count
+                [int]$netselection = Read-Host "Please select a network (1-$listmax)."
+                if ($netselection -lt 1 -or $netselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if  ($networklist.name.count -eq 1)
+            {
+                $nic0network = $networklist.name
+            } else {
+                $nic0network = $networklist.name[($netselection - 1)]
+            }
+        }
+        else 
+        {
+            While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
+        }
+        # if the network changes then the subnets will change
+        if ($nic0network -ne $selectednetwork)
+        {
+            if ($recoverygrab1.fields)
+            {
+                write-host "Fetching subnet list"
+                # we need to send a modified packet backto learn the subnets in the users selected network
+                (((($recoverygrab1.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                (((($recoverygrab1.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.name -eq $true }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab1 | convertto-json -depth 10 -compress
+                $recoverygrab2 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                $recoverydata = $recoverygrab2.fields
+                write-host ""
+                $zonelist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+                $subnetlist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+            }
+            else 
+            {
+                write-host "Fetching subnet list"
+                # we need to send a modified packet backto learn the subnets in the users selected network
+                foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                {
+                    $row.modified = $false
+                }
+                (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.selected -eq $true}).selected = $false
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                if ($project -ne $selectedproject)
+                {
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $project}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                }
+                (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.name -eq $true }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab1 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                $recoverydata = $recoverygrab1.fields
+                write-host ""
+                $subnetlist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+            }
+        }
+        if ($subnetlist.name)
+        {
+            write-host ""
+            write-host "Subnet Selection."
+            write-host ""
+            $i = 1
+            foreach ($sub in $subnetlist.displayName)
+            { 
+                Write-Host -Object "$i`: $sub"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $subnetlist.name.count
+                [int]$subselection = Read-Host "Please select a network (1-$listmax)."
+                if ($subselection -lt 1 -or $subselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if  ($subnetlist.name.count -eq 1)
+            {
+                $nic0subnet = $subnetlist.name
+            } else {
+                $nic0subnet = $subnetlist.name[($subselection - 1)]
+            }
+        }
+        else 
+        {
+            While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
+        }
         [int]$userselection = ""
         Write-Host "NIC0 External IP?"
         Write-Host "1`: None (default)"
@@ -546,9 +723,116 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             write-host ""
             Write-host "NIC1 settings"
             Write-Host ""
-    
-            While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID (mandatory)" } else { break } }
-            While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID (mandatory)" } else { break } }
+            if ($networklist.name)
+            {
+                write-host ""
+                write-host "Network Selection."
+                write-host ""
+                $i = 1
+                foreach ($net in $networklist.displayName)
+                { 
+                    Write-Host -Object "$i`: $net"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $networklist.count
+                    [int]$netselection = Read-Host "Please select a network (1-$listmax)."
+                    if ($netselection -lt 1 -or $netselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                if  ($networklist.name.count -eq 1)
+                {
+                    $nic1network = $networklist.name
+                } else {
+                    $nic1network = $networklist.name[($netselection - 1)]
+                }
+            }
+            else 
+            {
+                While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID (mandatory)" } else { break } }
+            }
+            if ($recoverygrab1.fields)
+            {
+                write-host "Fetching subnet list"
+                # we need to send a modified packet backto learn the subnets in the users selected network
+                (((($recoverygrab1.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                (((($recoverygrab1.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.name -eq $true }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab1 | convertto-json -depth 10 -compress
+                $recoverygrab2 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                $recoverydata = $recoverygrab2.fields
+                write-host ""
+                $zonelist = (($recoverydata | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+                $subnetlist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+            }
+            else 
+            {
+                write-host "Fetching subnet list"
+                # we need to send a modified packet backto learn the subnets in the users selected network
+                foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                {
+                    $row.modified = $false
+                }
+                (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.selected -eq $true}).selected = $false
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                if ($project -ne $selectedproject)
+                {
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $project}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                }
+                (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.name -eq $true }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab1 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                $recoverydata = $recoverygrab1.fields
+                write-host ""
+                $subnetlist = ((($recoverydata | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+            }
+        
+            if ($subnetlist.name)
+            {
+                write-host ""
+                write-host "Subnet Selection."
+                write-host ""
+                $i = 1
+                foreach ($sub in $subnetlist.displayName)
+                { 
+                    Write-Host -Object "$i`: $sub"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $subnetlist.name.count
+                    [int]$sub1selection = Read-Host "Please select a network (1-$listmax)."
+                    if ($sub1selection -lt 1 -or $sub1selection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                if  ($subnetlist.name.count -eq 1)
+                {
+                    $nic1subnet = $subnetlist.name
+                } else {
+                    $nic1subnet = $subnetlist.name[($sub1selection - 1)]
+                }
+            }
+            else 
+            {
+                While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
+            }
             [int]$userselection = ""
             Write-Host "NIC1 External IP?"
             Write-Host "1`: None (default)"
