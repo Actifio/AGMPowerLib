@@ -39,11 +39,11 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     -nic0subnet      The subnet name in URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
-    -poweroffvm      By default the new GCE Instance will be powered on.   If you want it to be created but then powered off, then specify this.
-    -migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all drives into GCE PD, then specify this.
+    -poweroffvm      By default the new GCE Instance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
+    -migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all data onto GCE PD, then specify this flag.
     -preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
 
-    Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
+    Optionally you can request a second NIC using nic1:
     -nic1network     The network name in URL format for nic1
     -nic1subnet      The subnet name in URL format for nic1
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
