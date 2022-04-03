@@ -13,8 +13,10 @@ Function New-AGMLibGCPSystemRecoveryMulti ([string]$instancelist,[int]$phase)
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
     phase,srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
-    1,391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,https,true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
+    1,391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
      
+
+    Note that the the labels and networktags fields can contain commas, so need to be double quoted to ensure they do no escape the wrong field
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
