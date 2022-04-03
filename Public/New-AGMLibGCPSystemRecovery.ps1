@@ -10,14 +10,14 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     This mounts the specified imageid 56410933
 
     .DESCRIPTION
-    To learn which Applications are suitable use this command:
-    Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
+    To learn which Applications are suitable use this command (note the ApplinanceName is where the images were created):
+    Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
 
     To learn which Cloud Credential srcids are available use this command:
     Get-AGMLibCredentialSrcID
 
-    To learn the image ID or image name, you could use this command:
-    Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot" | select appname,id,name,consistencydate,diskpool | ft
+    To learn the image ID or image name, you could use this command (change jobclass to snapshot or StreamSnap if needed):
+    Get-AGMImage -filtervalue "apptype=SystemState&apptype=VMBackup&jobclass=OnVault" | select appname,id,name,consistencydate,@{N='diskpoolname'; E={$_.diskpool.name}} | sort-object appname,consistencydate | format-table
     
     There are many parameters that need to be supplied:
 
@@ -55,6 +55,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     What is not supported right now:
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
+
+    If you get timeouts, then increase the timeout value with -timeout xx when running connect-agm
     
     #>
 
