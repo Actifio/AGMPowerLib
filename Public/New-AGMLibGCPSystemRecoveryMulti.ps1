@@ -47,6 +47,8 @@ Function New-AGMLibGCPSystemRecoveryMulti ([string]$instancelist,[int]$phase)
         return;
     }
 
+    write-host ""
+    write-host "Starting recovery jobs for phase $phase"
 
     foreach ($app in $recoverylist)
     {
