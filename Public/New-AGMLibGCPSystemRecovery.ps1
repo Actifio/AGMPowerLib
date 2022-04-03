@@ -430,7 +430,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
                 $zonelist = ""
                 if ($recoverygrab.fields)
                 {
-                    write-host "Fetching zone list because selected $region changed from $selectedregion"
+                    write-host "Fetching zone list"
                     # we need to send a modified packet backto learn the zones in the users selected region
                     foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
                     {
@@ -1218,8 +1218,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     $json = $json + '],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
     # diag info
-    write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
-    $json
+    #write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
+    #$json
     if ($jsonprint -eq "yes")
     {   
         $json  
