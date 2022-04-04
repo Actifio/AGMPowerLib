@@ -1114,22 +1114,20 @@ New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c
 
 ### GCE to GCE configuration
 
-The expected configuration in this scenario is that the end-user will be looking to recover workloads from one zone into another one:
+The expected configuration in this scenario is that the end-user will be looking to recover workloads from one GCP zone into another one:
 
 | Production Site  | DR Site |
 | ------------- | ------------- |
 | GCP Zone | GCP Zone |
-
 
 The goal is to offer a simplified way to manage failover from Production to DR or failback where:
 * The backup mechanism is to use persistent disk snapshots
 * These images are created by a Backup Appliance in the DR zone
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances.
 
-
 #### GCE to GCE CSV file
 
-We can take our **New-AGMLibGCPInstance** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
+We can take the **New-AGMLibGCPInstance** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
@@ -1152,15 +1150,32 @@ If you need either of these, please open an issue in Github.
 
 ### VMware to GCE configuration
 
-The expected configuration in this scenario is that the end-user will be looking to recover workloads from VMware into a GCE Zone
+The expected configuration in this scenario is that the end-user will be looking to recover workloads from VMware into a GCP Zone
 
 | Production Site  | DR Site |
 | ------------- | ------------- |
 | VMware | GCP Zone |
 
+The goal is to offer a simplified way to manage failover from Production to DR where:
+* The backup mechanism is to use VMware snapshots or System State backup
+* These images are created by an on-premises Backup Appliance and then replicated into cloud either in an OnVault pool or via StreamSnap.
+* DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
+* You may need to first run an OnVault import using this method:  https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
+
 #### VMware to GCE CSV file
 
-We can take our **New-AGMLibGCPSystemRecovery** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
+We can take the **New-AGMLibGCPSystemRecovery** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
+The phase for each VM needs to be set by an administrator who has knowledge of the order in which VMs should be recovered.   So you might have five VMs in the first phase, ten in the second and so on.
+To learn which Cloud Credential srcids are available use this command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.
+```
+Get-AGMLibCredentialSrcID
+To learn the AppIDs use this command (note the ApplianceName is where the images were created):
+```
+Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
+```
+
+```
+Here is an example of the CSV file:
 ```
 phase,srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
 1,391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
@@ -1172,8 +1187,7 @@ We can then run a command like this specifying our CSV file:
 New-AGMLibGCPSystemRecovery -instancelist recoverylist.csv -phase 1
 ```
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series where the phase=1.
-We would then run it again for phase 2 and 3 and so on.
- 
+We would then run it again for phase 2 and 3 and so on.   
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
@@ -1206,7 +1220,7 @@ udstask setparameter -param maxondemandslots -value 15
 
 ### Managing the mounted GCE Instance 
 
-Once we have created a new GCP Instance, there is no dependency on Actifio because the disks for the instance were created from the snapshots stored in Google Cloud Storage, rather than an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
+Once we have created a new GCP Instance from PD snapshot, there is no dependency on Actifio because the disks for the instance are all Persistent Disks rather than shared disks from an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
 ```
 PS /tmp/agmpowercli> Get-AGMLibActiveImage
 

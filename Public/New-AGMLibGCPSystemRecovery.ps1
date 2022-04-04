@@ -10,7 +10,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     This mounts the specified imageid 56410933
 
     .DESCRIPTION
-    To learn which Applications are suitable use this command (note the ApplinanceName is where the images were created):
+    To learn which Applications are suitable use this command (note the ApplianceName is where the images were created):
     Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
 
     To learn which Cloud Credential srcids are available use this command:
