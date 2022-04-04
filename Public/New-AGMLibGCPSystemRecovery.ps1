@@ -1132,7 +1132,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     }
     else 
     {
-        $json = $json + '{"displayName":"MIGRATE VM","name":"migratevm","helpId":1014,"type":"checkbox","description":"Migrate VM","modified":false,"dynamic":false,"_dependent":["volumeselection"],"checked":true}],"groupType":"layout"},{"displayName":"","name":"tagsgroup","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":['
+        $json = $json + '{"displayName":"MIGRATE VM","name":"migratevm","helpId":1014,"type":"checkbox","description":"Migrate VM","modified":false,"dynamic":false,"_dependent":["volumeselection"],"checked":false}],"groupType":"layout"},{"displayName":"","name":"tagsgroup","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":['
     }
     # labels
     if ($labels)
