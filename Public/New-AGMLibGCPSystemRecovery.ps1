@@ -103,7 +103,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             Get-AGMErrorMessage -messagetoprint "There are no Credentials.  Please add a credential"
             return
         }
-        if ($credarray.credentialid.count -eq 1)
+        if ($credarray.srcid.count -eq 1)
         {
             $srcid =  $credarray.srcid
             $credentialid = $credarray.credentialid
@@ -1075,6 +1075,52 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         return
     }
 
+    # we need a credential ID to grab diskjson, so if we dont have one here, grab it
+    if (!($credentialid))
+    {
+        $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
+        if ($credgrab.srcid.count -eq 1)
+        {
+            $mountapplianceid = $credgrab.applianceid
+            $credentialid = $credgrab.credentialid
+        }
+        else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a mountapplianceid"
+            return
+        }
+    }
+
+    # we need to build diskjson
+    if (!($diskjson))
+    {
+        if (!($disktype))
+        {
+            $disktype = "pd-balanced"
+        }
+        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+        if ($recoverygrab.fields)
+        {
+            $recoverydata = $recoverygrab.fields
+            $volumelist = ($recoverydata | where-object { $_.name -eq "volumes" })
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.selected -eq "True")
+                {
+                    $row.selected = ""
+                }
+            }
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.name -eq $disktype)
+                {
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -force
+                }
+            }
+            $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
+        }
+    }
+
+
+
     # Now we built the JSON
     # cloud credentials
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$srcid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","region","zone","machinetype","vpc","subnet","privateips","externalip"],"disabled":true,"hidden":true},'
@@ -1220,8 +1266,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     $json = $json + '],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
     # diag info
-    #write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
-    #$json
+    write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
+   
     if ($jsonprint -eq "yes")
     {   
         $json  
