@@ -1160,7 +1160,7 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 * The backup mechanism is to use VMware snapshots or System State backup
 * These images are created by an on-premises Backup Appliance and then replicated into cloud either in an OnVault pool or via StreamSnap.
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
-* You may need to first run an OnVault import using this method:  https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
+* You may need to first run an OnVault import using this method:  [a relative link] (https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images)
 
 #### VMware to GCE CSV file
 
