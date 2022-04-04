@@ -1112,9 +1112,9 @@ New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c
 
 ## User Story: GCE Disaster Recovery
 
-### Expected configuration
+### GCE to GCE configuration
 
-The expected configuration is that the end-user will be looking to recovery workloads from one zone into another one:
+The expected configuration in this scenario is that the end-user will be looking to recover workloads from one zone into another one:
 
 | Production Site  | DR Site |
 | ------------- | ------------- |
@@ -1126,13 +1126,10 @@ The goal is to offer a simplified way to manage failover from Production to DR o
 * These images are created by a Backup Appliance in the DR zone
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances.
 
-### Failover and failback
 
-Effectively failover and failback are identical because they are achieved using the same mechanism, so we will only use the term failover.   Where you read failover, failback is performed in exactly the same way.
+#### GCE to GCE CSV file
 
-### CSV file
-
-We can take our New-AGMLibGCPInstance command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
+We can take our **New-AGMLibGCPInstance** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
@@ -1153,7 +1150,36 @@ What is not supported right now:
     
 If you need either of these, please open an issue in Github.
 
-#### Maximum slot counts and mount jobs
+### VMware to GCE configuration
+
+The expected configuration in this scenario is that the end-user will be looking to recover workloads from VMware into a GCE Zone
+
+| Production Site  | DR Site |
+| ------------- | ------------- |
+| VMware | GCP Zone |
+
+#### VMware to GCE CSV file
+
+We can take our **New-AGMLibGCPSystemRecovery** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
+```
+phase,srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
+1,391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
+   
+```
+The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
+We can then run a command like this specifying our CSV file:
+```
+New-AGMLibGCPSystemRecovery -instancelist recoverylist.csv -phase 1
+```
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series where the phase=1.
+We would then run it again for phase 2 and 3 and so on.
+ 
+What is not supported right now:
+
+1.  Specifying more than one internal IP per subnet.
+1.  Specifying different disk types per disk
+
+### Maximum slot counts and mount jobs
 
 The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   To resolve this we need to use Appliance PowerShell which can be found here:
 
