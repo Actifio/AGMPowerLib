@@ -15,6 +15,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+**[User Story: GCE Disaster Recovery](#user-story-gce-disaster-recovery)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 
 
@@ -1044,7 +1045,8 @@ succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 
 ## User Story: Persistent Disk Snapshots
 
-In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.
+In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
+This command requires several inputs so first we explore how to get them.
 
 ### Creating a single GCE Instance from Snapshot
 
@@ -1108,9 +1110,29 @@ This brings us to a command like this one:
 New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -retainlabel true
 ```
 
-### Performing a multi-mount from file
+## User Story: GCE Disaster Recovery
 
-We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
+### Expected configuration
+
+The expected configuration is that the end-user will be looking to recovery workloads from one zone into another one:
+
+| Production Site  | DR Site |
+| ------------- | ------------- |
+| GCP Zone | GCP Zone |
+
+
+The goal is to offer a simplified way to manage failover from Production to DR or failback where:
+* The backup mechanism is to use persistent disk snapshots
+* These images are created by a Backup Appliance in the DR zone
+* DR occurs by issuing commands to the DR Appliance to create new GCE Instances.
+
+### Failover and failback
+
+Effectively failover and failback are identical because they are achieved using the same mechanism, so we will only use the term failover.   Where you read failover, failback is performed in exactly the same way.
+
+### CSV file
+
+We can take our New-AGMLibGCPInstance command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
