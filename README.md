@@ -1114,16 +1114,16 @@ New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c
 
 ### GCE to GCE configuration
 
-The expected configuration in this scenario is that the end-user will be looking to recover workloads from one GCP zone into another one:
+The expected configuration in this scenario is that the end-user wants to recover workloads from one GCP zone into another one:
 
 | Production Site  | DR Site |
 | ------------- | ------------- |
 | GCP Zone | GCP Zone |
 
-The goal is to offer a simplified way to manage failover from Production to DR or failback where:
-* The backup mechanism is to use persistent disk snapshots
-* These images are created by a Backup Appliance in the DR zone
-* DR occurs by issuing commands to the DR Appliance to create new GCE Instances.
+The goal is to offer a simplified way to manage failover or failback where:
+* The backup mechanism is persistent disk snapshots
+* The images are created by a Backup Appliance in an alternate zone
+* DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
 
 #### GCE to GCE CSV file
 
@@ -1139,7 +1139,7 @@ We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series.
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  They will run in parallel but be started serially.
  
 What is not supported right now:
 
@@ -1160,20 +1160,19 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 * The backup mechanism is to use VMware snapshots or System State backup
 * These images are created by an on-premises Backup Appliance and then replicated into cloud either in an OnVault pool or via StreamSnap.
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
-* You may need to first run an OnVault import using this method:  [a relative link] (https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images)
+* You may need to first run an OnVault import using this method: https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
 
 #### VMware to GCE CSV file
 
 We can take the **New-AGMLibGCPSystemRecovery** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
-The phase for each VM needs to be set by an administrator who has knowledge of the order in which VMs should be recovered.   So you might have five VMs in the first phase, ten in the second and so on.
-To learn which Cloud Credential srcids are available use this command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.
+The phase for each VM needs to be set by an Administrator who has knowledge of the order in which VMs should be recovered.   So you might have five VMs in the first phase, ten in the second and so on.
+To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
 ```
 Get-AGMLibCredentialSrcID
-To learn the AppIDs use this command (note the ApplianceName is where the images were created):
+```
+To learn the AppIDs use this command (note the ApplianceName is where the images were created, in other words the source appliance, not the one running the mount):
 ```
 Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
-```
-
 ```
 Here is an example of the CSV file:
 ```
@@ -1186,8 +1185,8 @@ We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPSystemRecovery -instancelist recoverylist.csv -phase 1
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series where the phase=1.
-We would then run it again for phase 2 and 3 and so on.   
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCPInstance** jobs where the phase=1.   The jobs will run in parallel (up to the slot limit), but will be started in series.
+We would then run it again for phase 2 and then phase 3 and so on.   
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
