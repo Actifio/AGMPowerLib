@@ -97,11 +97,11 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
 'New-AGMLibFSMount',
+'New-AGMLibGCEConversion',
+'New-AGMLibGCEConversionMulti',
 'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
-'New-AGMLibGCPSystemRecovery',
-'New-AGMLibGCPSystemRecoveryMulti',
 'New-AGMLibGCPVM',
 'New-AGMLibImage',
 'New-AGMLibMultiMount',
@@ -161,7 +161,7 @@ PrivateData = @{
         ReleaseNotes = '
         ## [0.0.0.43] 2022-03-30
         Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
-        Add New-AGMLibGCPSystemRecovery and New-AGMLibGCPSystemRecoveryMulti 
+        Add New-AGMLibGCEConversion and New-AGMLibGCEConversionMulti 
 
         ## [0.0.0.42] 2022-03-08
         Fixed typo

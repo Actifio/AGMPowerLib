@@ -1164,7 +1164,7 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 
 #### VMware to GCE CSV file
 
-We can take the **New-AGMLibGCPSystemRecovery** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
+We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
 The phase for each VM needs to be set by an Administrator who has knowledge of the order in which VMs should be recovered.   So you might have five VMs in the first phase, ten in the second and so on.
 To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
 ```
@@ -1183,14 +1183,15 @@ phase,srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machin
 The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
 We can then run a command like this specifying our CSV file:
 ```
-New-AGMLibGCPSystemRecovery -instancelist recoverylist.csv -phase 1
+NNew-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 ```
-This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCPInstance** jobs where the phase=1.   The jobs will run in parallel (up to the slot limit), but will be started in series.
-We would then run it again for phase 2 and then phase 3 and so on.   
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCPInstance** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
+   
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
+1.  More than two NICS per instance
 
 ### Maximum slot counts and mount jobs
 

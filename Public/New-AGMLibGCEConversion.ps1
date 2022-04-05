@@ -1,11 +1,11 @@
-Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm,[string]$preferedsource,[string]$disktype) 
+Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$sharedvpcprojectid,[string]$nodegroup,[string]$region,[string]$zone,[string]$instancename,[string]$machinetype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[switch]$poweroffvm,[switch]$migratevm,[string]$preferedsource,[string]$disktype) 
 {
     <#
     .SYNOPSIS
     Mounts a VMware VM or System State image as a new GCP Instance (VM)
 
     .EXAMPLE
-    New-AGMLibGCPSystemRecovery -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCEConversion -imageid 56410933 -srcid 1234 -region australia-southeast1 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweroffvm 
 
     This mounts the specified imageid 56410933
 
@@ -111,8 +111,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         else
         {
             Clear-Host
-            write-host "Welcome to the Guided Menu for System Recovery. "
-            write-host "You will be offered selections to build a command to run a System Recovery that will create a new GCE Instance, either from a VMware VM or System State Backup"
+            write-host "Welcome to the Guided Menu for GCE Conversion. "
+            write-host "You will be offered selections to build a command to run a conversion job that will create a new GCE Instance, either from a VMware VM or System State Backup"
             write-host ""
             write-host "Credential Selection menu"
             write-host "The Credential is used to authenticate GCE commands.  Ensure you select the credential on the correct appliance since this will determine which appliance runs the recovery job"
@@ -141,9 +141,9 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Write-host ""
         write-host "Select application status for VMWare/SystemState apps with images on $mountappliancename"
         Write-host ""
-        Write-Host "1`: Managed local apps(default)"
+        Write-Host "1`: Managed local apps (default)"
         Write-Host "2`: Unmanaged local apps"
-        Write-Host "3`: Imported apps (from other Appliances).  Use this in a DR situation. You may need to import from OnVault first."
+        Write-Host "3`: Imported apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
         if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname }
@@ -151,8 +151,8 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
-            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed System State or VMware apps to list." }
-            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged System State or VMware apps to list." }
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed System State or VMware apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged System State or VMware apps to list" }
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported System State or VMware apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
@@ -205,7 +205,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         $appgrab = Get-AGMApplication -filtervalue "appname=$appname&apptype=VMBackup&apptype=SystemState"
         if ($appgrab.id.count -ne 1)
         { 
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid."
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid"
             return
         }
         else {
@@ -252,7 +252,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             [int]$userselection = ""
             write-host ""
             Write-Host "Prefered source?   Use this to determine which storage pool will be examined to find source images"
-            Write-Host "1`: Any source(default)"
+            Write-Host "1`: Any source (default)"
             Write-Host "2`: snapshot"
             Write-Host "3`: streamsnap"
             Write-Host "4`: onvault"
@@ -261,76 +261,137 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             if ($userselection -eq 2) {  $preferedsource = "snapshot" }
             if ($userselection -eq 3) {  $preferedsource = "streamsnap" }
             if ($userselection -eq 4) {  $preferedsource = "onvault" }
-
-
-            write-host "Fetching Image list from AGM"
-            if ($preferedsource -eq "snapshot")
-            {
-                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
-            }
-            elseif ($preferedsource -eq "streamsnap")
-            {
-                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=StreamSnap&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
-            }
-            elseif ($preferedsource -eq "onvault")
-            {
-                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
-            }
-            else 
-            {
-                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
-            }
-            if ($imagelist.id.count -eq 0)
-            {
-                if (!($preferedsource))
-                {
-                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
-                }
-                else 
-                {
-                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any $preferedsource Images for appid $appid"
-                }
-                return
-            }
-
-            Clear-Host
-            Write-Host "Image list.  Choose based on the best consistency date, location and jobclass."
-            $i = 1
-            foreach
-            ($image in $imagelist)
-            { 
-                if ($image.jobclass -eq "OnVault")
-                {
-                    $target = $image.diskpool.name
-                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Diskpool: $target)"
-                }
-                else
-                {
-                    $target = $image.cluster.name
-                    Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Appliance: $target)"
-                }
-                $i++
-            }
+            write-host ""
+            $userselection = ""
+            Write-Host "Image selection"
+            Write-Host "1`: Use the most recent backup for lowest RPO (default)"
+            Write-Host "2`: Select a backup"
+            Write-Host ""
             While ($true) 
             {
-                Write-host ""
-                $listmax = $imagelist.Length
-                [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq "") { $userselection = 1 }
+                if ($userselection -lt 1 -or $userselection -gt2)
                 {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
                 } 
                 else
                 {
                     break
                 }
             }
-            $copygrab = $imagelist[($imageselection - 1)].copies
-            $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
-            $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+            if ($userselection -eq 1)
+            {
+                if ($preferedsource -eq "snapshot")
+                {
+                    $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                }
+                elseif ($preferedsource -eq "streamsnap")
+                {
+                    $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=StreamSnap" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                }
+                elseif ($preferedsource -eq "onvault")
+                {
+                    $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                }
+                else 
+                {
+                    $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                }
+                if ($imagegrab.count -eq 1)
+                {   
+                    $copygrab = $imagegrab.copies
+                    $consistencydate = $imagegrab.consistencydate
+                    $jobclass = $imagegrab.jobclass
+                    $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+                    $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+                    Write-host ""
+                    write-host "Found $jobclass imageID $imageid with consistency date: $consistencydate"
+                    Write-host ""
+                }
+                else 
+                {
+                    if (!($preferedsource))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+                    }   
+                    else 
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch a $preferedsource Image for appid $appid on appliance with clusterID $mountapplianceid"
+                    } 
+                    return
+                }
+            }
+            if ($userselection -eq 2) 
+            { 
+                write-host "Fetching Image list from AGM"
+                if ($preferedsource -eq "snapshot")
+                {
+                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                }
+                elseif ($preferedsource -eq "streamsnap")
+                {
+                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=StreamSnap&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                }
+                elseif ($preferedsource -eq "onvault")
+                {
+                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                }
+                else 
+                {
+                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                }
+                if ($imagelist.id.count -eq 0)
+                {
+                    if (!($preferedsource))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                    }
+                    else 
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch any $preferedsource Images for appid $appid"
+                    }
+                    return
+                }
+                Clear-Host
+                Write-Host "Image list.  Choose based on the best consistency date, location and jobclass"
+                $i = 1
+                foreach
+                ($image in $imagelist)
+                { 
+                    if ($image.jobclass -eq "OnVault")
+                    {
+                        $target = $image.diskpool.name
+                        Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Diskpool: $target)"
+                    }
+                    else
+                    {
+                        $target = $image.cluster.name
+                        Write-Host -Object "$i`:  $($image.consistencydate) $($image.jobclass) (Appliance: $target)"
+                    }
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $imagelist.Length
+                    [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $copygrab = $imagelist[($imageselection - 1)].copies
+                $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+                $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+            }
         }
         # system recovery data grab
-        write-host "Getting image data, this may take a few seconds"
+        write-host "Getting image data"
         $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
         if ($recoverygrab.fields)
         {
@@ -385,6 +446,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # host project ID
         if (!($sharedvpcprojectid))
         {
+            write-host ""
             [string]$sharedvpcprojectid= Read-Host "Host Project ID (optional, needed if $projectname is a service project)" 
         }
 
@@ -493,6 +555,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # learn name of new VM
         if (!($instancename))
         {
+            write-host ""
             While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
         }
 
@@ -501,30 +564,44 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         {
             if ($machinetypelist.name)
             {
+                $displayname  = ($machinetypelist | Where-Object {$_.groupType -eq "Best Fit"}).displayName
                 write-host ""
-                write-host "Machine Type Selection."
-                write-host ""
-                $i = 1
-                foreach ($machine in $machinetypelist.displayName)
-                { 
-                    Write-Host -Object "$i`: $machine"
-                    $i++
-                }
-                While ($true) 
+                Write-Host "Machine type selection"
+                Write-Host "1`: Use $displayname (default)"
+                Write-Host "2`: Select a different type"
+                Write-Host ""
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq 2) 
                 {
-                    Write-host ""
-                    $listmax = $machinetypelist.count
-                    [int]$machselection = Read-Host "Please select a machine type (1-$listmax)."
-                    if ($machselection -lt 1 -or $machselection -gt $listmax)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                    } 
-                    else
-                    {
-                        break
+                    write-host ""
+                    write-host "Machine Type Selection"
+                    write-host ""
+                    $i = 1
+                    foreach ($machine in $machinetypelist.displayName)
+                    { 
+                        Write-Host -Object "$i`: $machine"
+                        $i++
                     }
+                    While ($true) 
+                    {
+                        Write-host ""
+                        $listmax = $machinetypelist.count
+                        [int]$machselection = Read-Host "Please select a machine type (1-$listmax)"
+                        if ($machselection -lt 1 -or $machselection -gt $listmax)
+                        {
+                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                    $machinetype =  $machinetypelist.name[($machselection - 1)]
                 }
-                $machinetype =  $machinetypelist.name[($machselection - 1)]
+                else
+                {  
+                    $machinetype = ($machinetypelist | Where-Object {$_.groupType -eq "Best Fit"}).name 
+                }
             }
             else 
             {
@@ -536,7 +613,10 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         if (!($serviceaccount))
         {
             if ($serviceaccountgrab) 
-            { write-host "Suggested service account is: $serviceaccountgrab" }
+            { 
+                write-host ""
+                write-host "Suggested service account is: $serviceaccountgrab" 
+            }
             While ($true)  { if ($serviceaccount -eq "") { [string]$serviceaccount= Read-Host "Service Account" } else { break } }
         }
         
@@ -544,19 +624,22 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # sole tenant name
         if (!($nodegroup))
         {
+            write-host ""
             [string]$nodegroup= Read-Host "Sole Tenant Name or Node Group (optional, needed if mounting into a Node Group)" 
         }
 
         #network tags
         if (!($networktags))
         {
+            write-host ""
             [string]$networktags= Read-Host "Network tags (optional)" 
         }
 
         # poweroff after recovery
         [int]$userselection = ""
+        write-host ""
         Write-Host "Power off after recovery?"
-        Write-Host "1`: Do not power off after recovery(default)"
+        Write-Host "1`: Do not power off after recovery (default)"
         Write-Host "2`: Power off after recovery"
         Write-Host ""
         [int]$userselection = Read-Host "Please select from this list (1-2)"
@@ -564,8 +647,9 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
 
         # migrate VM
         [int]$userselection = ""
+        write-host ""
         Write-Host "Migrate VM?"
-        Write-Host "1`: Do not migrate VM(default)"
+        Write-Host "1`: Do not migrate VM (default)"
         Write-Host "2`: Migrate the VM to Persistent Disk"
         Write-Host ""
         [int]$userselection = Read-Host "Please select from this list (1-2)"
@@ -574,12 +658,14 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         # labels
         if (!($labels))
         {
+            write-host ""
             [string]$labels= Read-Host "Labels (optional).  Separate key and value  with colon, and each pair with a comma, for instance:   pet:cat,food:fish" 
         }
 
 
         #networks
 
+        write-host ""
         Write-Host "Network Interfaces?"
         Write-Host "1`: One Nic (default)"
         Write-Host "2`: Two Nics"
@@ -594,7 +680,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         if ($networklist.name)
         {
             write-host ""
-            write-host "Network Selection."
+            write-host "Network Selection"
             write-host ""
             $i = 1
             foreach ($net in $networklist.displayName)
@@ -606,7 +692,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             {
                 Write-host ""
                 $listmax = $networklist.count
-                [int]$netselection = Read-Host "Please select a network (1-$listmax)."
+                [int]$netselection = Read-Host "Please select a network (1-$listmax)"
                 if ($netselection -lt 1 -or $netselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -671,7 +757,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         if ($subnetlist.name)
         {
             write-host ""
-            write-host "Subnet Selection."
+            write-host "Subnet Selection"
             write-host ""
             $i = 1
             foreach ($sub in $subnetlist.displayName)
@@ -683,7 +769,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             {
                 Write-host ""
                 $listmax = $subnetlist.name.count
-                [int]$subselection = Read-Host "Please select a network (1-$listmax)."
+                [int]$subselection = Read-Host "Please select a network (1-$listmax)"
                 if ($subselection -lt 1 -or $subselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -728,7 +814,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             if ($networklist.name)
             {
                 write-host ""
-                write-host "Network Selection."
+                write-host "Network Selection"
                 write-host ""
                 $i = 1
                 foreach ($net in $networklist.displayName)
@@ -740,7 +826,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
                 {
                     Write-host ""
                     $listmax = $networklist.count
-                    [int]$netselection = Read-Host "Please select a network (1-$listmax)."
+                    [int]$netselection = Read-Host "Please select a network (1-$listmax)"
                     if ($netselection -lt 1 -or $netselection -gt $listmax)
                     {
                         Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -802,7 +888,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
             if ($subnetlist.name)
             {
                 write-host ""
-                write-host "Subnet Selection."
+                write-host "Subnet Selection"
                 write-host ""
                 $i = 1
                 foreach ($sub in $subnetlist.displayName)
@@ -814,7 +900,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
                 {
                     Write-host ""
                     $listmax = $subnetlist.name.count
-                    [int]$sub1selection = Read-Host "Please select a network (1-$listmax)."
+                    [int]$sub1selection = Read-Host "Please select a network (1-$listmax)"
                     if ($sub1selection -lt 1 -or $sub1selection -gt $listmax)
                     {
                         Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -892,7 +978,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibGCPSystemRecovery -srcid $srcid -imageid $imageid -appid $appid -projectname `"$projectname`""
+        Write-Host -nonewline "New-AGMLibGCEConversion -srcid $srcid -imageid $imageid -appid $appid -projectname `"$projectname`""
         if ($sharedvpcprojectid) { Write-Host -nonewline " -sharedvpcprojectid `"$sharedvpcprojectid`"" } 
         Write-Host -nonewline " -region `"$region`" -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`" -serviceaccount `"$serviceaccount`""
         if ($nodegroup) { Write-Host -nonewline " -nodegroup `"$nodegroup`"" } 
@@ -946,7 +1032,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     {
         # if we don't know the mountapplianceID then we don't know which appliance to kick this off from
         $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
-        if ($credgrab.clusterid.count -eq 1)
+        if ($credgrab.appliancename.count -eq 1)
         {
             $mountapplianceid = $credgrab.applianceid
             $credentialid = $credgrab.credentialid
@@ -1266,7 +1352,7 @@ Function New-AGMLibGCPSystemRecovery ([string]$appid,[string]$appname,[string]$i
     $json = $json + '],"formtype":"systemrecovery","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
     # diag info
-    write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
+    # write-host "image name is $imagename and image ID is $imageid and appid is $appid" 
    
     if ($jsonprint -eq "yes")
     {   
