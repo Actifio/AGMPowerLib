@@ -1165,7 +1165,8 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 #### VMware to GCE CSV file
 
 We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
-The phase for each VM needs to be set by an Administrator who has knowledge of the order in which VMs should be recovered.   So you might have five VMs in the first phase, ten in the second and so on.
+You can run the **New-AGMLibGCEConversion** command manually to learn all the parameters needed to run the command.
+
 To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
 ```
 Get-AGMLibCredentialSrcID
@@ -1174,10 +1175,11 @@ To learn the AppIDs use this command (note the ApplianceName is where the images
 ```
 Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
 ```
+If the applications are not yet imported you can use the appname instead (meaning the heading will be *appname* rather than *appid*)
 Here is an example of the CSV file:
 ```
-phase,srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
-1,391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
+srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
+391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
    
 ```
 The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
@@ -1185,7 +1187,7 @@ We can then run a command like this specifying our CSV file:
 ```
 NNew-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 ```
-This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCPInstance** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
    
 What is not supported right now:
 
