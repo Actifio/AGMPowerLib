@@ -1197,27 +1197,48 @@ What is not supported right now:
 
 ### Maximum slot counts and mount jobs
 
-The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   To resolve this we need to use Appliance PowerShell which can be found here:
-
-https://github.com/Actifio/ActPowerCLI/
-
-The method to change slots is here:
-
-https://github.com/Actifio/ActPowerCLI/blob/main/README.md#slot-management
-
-Specifically you will need to use:
-
-https://github.com/Actifio/ActPowerCLI/blob/main/README.md#mount-job-slot-command
-
-Validate the slot counts for ondemand jobs (this is Appliance CLI, which needs PowerShell Module ActPowerCLI):
+The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   To resolve this we need to adjust what are called slot values.
+Firstly learn the ID of the relevant Appliance.  In this case the appliance is avwlab2sky so we will use applianceid 361153
 ```
-udsinfo getparameter -param reservedondemandslots
-udsinfo getparameter -param maxondemandslots
+PS > Get-AGMAppliance | select id,name
+
+id     name
+--     ----
+361153 avwlab2sky
+296357 londonsky.c.avwlab2.internal
+```
+We now learn the current value of these params, both relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one an ondemand slots.
+reservedondemandslots   -->  This controls the minimum number of ondemand jobs can run at any time.  
+maxondemandslots  -->  This controls the maximum number of ondemand jobs can run at any time.  
+```
+PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+
+reservedondemandslots
+---------------------
+3
+
+PS > Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
+
+maxondemandslots
+----------------
+6
 ```
 Set the slot counts to larger values like this:
 ```
-udstask setparameter -param reservedondemandslots -value 10
-udstask setparameter -param maxondemandslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+```
+Here is an example:
+```
+PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+
+reservedondemandslots changed from 3 to 10
+
+PS > Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+
+maxondemandslots changed from 6 to 15
+
+PS /home/avw_google_com>
 ```
 
 ### Managing the mounted GCE Instance 
