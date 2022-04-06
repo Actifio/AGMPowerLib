@@ -1208,37 +1208,32 @@ id     name
 296357 londonsky.c.avwlab2.internal
 ```
 We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot.
-* reservedondemandslots   -->  This controls the minimum number of ondemand jobs that can run at any time.  
+* reservedondemandslots   -->  This is the guaranteed number of ondemand jobs that can run at any time.  
 * maxondemandslots  -->  This controls the maximum number of ondemand jobs that can run at any time.  
+* unreservedslots -->  Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+We learn the values with:
+* Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+* Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
+* Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+Here is an example:
 ```
 PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
 
 reservedondemandslots
 ---------------------
 3
-
-PS > Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
-
-maxondemandslots
-----------------
-6
 ```
 Set the slot counts to larger values like this:
 ```
 Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
 Here is an example:
 ```
 PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
 
 reservedondemandslots changed from 3 to 10
-
-PS > Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
-
-maxondemandslots changed from 6 to 15
-
-PS >
 ```
 
 ### Managing the mounted GCE Instance 
