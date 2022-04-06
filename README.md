@@ -1195,51 +1195,6 @@ What is not supported right now:
 1.  Specifying different disk types per disk
 1.  More than two NICS per instance
 
-### Maximum slot counts and mount jobs
-
-The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   
-
-To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
-
-Firstly learn the ID of the relevant Appliance.  In this case the appliance running our mount jobs is **avwlab2sky** so we will use applianceid **361153**
-```
-PS > Get-AGMAppliance | select id,name
-
-id     name
---     ----
-361153 avwlab2sky
-296357 londonsky.c.avwlab2.internal
-```
-We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
-* **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
-* **maxondemandslots** This controls the maximum number of ondemand jobs that can run at any time.  
-* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
-
-We learn the values with:
-* Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
-* Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
-* Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
-Here is an example:
-```
-PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
-
-reservedondemandslots
----------------------
-3
-```
-Set the slot counts to larger values like this:
-```
-Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
-Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
-Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
-```
-Here is an example:
-```
-PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
-
-reservedondemandslots changed from 3 to 10
-```
-
 ### Managing the mounted GCE Instance 
 
 Once we have created a new GCP Instance from PD snapshot, there is no dependency on Actifio because the disks for the instance are all Persistent Disks rather than shared disks from an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
@@ -1271,6 +1226,89 @@ PS /tmp/agmpowercli>
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
+```
+### Maximum slot counts and mount jobs
+
+The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   
+
+To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
+
+Firstly learn the ID of the relevant Appliance.  In this case the appliance running our mount jobs is **avwlab2sky** so we will use applianceid **361153**
+```
+PS > Get-AGMAppliance | select id,name
+
+id     name
+--     ----
+361153 avwlab2sky
+296357 londonsky.c.avwlab2.internal
+```
+### Slot limits for mount jobs
+We need to learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
+* **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
+* **maxondemandslots** This controls the maximum number of ondemand jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Here is an example:
+```
+PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+
+reservedondemandslots
+---------------------
+3
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
+```
+Here is an example:
+```
+PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+
+reservedondemandslots changed from 3 to 10
+```
+### Slot limits for OnVault jobs
+We need to learn the current value of the params that relate to **onvault** slots.  Note this is listed as **vault**
+* **reservedvaultslots** This is the guaranteed number of snapshot jobs that can run at any time.  
+* **maxvaultslots** This controls the maximum number of snapshot jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
+```
+### Slot limits for snapshot jobs
+We need to learn the current value of the params that relate to **snapshot** slots.
+* **reservedsnapslots** This is the guaranteed number of snapshot jobs that can run at any time.  
+* **maxsnapslots** This controls the maximum number of snapshot jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
 ## User Story: Importing and Exporting AGM Policy Templates
 
