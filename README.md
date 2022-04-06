@@ -1207,9 +1207,9 @@ id     name
 361153 avwlab2sky
 296357 londonsky.c.avwlab2.internal
 ```
-We now learn the current value of these params, both relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one an ondemand slots.
-reservedondemandslots   -->  This controls the minimum number of ondemand jobs can run at any time.  
-maxondemandslots  -->  This controls the maximum number of ondemand jobs can run at any time.  
+We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot.
+* reservedondemandslots   -->  This controls the minimum number of ondemand jobs that can run at any time.  
+* maxondemandslots  -->  This controls the maximum number of ondemand jobs that can run at any time.  
 ```
 PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
 
