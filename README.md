@@ -1227,13 +1227,13 @@ PS /tmp/agmpowercli>
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
 ```
-### Maximum slot counts and mount jobs
+### Appliance Slots and how they are used to control the number of running jobs
 
-The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   
+The Appliance running your jobs may hit a slot limit, which means that you may see a case where jobs go into queued status waiting for free slots.   
 
 To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
 
-Firstly learn the ID of the relevant Appliance.  In this case the appliance running our mount jobs is **avwlab2sky** so we will use applianceid **361153**
+Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **avwlab2sky** so we will use applianceid **361153**
 ```
 PS > Get-AGMAppliance | select id,name
 
@@ -1242,6 +1242,7 @@ id     name
 361153 avwlab2sky
 296357 londonsky.c.avwlab2.internal
 ```
+Now depending on which job type, we modify different slots.
 ### Slot limits for mount jobs
 We need to learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
 * **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
