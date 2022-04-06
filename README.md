@@ -1211,9 +1211,9 @@ id     name
 296357 londonsky.c.avwlab2.internal
 ```
 We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
-* reservedondemandslots   -->  This is the guaranteed number of ondemand jobs that can run at any time.  
-* maxondemandslots  -->  This controls the maximum number of ondemand jobs that can run at any time.  
-* unreservedslots -->  Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+* reservedondemandslots: This is the guaranteed number of ondemand jobs that can run at any time.  
+* maxondemandslots: This controls the maximum number of ondemand jobs that can run at any time.  
+* unreservedslots: Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
 
 We learn the values with:
 * Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
