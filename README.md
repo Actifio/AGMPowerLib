@@ -1238,7 +1238,7 @@ PS > Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -v
 
 maxondemandslots changed from 6 to 15
 
-PS /home/avw_google_com>
+PS >
 ```
 
 ### Managing the mounted GCE Instance 
