@@ -1,4 +1,4 @@
-Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[int]$value) 
+Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[string]$value) 
 {
     <#
     .SYNOPSIS
@@ -28,17 +28,17 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[int]$
     # first we need an applianceid
     if (!($applianceid))
     {
-        $applianceidgrab = Get-AGMAppliance
-        if ($applianceidgrab.id.count -eq 0)
+        $appliancegrab = Get-AGMAppliance
+        if ($appliancegrab.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances with Get-AGMAppliance"
             return
         }
-        if ($applianceidgrab.id.count -eq 1)
+        if ($appliancegrab.id.count -eq 1)
         {
-            $applianceid = $applianceidgrab.id
+            $applianceid = $appliancegrab.id
         }
-        if ($applianceidgrab.id.count -gt 1)
+        if ($appliancegrab.id.count -gt 1)
         {
             write-host ""
             write-host "Appliance Selection"
@@ -72,12 +72,23 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[int]$
     }
     if (!($value)) 
     {
-        [int]$value = Read-Host "Desired value for $param"
+        [string]$value = Read-Host "Desired value for $param"
     }
 
 
-    $oldvalue = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
-    $set = Set-AGMAPIApplianceTask -applianceid 361153 -command "setparameter" -arguments "param=$param&value=$value"
-    $oldvalue = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
-    write-host "$param changed from $oldvalue to $newvalue"
+    $oldvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
+    $set = Set-AGMAPIApplianceTask -applianceid $applianceid -command "setparameter" -arguments "param=$param&value=$value"
+    $newvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
+    $oldvalue = $oldvaluegrab.$param
+    $newvalue = $newvaluegrab.$param
+    if ($set.err_message)
+    {
+        $set
+    }
+    else
+    {
+        write-host ""
+        write-host "$param changed from $oldvalue to $newvalue"
+        write-host ""
+    }
 }

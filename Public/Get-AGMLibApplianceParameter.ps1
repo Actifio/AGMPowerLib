@@ -3,10 +3,19 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
     <#
     .SYNOPSIS
     Fetches output of parameters from appliances
+    You can learn the applianceid by running Get-AGMAppliance and using the value in the relevant id field
 
     .EXAMPLE
-    Get-AGMLibApplianceParameter -applianceid  1234 -param maxsnapslots
-    Displays all active images (mounts)
+    Get-AGMLibApplianceParameter -applianceid 1234 -param maxsnapslots
+    Display the value of the maxsnapslots parameter for appliance with ID 1234
+
+    .EXAMPLE
+    Get-AGMLibApplianceParameter -applianceid 1234 -slots
+    Display the value of the commonly changed slot parameters for appliance with ID 1234
+
+    .EXAMPLE
+    Get-AGMLibApplianceParameter -applianceid 1234 
+    Display the value of all parameters for appliance with ID 1234
 
     .DESCRIPTION
     A function to get parameters
@@ -28,25 +37,29 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
     # first we need an applianceid
     if (!($applianceid))
     {
-        $applianceidgrab = Get-AGMAppliance
-        if ($applianceidgrab.id.count -eq 0)
+        $appliancegrab = Get-AGMAppliance
+        if ($appliancegrab.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances with Get-AGMAppliance"
             return
         }
-        if ($applianceidgrab.id.count -eq 1)
+        if ($appliancegrab.id.count -eq 1)
         {
-            $applianceid = $applianceidgrab.id
+            $applianceid = $appliancegrab.id
+            write-host "Applianceid is $applianceid"
+            write-host ""
         }
-        if ($applianceidgrab.id.count -gt 1)
+        if ($appliancegrab.id.count -gt 1)
         {
             write-host ""
-            write-host "Appliance Selection"
+            write-host "Select which Appliance you wish to get parameters from"
             write-host ""
             $i = 1
-            foreach ($appliance in $appliancegrab.name)
+            foreach ($appliance in $appliancegrab)
             { 
-                Write-Host -Object "$i`: $appliance"
+                $id = $appliance.id
+                $name = $appliance.name
+                Write-Host -Object "$i`: $name (applianceid: $id)"
                 $i++
             }
             While ($true) 
@@ -63,22 +76,16 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
                     break
                 }
             }
-            $applianceid =  $appliancegrab.name[($appselection - 1)]
+            $applianceid =  $appliancegrab.id[($appselection - 1)]
         }
     } 
-    if ((!($param)) -and (!($allparams)) -and (!($slots)))
-    {
-        $allparams = $true
-    }
-    if ($allparams -eq $true)
-    {
-        Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" 
-    }
+    
+   
     if ($param)
     {
         Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
     }
-    if ($slots)
+    elseif ($slots)
     {
         $paramgrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" 
         if ($paramgrab.maxsnapslots)
@@ -99,5 +106,9 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
             }
         }
        $paramarray 
+    }
+    else 
+    {
+        Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" 
     }
 }
