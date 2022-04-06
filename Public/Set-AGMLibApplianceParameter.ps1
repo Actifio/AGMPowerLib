@@ -2,11 +2,14 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[strin
 {
     <#
     .SYNOPSIS
-    Sets  parameters from appliances
+    Sets parameters on appliances.
+    Using this means you do not have to access the appliance directly to change the parameter
+    When you set the value, the previous and new values will be reported.
+    If an error occurs this will be reported.
 
     .EXAMPLE
     Set-AGMLibApplianceParameter -applianceid  1234 -param maxsnapslots -value 10
-    Sets the maxsnapslots param to a value of 10
+    Sets the maxsnapslots param to a value of 10 on the appliance with ID 1234
 
     .DESCRIPTION
     A function to set parameters

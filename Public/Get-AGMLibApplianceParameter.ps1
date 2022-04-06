@@ -2,8 +2,13 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
 {
     <#
     .SYNOPSIS
-    Fetches output of parameters from appliances
-    You can learn the applianceid by running Get-AGMAppliance and using the value in the relevant id field
+    Fetches output of parameters from appliances.  This means we dont need access to the appliance to do this.
+    We need to supply an ID for the relevant Appliance.
+    You can learn the applianceid by running Get-AGMAppliance and using the value in the id field for the relevant appliance
+
+    .EXAMPLE
+    Get-AGMLibApplianceParameter -applianceid 1234 
+    Display the value of all parameters for appliance with ID 1234
 
     .EXAMPLE
     Get-AGMLibApplianceParameter -applianceid 1234 -param maxsnapslots
@@ -12,10 +17,6 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
     .EXAMPLE
     Get-AGMLibApplianceParameter -applianceid 1234 -slots
     Display the value of the commonly changed slot parameters for appliance with ID 1234
-
-    .EXAMPLE
-    Get-AGMLibApplianceParameter -applianceid 1234 
-    Display the value of all parameters for appliance with ID 1234
 
     .DESCRIPTION
     A function to get parameters
