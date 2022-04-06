@@ -1199,18 +1199,18 @@ What is not supported right now:
 
 The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   
 
-To resolve this we need to adjust what are called slot values.
+To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
 
-Firstly learn the ID of the relevant Appliance.  In this case the appliance is **avwlab2sky** so we will use applianceid **361153**
+Firstly learn the ID of the relevant Appliance.  In this case the appliance running our mount jobs is **avwlab2sky** so we will use applianceid **361153**
 ```
 PS > Get-AGMAppliance | select id,name
 
 id     name
 --     ----
-**361153** avwlab2sky
+361153 avwlab2sky
 296357 londonsky.c.avwlab2.internal
 ```
-We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot.
+We now learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
 * reservedondemandslots   -->  This is the guaranteed number of ondemand jobs that can run at any time.  
 * maxondemandslots  -->  This controls the maximum number of ondemand jobs that can run at any time.  
 * unreservedslots -->  Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
