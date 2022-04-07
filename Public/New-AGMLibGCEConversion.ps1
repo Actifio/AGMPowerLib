@@ -21,12 +21,13 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     
     There are many parameters that need to be supplied:
 
-    -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
-    -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
-    -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
-    -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
-    -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
-    -projectname     This is the unique Google Project name
+    -appid           The application ID of the source VMWare VM or System State you want to mount.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+    -appname         The application name of the source VMWare VM or System State you want to mount.  This needs to be unique.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+    -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+    -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+    -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is going to run the mount.
+    -serviceaccount  The service account.
+    -projectname     This is the unique Google Project name where the new instance will be created.
     -sharedvpcprojectid  If the instance is being created in a service project, what is the ID the project that is sharing the VPC (optional)
     -nodegroup       If creating an instance into a sole tenant node group, this is the name of the node group (optional)
     -region          This is the GCP Region such as:   australia-southeast1

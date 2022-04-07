@@ -161,8 +161,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.43] 2022-04-06
+        ## [0.0.0.43] 2022-04-07
         Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
+        Fixed volume selection in  New-AGMLibGCPInstance
         Add New-AGMLibGCEConversion and New-AGMLibGCEConversionMulti, Set-AGMLibApplianceParameter,  Get-AGMLibApplianceParameter
 
         ## [0.0.0.42] 2022-03-08

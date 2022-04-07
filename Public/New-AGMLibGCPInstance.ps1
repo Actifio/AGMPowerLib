@@ -210,28 +210,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
 
     # disktype 
-    if ($disktype)
-    {
+    #if ($disktype)
+    #{
         $disktypegrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
         if (!($disktypegrab.fields))
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find data for image ID $imageid.  Please check this is a valid image ID with Get-AGMImage -id $imageid"
         return
         }
-        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
-            if ($row.selected -eq "True")
-            {
-                $row.selected = ""
+        if ($disktype)
+        {
+            foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumes" }).children.rows.disktype) {
+                if ($row.selected -eq "True")
+                {
+                    $row.selected = ""
+                }
+            }
+            foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumes" }).children.rows.disktype) {
+                if ($row.name -eq $disktype)
+                {
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -force
+                }
             }
         }
-        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
-            if ($row.name -eq $disktype)
-            {
-                $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
-            }
-        }
-        $diskjson = $gcpdata.fields | where-object { $_.name -eq "volumeselection" } | ConvertTo-json -depth 5 -compress
-    }
+        $diskjson = $disktypegrab.fields | where-object { $_.name -eq "volumes" } | ConvertTo-json -depth 10 -compress
+   # }
 
     if ($retainlabel -eq "true")
     {
@@ -462,6 +465,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
     # imagename
     $json = $json + '"version":1,"formtype":"newmount","image":"' +$imagename +'","cloudtype":"GCP"}}'
+
 
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
 
