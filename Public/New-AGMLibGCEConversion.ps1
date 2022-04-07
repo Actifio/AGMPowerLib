@@ -1037,10 +1037,9 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         {
             $mountapplianceid = $credgrab.applianceid
             $credentialid = $credgrab.credentialid
-        }
-        else 
+        }  else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch an applianceid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
+            Get-AGMErrorMessage -messagetoprint "Failed to learn the credentialid of srcid $srcid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
             return
         }
 
@@ -1166,14 +1165,14 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     if (!($credentialid))
     {
         $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
-        if ($credgrab.srcid.count -eq 1)
+        if ($credgrab.appliancename.count -eq 1)
         {
             $mountapplianceid = $credgrab.applianceid
             $credentialid = $credgrab.credentialid
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch an applianceid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
+            Get-AGMErrorMessage -messagetoprint "Failed to learn the credentialid of srcid $srcid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
             return
         }
     }
