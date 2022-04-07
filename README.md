@@ -1185,7 +1185,7 @@ srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,
 The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
 We can then run a command like this specifying our CSV file:
 ```
-NNew-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
+New-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 ```
 This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
    

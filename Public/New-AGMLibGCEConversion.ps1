@@ -1040,7 +1040,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a mountapplianceid"
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch an applianceid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
             return
         }
 
@@ -1173,7 +1173,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a mountapplianceid"
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch an applianceid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
             return
         }
     }
