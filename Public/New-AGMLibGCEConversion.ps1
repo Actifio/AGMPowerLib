@@ -1013,15 +1013,9 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         if ($userchoice -eq 3)
         {
-            write-host "srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype"
-            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$sharedvpcprojectid`",`"$region`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$nodegroup`",`"$networktags`","
-            if ($poweroffvm) { Write-Host -nonewline "true," } else { Write-Host -nonewline "," }
-            if ($migratevm) { Write-Host -nonewline "true," } else { Write-Host -nonewline "," }
-            write-host -nonewline "$labels,$nic0network,$nic0subnet,"
-            if ($nic0externalip) { Write-Host -nonewline $nic0externalip } 
-            write-host -nonewline ",$nic0internalip,$nic1network,$nic1subnet,"
-            if ($nic1externalip) { Write-Host -nonewline $nic1externalip }
-            write-host -nonewline ",$nic1internalip,$preferedsource,$disktype"
+            write-host "srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
+            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$sharedvpcprojectid`",`"$region`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$nodegroup`",`"$networktags`""
+            write-host -nonewline ",$poweroffvm,$migratevm,$labels,$preferedsource,$disktype,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
             write-host ""
             return
         }
