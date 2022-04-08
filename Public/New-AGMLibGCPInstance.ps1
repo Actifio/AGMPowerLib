@@ -785,7 +785,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         }
 
         #disk selection
-        $volumelist = ($recoverydata | where-object { $_.name -eq "volumes" })
+        $volumelist = ($recoverygrab.fields | where-object { $_.name -eq "volumes" })
 
 
         if ($volumelist)
@@ -824,7 +824,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "New-AGMLibGCEConversion -srcid $srcid -imageid $imageid -appid $appid -projectname `"$projectname`""
+        Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
         Write-Host -nonewline " -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`"" 
         if ($serviceaccount) { Write-Host -nonewline " -serviceaccount `"$serviceaccount`"" }
         if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
@@ -856,9 +856,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         }
         if ($userchoice -eq 3)
         {
-            write-host "srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
-            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$sharedvpcprojectid`",`"$region`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$nodegroup`",`"$networktags`""
-            write-host -nonewline ",$poweroffvm,$migratevm,$labels,$preferedsource,$disktype,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
+            write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
+            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
+            write-host -nonewline ",$poweronvm,$labels,$disktype,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
             write-host ""
             return
         }
