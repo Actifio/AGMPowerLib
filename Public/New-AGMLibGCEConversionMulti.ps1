@@ -12,8 +12,8 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
-    391360,296433,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
+    srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype
+    391360,296433,testvm,avwlab2,,australia-southeast1,australia-southeast1-a,newinstance,n2-highmem-16,systemstaterecovery@avwlab2.iam.gserviceaccount.com,,"http,https",true,true,"pet:cat,food:fish",https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/default,https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/default,auto,,,,,,onvault,pd-standard
      
     Note you can specify appid or appname.   Do not specify both.
 
@@ -52,13 +52,19 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
 
     foreach ($app in $recoverylist)
     {
+        if ((!($app.appname)) -and (!($app.appid))) 
+        { 
+            Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns"
+            return;
+        }
         $mountcommand = 'New-AGMLibGCEConversion -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         $mountcommand = $mountcommand + ' -region "' +$app.region +'"' 
         $mountcommand = $mountcommand + ' -zone "' +$app.zone +'"' 
         $mountcommand = $mountcommand + ' -srcid "' +$app.srcid +'"' 
         $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"' 
-        if ($app.appname) { $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' } 
-        if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' } 
+        if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+        if ((!($app.appname)) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if ($app.nodegroup) { $mountcommand = $mountcommand + ' -nodegroup "' +$app.nodegroup +'"' } 
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
         if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 

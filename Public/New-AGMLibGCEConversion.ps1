@@ -1000,7 +1000,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
-        Write-Host "3`: Write comma separated output"
+        Write-Host "3`: Write comma separated output.  This will mount the most recently created image for that application"
         Write-Host "4`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-4)"
         if ($userchoice -eq 2)
@@ -1013,8 +1013,8 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         if ($userchoice -eq 3)
         {
-            write-host "srcid,appid,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype"
-            write-host -nonewline "$srcid,$appid,`"$projectname`",`"$sharedvpcprojectid`",`"$region`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$nodegroup`",`"$networktags`","
+            write-host "srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,preferedsource,disktype"
+            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$sharedvpcprojectid`",`"$region`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$nodegroup`",`"$networktags`","
             if ($poweroffvm) { Write-Host -nonewline "true," }
             if ($migratevm) { Write-Host -nonewline "true," }
             write-host -nonewline "$labels,$nic0network,$nic0subnet,"
