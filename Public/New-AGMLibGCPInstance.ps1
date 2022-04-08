@@ -417,7 +417,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                         break
                     }
                 }
-                $zone =  $zonelist.name[($rejselection - 1)]
+                $zone =  $zonelist.name[($zonselection - 1)]
             }
             else 
             {
