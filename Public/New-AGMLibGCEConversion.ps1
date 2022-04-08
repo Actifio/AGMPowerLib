@@ -272,7 +272,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
             {
                 [int]$userselection = Read-Host "Please select from this list (1-2)"
                 if ($userselection -eq "") { $userselection = 1 }
-                if ($userselection -lt 1 -or $userselection -gt2)
+                if ($userselection -lt 1 -or $userselection -gt 2)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
                 } 
@@ -706,8 +706,10 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
             if  ($networklist.name.count -eq 1)
             {
                 $nic0network = $networklist.name
+                $selectednic0network = $networklist.displayName
             } else {
                 $nic0network = $networklist.name[($netselection - 1)]
+                $selectednic0network = $networklist.displayName[($netselection - 1)]
             }
         }
         else 
@@ -715,7 +717,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
             While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
         }
         # if the network changes then the subnets will change
-        if ($nic0network -ne $selectednetwork)
+        if ($selectednic0network -ne $selectednetwork)
         {
             if ($recoverygrab1.fields)
             {
