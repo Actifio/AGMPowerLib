@@ -488,7 +488,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             if ($serviceaccountgrab) 
             { 
                 write-host ""
-                write-host "Suggested service account is: $serviceaccountgrab (optional)" 
+                write-host "Suggested service account (optional): $serviceaccountgrab" 
             }
            [string]$serviceaccount= Read-Host "Service Account" 
   
@@ -541,16 +541,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                 (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
                 ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
                 ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $project}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
             }
             if ($zone -ne $selectedzone)
             {
                 (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).modified = $true
                 ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).selected = $false
                 ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).choices | where-object {$_.name -eq $zone}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
         
             }
-            $newjson = $recoverygrab | convertto-json -depth 10 -compress
-            $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
             $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
             $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
         }
