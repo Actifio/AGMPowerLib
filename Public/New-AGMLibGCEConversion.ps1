@@ -73,6 +73,20 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         return
     }
 
+    if ($srcid)
+    {
+        # if we don't know the mountapplianceID then we don't know which appliance to kick this off from
+        $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
+        if ($credgrab.appliancename.count -eq 1)
+        {
+            $mountapplianceid = $credgrab.applianceid
+            $credentialid = $credgrab.credentialid
+        }  else 
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to learn the credentialid of srcid $srcid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
+            return
+        }
+    }
 
     # GUIDED MODE kicks in if we dont have an image or app preference
     if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
@@ -227,7 +241,15 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         else 
         {
-            $imageid = $imagegrab.id
+            if ($imagegrab.copies)
+            {
+                $imageid =  ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).id 
+            }
+            else 
+            {
+                $imageid =  $imagegrab.id 
+            }
+           
         }
     }
     if ((!($imagename)) -and ($imageid))
@@ -240,7 +262,14 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         else 
         {
-            $imagename = $imagegrab.backupname
+            if ($imagegrab.copies)
+            {
+                $imagename =  ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).backupname 
+            }
+            else 
+            {
+                $imagename = $imagegrab.backupname
+            }
         }
     }
 
@@ -301,11 +330,17 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                 }
                 if ($imagegrab.count -eq 1)
                 {   
-                    $copygrab = $imagegrab.copies
                     $consistencydate = $imagegrab.consistencydate
                     $jobclass = $imagegrab.jobclass
-                    $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
-                    $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+                    if ($imagegrab.copies)
+                    {
+                        $imagename = ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+                        $imageid =  ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).id 
+                    }
+                    else {
+                        $imagename = $imagegrab.backupname
+                        $imageid =  $imagegrab.id 
+                    }
                     Write-host ""
                     write-host "Found $jobclass imageID $imageid with consistency date: $consistencydate"
                     Write-host ""
@@ -386,9 +421,16 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                         break
                     }
                 }
-                $copygrab = $imagelist[($imageselection - 1)].copies
-                $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
-                $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+                $imagegrab = $imagelist[($imageselection - 1)]
+                if ($imagegrab.copies)
+                {
+                    $imagename = ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+                    $imageid =  ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).id 
+                }
+                else {
+                    $imagename = $imagegrab.backupname
+                    $imageid =  $imagegrab.id 
+                }
             }
         }
         # system recovery data grab
@@ -1027,17 +1069,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     # if we are not running guided mode, but the user has supplied a srcid and appid then we need to find the latest image either in any storage class or user selected class
     if (($appid) -and ($srcid) -and (!($imageid)))
     {
-        # if we don't know the mountapplianceID then we don't know which appliance to kick this off from
-        $credgrab = Get-AGMLibCredentialSrcID | Where-Object {$_.srcid -eq $srcid}
-        if ($credgrab.appliancename.count -eq 1)
-        {
-            $mountapplianceid = $credgrab.applianceid
-            $credentialid = $credgrab.credentialid
-        }  else 
-        {
-            Get-AGMErrorMessage -messagetoprint "Failed to learn the credentialid of srcid $srcid.  Please validate your srcid with: Get-AGMLibCredentialSrcID"
-            return
-        }
+
 
         # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
        
@@ -1059,9 +1091,15 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         if ($imagegrab.count -eq 1)
         {   
-            $copygrab = $imagegrab.copies
-            $imagename = ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).backupname
-            $imageid =  ($copygrab | where-object {$_.targetuds -eq $mountapplianceid}).id 
+            if ($imagegrab.copies)
+            {
+                $imagename = ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).backupname
+                $imageid =  ($imagegrab.copies | where-object {$_.targetuds -eq $mountapplianceid}).id 
+            }
+            else {
+                $imagename = $imagegrab.backupname
+                $imageid =  $imagegrab.id 
+            }
         }
         else 
         {
