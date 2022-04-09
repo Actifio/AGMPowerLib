@@ -723,15 +723,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
 
 
-        #networks
-
-        write-host ""
-        Write-Host "Network Interfaces?"
-        Write-Host "1`: One Nic (default)"
-        Write-Host "2`: Two Nics"
-        Write-Host ""
-        [int]$niccount = Read-Host "Please select from this list (1-2)"
-     
+        #networks  
         write-host ""
         Write-host "NIC0 settings"
         Write-Host ""
@@ -852,121 +844,6 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         [int]$userselection = Read-Host "Please select from this list (1-2)"
         if ($userselection -eq 2) { [string]$nic0internalip = Read-Host "IP address" }
 
-        if ($niccount -eq 2)
-        {
-            write-host ""
-            Write-host "NIC1 settings"
-            Write-Host ""
-            if ($networklist.name)
-            {
-                write-host ""
-                write-host "Network Selection"
-                write-host ""
-                $i = 1
-                foreach ($net in $networklist.displayName)
-                { 
-                    Write-Host -Object "$i`: $net"
-                    $i++
-                }
-                While ($true) 
-                {
-                    Write-host ""
-                    $listmax = $networklist.count
-                    [int]$netselection = Read-Host "Please select a network (1-$listmax)"
-                    if ($netselection -lt 1 -or $netselection -gt $listmax)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                    } 
-                    else
-                    {
-                        break
-                    }
-                }
-                if  ($networklist.name.count -eq 1)
-                {
-                    $nic1network = $networklist.name
-                    $selectednic1network = $networklist.displayName
-                } else {
-                    $nic1network = $networklist.name[($netselection - 1)]
-                    $selectednic1network = $networklist.displayName
-                }
-            }
-            else 
-            {
-                While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID in URL format (mandatory)" } else { break } }
-            }
-            if ($recoverygrab2.fields)
-            {
-                write-host "Fetching subnet list"
-                # we need to send a modified packet backto learn the subnets in the users selected network
-                (((($recoverygrab2.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).selected = $false
-                (((($recoverygrab2.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic1network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-                $newjson = $recoverygrab2 | convertto-json -depth 10 -compress
-                $recoverygrab3 = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
-                write-host ""
-                $subnetlist = ((($recoverygrab3.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
-            
-                if ($subnetlist.name)
-                {
-                    write-host ""
-                    write-host "Subnet Selection"
-                    write-host ""
-                    $i = 1
-                    foreach ($sub in $subnetlist.displayName)
-                    { 
-                        Write-Host -Object "$i`: $sub"
-                        $i++
-                    }
-                    While ($true) 
-                    {
-                        Write-host ""
-                        $listmax = $subnetlist.name.count
-                        [int]$sub1selection = Read-Host "Please select a subnet (1-$listmax)"
-                        if ($sub1selection -lt 1 -or $sub1selection -gt $listmax)
-                        {
-                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                        } 
-                        else
-                        {
-                            break
-                        }
-                    }
-                    if  ($subnetlist.name.count -eq 1)
-                    {
-                        $nic1subnet = $subnetlist.name
-                    } else {
-                        $nic1subnet = $subnetlist.name[($sub1selection - 1)]
-                    }
-                }
-                else 
-                {
-                    While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID in URL format (mandatory)" } else { break } }
-                }    
-            }
-            else 
-            {
-                While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID in URL format (mandatory)" } else { break } }
-            }
-            [int]$userselection = ""
-            Write-Host "NIC1 External IP?"
-            Write-Host "1`: None (default)"
-            Write-Host "2`: Auto Assign"
-            Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if ($userselection -eq 2) {  [string]$nic1externalip = "auto" }
-            [int]$userselection = ""
-            Write-Host ""
-            Write-Host "NIC1 Internal IP?"
-            Write-Host "1`: Auto Assign (default)"
-            Write-Host "2`: Manual Assign"
-            Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if ($userselection -eq 2) { [string]$nic1internalip = Read-Host "IP address" }
-        }
-
-
-
-
         if ($volumelist)
         {
             if (!($disktype))
@@ -1015,10 +892,6 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
         if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
         if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
-        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
-        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
-        if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
-        if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
         Write-Host ""
