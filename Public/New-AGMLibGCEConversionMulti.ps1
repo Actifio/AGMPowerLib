@@ -67,6 +67,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
         if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
         if ((!($app.appname)) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if ($app.sharedvpcprojectid) { $mountcommand = $mountcommand + ' -sharedvpcprojectid "' +$app.sharedvpcprojectid +'"' } 
         if ($app.nodegroup) { $mountcommand = $mountcommand + ' -nodegroup "' +$app.nodegroup +'"' } 
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
         if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
@@ -79,7 +80,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
         if ($app.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$app.nic1network +'"'} 
         if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
         if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
-        if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip } 
+        if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip }         
         Invoke-Expression $mountcommand 
     }
 }

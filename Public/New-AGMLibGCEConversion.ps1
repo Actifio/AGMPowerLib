@@ -145,10 +145,10 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         Write-host ""
         Write-Host "1`: Managed local apps (default)"
         Write-Host "2`: Unmanaged local apps"
-        Write-Host "3`: Imported apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
+        Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
-        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&apptype=VMBackup&clusterid=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=SystemState&apptype=VMBackup&sourcecluster=$mountapplianceid" | sort-object appname }
         if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=SystemState&apptype=VMBackup&sourcecluster=$mountapplianceid" | sort-object appname  }
         if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
@@ -366,7 +366,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                 }
                 elseif ($preferedsource -eq "streamsnap")
                 {
-                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=StreamSnap&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                    $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=StreamSnap&targetuds=$mountapplianceid&clusterid=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
                 }
                 elseif ($preferedsource -eq "onvault")
                 {
@@ -932,7 +932,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         elseif ($preferedsource -eq "streamsnap")
         {
-            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=StreamSnap" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+            $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=StreamSnap&clusterid=$mountapplianceid" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
         }
         elseif ($preferedsource -eq "onvault")
         {
