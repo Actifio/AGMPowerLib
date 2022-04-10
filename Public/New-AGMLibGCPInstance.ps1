@@ -108,11 +108,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             Get-AGMErrorMessage -messagetoprint "There are no Credentials.  Please add a credential"
             return
         }
-        if ($credarray.srcid.count -eq 1)
-        {
-            $srcid =  $credarray.srcid
-            $credentialid = $credarray.credentialid
-        }
         else
         {
             Clear-Host
@@ -137,10 +132,20 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                     break
                 }
             }
-            $srcid = $credarray.srcid[($credselection - 1)]
-            $mountapplianceid = $credarray.applianceid[($credselection - 1)]
-            $mountappliancename = $credarray.appliancename[($credselection - 1)]
-            $credentialid =$credarray.credentialid[($credselection - 1)]
+            if ($credarray.credentialid.count -eq 1)
+            {
+                $srcid = $credarray.srcid
+                $mountapplianceid = $credarray.applianceid
+                $mountappliancename = $credarray.appliancename
+                $credentialid =$credarray.credentialid
+            }
+            else 
+            {
+                $srcid = $credarray.srcid[($credselection - 1)]
+                $mountapplianceid = $credarray.applianceid[($credselection - 1)]
+                $mountappliancename = $credarray.appliancename[($credselection - 1)]
+                $credentialid =$credarray.credentialid[($credselection - 1)]
+            }
         }
 
         Write-host ""
