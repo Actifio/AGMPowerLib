@@ -15,7 +15,10 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
-**[User Story: GCE Disaster Recovery](#user-story-gce-disaster-recovery)**<br>
+**[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
+**[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 
 
@@ -1043,7 +1046,8 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
-## User Story: Persistent Disk Snapshots
+
+## User Story: Creating GCE Instance from PD Snapshots
 
 In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
 This command requires several inputs so first we explore how to get them.
@@ -1134,6 +1138,7 @@ This brings us to a command like this one:
 New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -retainlabel true
 ```
 
+
 ## User Story: GCE Disaster Recovery using GCE Instance PD Snapshots
 
 ### GCE to GCE configuration
@@ -1177,10 +1182,7 @@ What is not supported right now:
     
 If you need either of these, please open an issue in Github.
 
-
-
-
-## User Story: VMware to GCE Conversion
+## User Story: Creating GCE Instance from VMware Snapshots
 
 In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCEConversion**
 This command requires several inputs so first we explore how to get them.
@@ -1225,7 +1227,7 @@ Get-AGMImage -filtervalue "apptype=SystemState&apptype=VMBackup&jobclass=OnVault
 ```
 
 There are many parameters that may need to be supplied:
-
+```
 -appid           The application ID of the source VMWare VM or System State you want to mount.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
 -appname         The application name of the source VMWare VM or System State you want to mount.  This needs to be unique.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
@@ -1248,16 +1250,18 @@ There are many parameters that may need to be supplied:
 -poweroffvm      By default the new GCE Instance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
 -migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all data onto GCE PD, then specify this flag.
 -preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
-
+```
 Optionally you can request a second NIC using nic1:
+```
 -nic1network     The network name in URL format for nic1
 -nic1subnet      The subnet name in URL format for nic1
 -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
 -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
-
+```
 Optionally you can specify that all disks be a different type:
+```
 -disktype        Has to be one  of pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
-
+```
 This bring us to command like this one:
 ```
 New-AGMLibGCEConversion -imageid 56410933 -srcid 1234 -region australia-southeast1 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweroffvm 
