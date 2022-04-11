@@ -1050,6 +1050,7 @@ succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ## User Story: Creating GCE Instance from PD Snapshots
 
 In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
+
 This command requires several inputs so first we explore how to get them.
 
 ### Creating a single GCE Instance from Snapshot
@@ -1059,24 +1060,24 @@ This starts what we called *guided mode* which will help you learn all the synta
 The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
 The end result is you will get several choices:
 
-1. Run the command there and then
-1. Print out a simple command to run later.   Note you may want to edit this command as we explain in a moment.
+1. Run the command
+1. Print out a simple command to run later.   Note you may want to edit this command as we explain in the next section.
 1. Print out a sample CSV file to use with  **New-AGMLibGCPInstanceMultiMount**
 
 #### Determining which image is used for the mount
 
 The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
-
-* -appid     If you specify this, then the most recent image for that app will be mounted.
-* -appname   If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
-* -imageid   if you specify this, then this image will be mounted
-* -imagename   if you specify this, then this image will be mounted
-
-In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO)
+```
+-appid       If you specify this, then the most recent image for that app will be mounted.
+-appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
+-imageid     If you specify this, then this image will be mounted
+-imagename   If you specify this, then this image will be mounted
+```
+In general the best choice is **-appid** as it saves you having to work out the imageid or imagename and gives you the most recent image (for the best RPO)
 
 #### Manually constructing output
 
-If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+If you want to manually construct the output, or get some variables to tweak the output, consider the following tips:
 
 To learn which Applications are suitable use this command:
 ```
@@ -1125,12 +1126,18 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 -disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
 You can specify any labels you want to supply for this new GCE VM with -label, for instance:
+
  **-label "pet:cat,drink:milk"**
+
 However if you add **-retainlabel true** then any labels that were used the GCE Instance when the snapshot was created will be applied to the new VM.
-Lets imagine the original VM had a label:  
+Lets imagine the original VM had a label:
+
 **bird:parrot** 
+
 and we specify the following:   
+
 **-retainlabel true -label "pet:cat,drink:milk"**  
+
 then the new VM will have all three labels (the two new ones and the retained one from the original VM).
 
 This brings us to a command like this one:
@@ -1156,9 +1163,12 @@ The goal is to offer a simplified way to manage failover or failback where:
 
 #### GCE to GCE CSV file
 
-In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  What we can do is store the parameters needed to run that command in a CSV file.  
-We can egenarte the CSV file by running **New-AGMLibGCPInstance** in guided mode.
-We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV file: 
+In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  
+
+What we can do is store the parameters needed to run that command in a CSV file.  
+We can generate the CSV file by running **New-AGMLibGCPInstance** in guided mode.
+We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV file.
+
 Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
@@ -1166,7 +1176,7 @@ appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,netw
 51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,,
 36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
 ```
-The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command (although the field order is not important).
+The main thing is the headers in the CSV file needs to be exactly as shown, as they are the parameters we pass to the command (although the field order is not important).
 We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
@@ -1184,7 +1194,8 @@ If you need either of these, please open an issue in Github.
 
 ## User Story: Creating GCE Instance from VMware Snapshots
 
-In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCEConversion**
+In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the **New-AGMLibGCEConversion** command.
+
 This command requires several inputs so first we explore how to get them.
 
 ### Creating a single GCE Instance from Snapshot
@@ -1201,12 +1212,12 @@ The end result is you will get several choices:
 #### Determining which image is used for the mount
 
 The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
-
-* -appid     If you specify this, then the most recent image for that app will be mounted.
-* -appname   If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
-* -imageid   if you specify this, then this image will be mounted
-* -imagename   if you specify this, then this image will be mounted
-
+```
+-appid        If you specify this, then the most recent image for that app will be mounted.
+-appname      If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
+-imageid      If you specify this, then this image will be mounted
+-imagename    If you specify this, then this image will be mounted
+```
 In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO)
 
 #### Manually constructing output
