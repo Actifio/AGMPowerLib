@@ -1050,6 +1050,30 @@ This command requires several inputs so first we explore how to get them.
 
 ### Creating a single GCE Instance from Snapshot
 
+The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCPInstance** command without any parameters.
+This starts what we called *guided mode* which will help you learn all the syntax to run the command.
+The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you will get several choices:
+
+1. Run the command there and then
+1. Print out a simple command to run later.   Note you may want to edit this command as we explain in a moment.
+1. Print out a sample CSV file to use with  **New-AGMLibGCPInstanceMultiMount**
+
+#### Determining which image is used for the mount
+
+The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
+
+* -appid     If you specify this, then the most recent image for that app will be mounted.
+* -appname   If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
+* -imageid   if you specify this, then this image will be mounted
+* -imagename   if you specify this, then this image will be mounted
+
+In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO)
+
+#### Manually constructing output
+
+If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+
 To learn which Applications are suitable use this command:
 ```
 Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
@@ -1110,7 +1134,7 @@ This brings us to a command like this one:
 New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -retainlabel true
 ```
 
-## User Story: GCE Disaster Recovery
+## User Story: GCE Disaster Recovery using GCE Instance PD Snapshots
 
 ### GCE to GCE configuration
 
@@ -1127,26 +1151,125 @@ The goal is to offer a simplified way to manage failover or failback where:
 
 #### GCE to GCE CSV file
 
-We can take the **New-AGMLibGCPInstance** command to create a new GCP VM and store the parameters needed to run that command in a CSV file.  Here is an example of the CSV file:
+In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  What we can do is store the parameters needed to run that command in a CSV file.  
+We can egenarte the CSV file by running **New-AGMLibGCPInstance** in guided mode.
+We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV file: 
+Here is an example of the CSV file:
 ```
 appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
 51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,,
 36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
 ```
-The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
+The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command (although the field order is not important).
 We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  They will run in parallel but be started serially.
  
+If you specify both appid and appname, then the appname column will be ignored.  However having appname is handy as it gives you the name of the source application.
+
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
     
 If you need either of these, please open an issue in Github.
+
+
+
+
+## User Story: VMware to GCE Conversion
+
+In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCEConversion**
+This command requires several inputs so first we explore how to get them.
+
+### Creating a single GCE Instance from Snapshot
+
+The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCEConversion** command without any parameters.
+This starts what we called *guided mode* which will help you learn all the syntax to run the command.
+The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you will get several choices:
+
+1. Run the command there and then
+1. Print out a simple command to run later.   Note you may want to edit this command as we explain in a moment.
+1. Print out a sample CSV file to use with  **New-AGMLibGCEConversionMulti**
+
+#### Determining which image is used for the mount
+
+The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
+
+* -appid     If you specify this, then the most recent image for that app will be mounted.
+* -appname   If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
+* -imageid   if you specify this, then this image will be mounted
+* -imagename   if you specify this, then this image will be mounted
+
+In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO)
+
+#### Manually constructing output
+
+If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+
+To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
+```
+Get-AGMLibCredentialSrcID
+```
+To learn the AppIDs use this command (note the ApplianceName is where the images were created, in other words the source appliance, not the one running the mount):
+```
+Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
+```
+To learn the image ID or image name, you could use this command (change jobclass to snapshot or StreamSnap if needed):
+```
+Get-AGMImage -filtervalue "apptype=SystemState&apptype=VMBackup&jobclass=OnVault" | select appname,id,name,consistencydate,@{N='diskpoolname'; E={$_.diskpool.name}} | sort-object appname,consistencydate | format-table
+```
+
+There are many parameters that may need to be supplied:
+
+-appid           The application ID of the source VMWare VM or System State you want to mount.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+-appname         The application name of the source VMWare VM or System State you want to mount.  This needs to be unique.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+-imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+-imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+-srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is going to run the mount.
+-serviceaccount  The service account.
+-projectname     This is the unique Google Project name where the new instance will be created.
+-sharedvpcprojectid  If the instance is being created in a service project, what is the ID the project that is sharing the VPC (optional)
+-nodegroup       If creating an instance into a sole tenant node group, this is the name of the node group (optional)
+-region          This is the GCP Region such as:   australia-southeast1
+-zone            This is the GCP Zone such as: australia-southeast1-c
+-instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
+-machinetype     This is the GCP instance machine type such as:  e2-micro
+-networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
+-labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
+-nic0network     The network name in URL format for nic0
+-nic0subnet      The subnet name in URL format for nic0
+-nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
+-nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
+-poweroffvm      By default the new GCE Instance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
+-migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all data onto GCE PD, then specify this flag.
+-preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
+
+Optionally you can request a second NIC using nic1:
+-nic1network     The network name in URL format for nic1
+-nic1subnet      The subnet name in URL format for nic1
+-nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
+-nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
+
+Optionally you can specify that all disks be a different type:
+-disktype        Has to be one  of pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
+
+This bring us to command like this one:
+```
+New-AGMLibGCEConversion -imageid 56410933 -srcid 1234 -region australia-southeast1 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweroffvm 
+```
+
+What is not supported right now:
+1)  Specifying more than one internal IP per subnet.
+2)  Specifying different disk types per disk
+
+If you get timeouts, then increase the timeout value with -timeout xx when running connect-agm
+
+## User Story: GCE Disaster Recovery using VMware VM Snapshots
 
 ### VMware to GCE configuration
 
@@ -1162,19 +1285,21 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
 * You may need to first run an OnVault import using this method: https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
 
+The best way to create the syntax for this command, at least for the first time you run it,  simply run the **New-AGMLibGCEConversion** command without any parameters.
+This starts what we called *guided mode* which will help you create the command.
+The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you wil get two choices:
+
+1. Print out a simple command
+1. Print out a sample CSV file to use with  **New-AGMLibGCEConversionMulti**
+
+If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+
+
 #### VMware to GCE CSV file
 
 We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
-You can run the **New-AGMLibGCEConversion** command manually to learn all the parameters needed to run the command.
 
-To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
-```
-Get-AGMLibCredentialSrcID
-```
-To learn the AppIDs use this command (note the ApplianceName is where the images were created, in other words the source appliance, not the one running the mount):
-```
-Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
-```
 If the applications are not yet imported you can use the appname instead, meaning the heading will be *appname* rather than *appid*.  In which case dont add an appid column.
 Here is an example of the CSV file:
 ```
