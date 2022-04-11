@@ -155,13 +155,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             Get-AGMErrorMessage -messagetoprint "There are no GCE Instances to list" 
             return
         }
-        if ($vmgrab.count -eq 1)
-        {
-            $appname =  $vmgrab.appname
-            $appid = $vmgrab.id
-            write-host "Found one app $appname"
-            write-host ""
-        }
+
         else
         {
             Clear-Host
@@ -187,8 +181,17 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                     break
                 }
             }
-            $appname =  $vmgrab.appname[($vmselection - 1)]
-            $appid = $vmgrab.id[($vmselection - 1)]
+            if ($vmgrab.count -eq 1)
+            {
+                $appname =  $vmgrab.appname
+                $appid = $vmgrab.id
+            }
+            else 
+            {
+                $appname =  $vmgrab.appname[($vmselection - 1)]
+                $appid = $vmgrab.id[($vmselection - 1)]
+            }
+
         }
     }
     else 
@@ -867,12 +870,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             foreach ($row in ($volumelist.children.rows.disktype)) {
                 if ($row.name -eq $disktype)
                 {
-                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -Force
                 }
             }
             $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
         }
-        Clear-Host
+        #Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
