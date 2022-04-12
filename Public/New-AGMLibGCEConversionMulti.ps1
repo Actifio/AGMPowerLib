@@ -9,6 +9,12 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
 
     This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCEConversion jobs
 
+    .EXAMPLE
+    New-AGMLibGCEConversionMulti -instancelist recoverylist.csv -textoutput
+
+    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCEConversion jobs
+    Rather than wait for all jobs to be attemped before reporting status, a report will be displayed after each job is attempted.
+
     .DESCRIPTION
     This routine needs a well formatted CSV file. The column order is not important.    
     Here is an example of such a file:

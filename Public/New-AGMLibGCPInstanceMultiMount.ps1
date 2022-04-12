@@ -9,6 +9,12 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
 
     This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCPInstance jobs
 
+    .EXAMPLE
+    New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv -textoutput
+
+    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCPInstance jobs
+    Rather than wait for all jobs to be attemped before reporting status, a report will be displayed after each job is attempted.
+
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
