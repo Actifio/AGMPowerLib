@@ -53,15 +53,16 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
         return;
     }
 
+    # first we quality check the CSV
+    if ($recoverylist.srcid -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
+    if ($recoverylist.projectname -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
+    if ($recoverylist.machinetype -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
+    if ($recoverylist.instancename -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
+    if ($recoverylist.nic0network -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
+    if ($recoverylist.nic0subnet -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
+    if ($recoverylist.zone -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
+    if (($recoverylist.appname -eq $null) -and ($recoverylist.appid -eq $null))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
 
-    if ($recoverylist.srcid.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
-    if ($recoverylist.projectname.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
-    if ($recoverylist.machinetype.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
-    if ($recoverylist.instancename.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
-    if ($recoverylist.nic0network.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
-    if ($recoverylist.nic0subnet.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
-    if ($recoverylist.zone.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
-    if (($recoverylist.appname.count -eq 0) -and ($recoverylist.appid.count -eq 0))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
 
 
     write-host ""
@@ -69,9 +70,18 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     {
         $printarray = @()
     }
-
+    $row = 1
     foreach ($app in $recoverylist)
     {
+        if ($app.srcid -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: srcid in row $row" ;return }
+        if ($app.projectname -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: projectname row $row" ;return }
+        if ($app.machinetype -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: machinetype row $row" ;return }
+        if ($app.instancename -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: instancename row $row" ;return }
+        if ($app.nic0network -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: nic0network row $row" ;return }
+        if ($app.nic0subnet -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: nic0subnet row $row" ;return }
+        if ($app.zone.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: zone row $row" ;return }
+        if (($app.appname -eq "") -and ($app.appid -eq ""))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname value in row $row" ; return }
+
         $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
@@ -166,6 +176,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                     command =  $mountcommand }
             }
         }
+        $row += 1
     }
        
     if (!($textoutput))
