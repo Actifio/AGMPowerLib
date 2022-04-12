@@ -50,15 +50,16 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
         return;
     }
 
-    if (!($recoverylist.srcid)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
-    if (!($recoverylist.projectname)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
-    if (!($recoverylist.machinetype)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
-    if (!($recoverylist.instancename)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
-    if (!($recoverylist.nic0network)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
-    if (!($recoverylist.nic0subnet)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
-    if (!($recoverylist.region)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: region" ;return }
-    if (!($recoverylist.zone)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
-    if ((!($recoverylist.appname)) -and (!($recoverylist.appid)))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
+    if ($recoverylist.srcid.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
+    if ($recoverylist.projectname.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
+    if ($recoverylist.machinetype.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
+    if ($recoverylist.instancename.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
+    if ($recoverylist.nic0network.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
+    if ($recoverylist.nic0subnet.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
+    if ($recoverylist.region.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: region" ;return }
+    if ($recoverylist.zone.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
+    if (($recoverylist.appname.count -eq 0) -and ($recoverylist.appid.count -eq 0))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
+
 
     write-host ""
     if (!($textoutput))
