@@ -73,14 +73,15 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     $row = 1
     foreach ($app in $recoverylist)
     {
-        if ($app.srcid -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: srcid in row $row" ;return }
-        if ($app.projectname -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: projectname row $row" ;return }
-        if ($app.machinetype -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: machinetype row $row" ;return }
-        if ($app.instancename -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: instancename row $row" ;return }
-        if ($app.nic0network -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: nic0network row $row" ;return }
-        if ($app.nic0subnet -eq "") { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: nic0subnet row $row" ;return }
-        if ($app.zone.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory value is missing: zone row $row" ;return }
-        if (($app.appname -eq "") -and ($app.appid -eq ""))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname value in row $row" ; return }
+        $badrowmesssage = ""
+        if ($app.srcid -eq "") { $badrowmesssage =  "The following mandatory value is missing: srcid in row $row" }
+        if ($app.projectname -eq "") { $badrowmesssage = "The following mandatory value is missing: projectname row $row" }
+        if ($app.machinetype -eq "") { $badrowmesssage = "The following mandatory value is missing: machinetype row $row" }
+        if ($app.instancename -eq "") { $badrowmesssage = "The following mandatory value is missing: instancename row $row" }
+        if ($app.nic0network -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0network row $row" }
+        if ($app.nic0subnet -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0subnet row $row" }
+        if ($app.zone.count -eq 0) { $badrowmesssage = "The following mandatory value is missing: zone row $row" }
+        if (($app.appname -eq "") -and ($app.appid -eq ""))  { $badrowmesssage = "Could not find either appid or appname value in row $row" }
 
         $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
@@ -104,9 +105,28 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
         if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
         if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
         if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
-        $runcommand = Invoke-Expression $mountcommand 
-        
-        if ($runcommand.errormessage)
+        if ($badrowmesssage -eq "") 
+        {
+            $runcommand = Invoke-Expression $mountcommand 
+        }
+        if ($badrowmesssage -ne "") 
+        {
+            if ($textoutput)
+            {
+                write-host "The following command encountered this error: " $badrowmesssage
+                $mountcommand
+                write-host ""
+            }
+            else {
+                $printarray += [pscustomobject]@{
+                    appname = $app.appname
+                    appid = $app.appid
+                    result = "failed"
+                    message = $badrowmesssage
+                    command =  $mountcommand }
+            }
+        }
+        elseif ($runcommand.errormessage)
         { 
             if ($textoutput)
             {
