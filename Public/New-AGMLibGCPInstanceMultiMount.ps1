@@ -72,6 +72,9 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist)
         if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
         if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
         if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
+        write-host "About to run the following command:"
+        write-host ""
+        $mountcommand
         Invoke-Expression $mountcommand 
     }
 }

@@ -81,6 +81,9 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
         if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
         if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
         if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip }         
+        write-host "About to run the following command:"
+        write-host ""
+        $mountcommand
         Invoke-Expression $mountcommand 
     }
 }
