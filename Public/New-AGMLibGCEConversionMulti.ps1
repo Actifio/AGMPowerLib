@@ -120,7 +120,6 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                 write-host ""
             }
             else {
-                write-host "The following command encountered this error: " $runcommand.errormessage 
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
