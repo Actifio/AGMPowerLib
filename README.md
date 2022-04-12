@@ -1097,8 +1097,7 @@ There are many parameters that need to be supplied:
 -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
--credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work but ideally switch to -srcid
--srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application.  Note this parameter replaced -credentialid
+-srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application. 
 -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
 -projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
@@ -1161,7 +1160,7 @@ The goal is to offer a simplified way to manage failover or failback where:
 * The images are created by a Backup Appliance in an alternate zone
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
 
-#### GCE to GCE CSV file
+### GCE to GCE CSV file
 
 In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  
 
@@ -1171,7 +1170,7 @@ We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV f
 
 Here is an example of the CSV file:
 ```
-appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
+appid,srcid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
 51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,,
 36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
@@ -1191,6 +1190,50 @@ What is not supported right now:
 1.  Specifying different disk types per disk
     
 If you need either of these, please open an issue in Github.
+
+
+#### Monitoring the jobs created by a multi mount by creating an object
+
+When you run a multimount, by default all jobs will run before any output is printed.   What we output is a nicely formatted object listing each line in the CSV, the app details, the command that was run and the results.  
+
+The best way to manage this is to load this output into your own object, so do something like this:
+```
+$newrun = New-AGMLibGCPInstanceMultiMount -instancelist april12test1.csv
+```
+Then display the output like this:
+```
+PS /home/avw_google_com> $newrun
+```
+You can then find all the jobs that didn't start like this:
+```
+PS /home/avw_google_com> $newrun | where-object {$_.result -ne "started"}
+```
+Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
+```
+($newrun | where-object {$_.result -ne "started"}).command
+```
+
+
+#### Monitoring the jobs created by a multi mount by creating an object
+If you want to just see the output as each job is run, then add **-textoutput**
+
+The output will look like this:
+```
+PS /home/avw_google_com>  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+
+The following command encountered this error:       Instance Name already in use
+New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+
+PS /home/avw_google_com>
+```
+
+
+
+
+
 
 ## User Story: Creating GCE Instance from VMware Snapshots
 
@@ -1311,7 +1354,7 @@ The end result is you wil get two choices:
 If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
 
 
-#### VMware to GCE CSV file
+### VMware to GCE CSV file
 
 We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
 
@@ -1334,6 +1377,65 @@ What is not supported right now:
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
 1.  More than two NICS per instance
+
+#### Monitoring the jobs created by a multi mount by creating an object
+
+When you run a multimount, by default all jobs will run before any output is printed.   What we output is a nicely formatted object listing each line in the CSV, the app details, the command that was run and the results.  
+
+The best way to manage this is to load this output into your own object, so do something like this:
+```
+$newrun = New-AGMLibGCEConversionMulti -instancelist april12test1.csv
+```
+Then display the output like this:
+```
+PS /home/avw_google_com> $newrun
+
+appname : Centos3
+appid   :
+result  : started
+message : Job_0866903Optional[Job_0866903] to mount londonsky.c.avwlab2.internal_Image_0499948 started
+command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+
+appname : centos2
+appid   :
+result  : failed
+message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
+command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+```
+You can then find all the jobs that didn't start like this:
+```
+PS /home/avw_google_com> $newrun | where-object {$_.result -ne "started"}
+
+appname : centos2
+appid   :
+result  : failed
+message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
+command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+```
+Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
+```
+($newrun | where-object {$_.result -ne "started"}).command
+```
+
+
+#### Monitoring the jobs created by a multi mount by creating an object
+If you want to just see the output as each job is run, then add **-textoutput**
+
+The output will look like this:
+```
+PS /home/avw_google_com>  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+
+The following command encountered this error:       Instance Name already in use
+New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+
+PS /home/avw_google_com>
+```
 
 ### Managing the mounted GCE Instance 
 
