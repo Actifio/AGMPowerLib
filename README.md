@@ -1222,10 +1222,10 @@ The output will look like this:
 PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
 
 The following command encountered this error:       Instance Name already in use
-New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 
-The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
-New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.project1.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 
 PS >
 ```
@@ -1393,16 +1393,16 @@ PS > $newrun
 appname : Centos3
 appid   :
 result  : started
-message : Job_0866903Optional[Job_0866903] to mount londonsky.c.avwlab2.internal_Image_0499948 started
-command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
-          "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+message : Job_0866903Optional[Job_0866903] to mount londonsky.c.project1.internal_Image_0499948 started
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 
 appname : centos2
 appid   :
 result  : failed
 message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
-command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
-          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 ```
 You can then find all the jobs that didn't start like this:
 ```
@@ -1412,8 +1412,8 @@ appname : centos2
 appid   :
 result  : failed
 message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
-command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
-          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 ```
 Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
 ```
@@ -1429,10 +1429,10 @@ The output will look like this:
 PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
 
 The following command encountered this error:       Instance Name already in use
-New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 
-The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
-New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.project1.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
 
 PS >
 ```
@@ -1445,7 +1445,7 @@ PS /tmp/agmpowercli> Get-AGMLibActiveImage
 
 imagename        : Image_0021181
 apptype          : GCPInstance
-appliancename    : avwlab2sky
+appliancename    : project1sky
 hostname         : windows
 appname          : windows
 mountedhost      : avrecovery4
@@ -1475,14 +1475,14 @@ The Appliance running your jobs may hit a slot limit, which means that you may s
 
 To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
 
-Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **avwlab2sky** so we will use applianceid **361153**
+Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **project1sky** so we will use applianceid **361153**
 ```
 PS > Get-AGMAppliance | select id,name
 
 id     name
 --     ----
-361153 avwlab2sky
-296357 londonsky.c.avwlab2.internal
+361153 project1sky
+296357 londonsky.c.project1.internal
 ```
 Now depending on which job type, we modify different slots.
 #### Slot limits for mount jobs
