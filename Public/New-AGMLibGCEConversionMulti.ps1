@@ -94,9 +94,15 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
             $mountcommand
             write-host ""
         }
-        else 
+        elseif ($runcommand.jobstatus)
         {
-            write-host "The following command started a job: " $runcommand
+            write-host "The following command started this job: " $runcommand.jobstatus
+            $mountcommand 
+            write-host ""
+        }
+        else
+        {
+            write-host "The following command may not have started: " $runcommand
             $mountcommand 
             write-host ""
         }
