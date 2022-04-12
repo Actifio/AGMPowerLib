@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist) 
+Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textoutput) 
 {
     <#
     .SYNOPSIS
@@ -82,9 +82,82 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist)
         if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
         if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
         if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
-        write-host "About to run the following command:"
-        write-host ""
-        $mountcommand
-        Invoke-Expression $mountcommand 
+        $runcommand = Invoke-Expression $mountcommand 
+        
+        if ($runcommand.errormessage)
+        { 
+            if ($textoutput)
+            {
+                write-host "The following command encountered this error: " $runcommand.errormessage 
+                $mountcommand
+                write-host ""
+            }
+            else {
+                write-host "The following command encountered this error: " $runcommand.errormessage 
+                $printarray += [pscustomobject]@{
+                    appname = $app.appname
+                    appid = $app.appid
+                    result = "failed"
+                    message = $runcommand.errormessage 
+                    command =  $mountcommand }
+            }
+        }
+        elseif ($runcommand.err_message)
+        { 
+            if ($textoutput)
+            {
+                write-host "The following command encountered this error: " $runcommand.err_message 
+                $mountcommand
+                write-host ""
+            }
+            else {
+                $printarray += [pscustomobject]@{
+                    appname = $app.appname
+                    appid = $app.appid
+                    result = "failed"
+                    message = $runcommand.err_message
+                    errorcode = $runcommand.err_code 
+                    command =  $mountcommand }
+            }
+        }
+        elseif ($runcommand.jobstatus)
+        {
+            if ($textoutput)
+            {
+                write-host "The following command started this job: " $runcommand.jobstatus
+                $mountcommand 
+                write-host ""
+            }
+            else 
+            {
+                $printarray += [pscustomobject]@{
+                    appname = $app.appname
+                    appid = $app.appid
+                    result = "started"
+                    message = $runcommand.jobstatus 
+                    command =  $mountcommand }
+            }
+        }
+        else
+        {
+            if ($textoutput)
+            {
+                write-host "The following command may not have started: " $runcommand
+                $mountcommand 
+                write-host ""
+            }
+            else {
+                $printarray += [pscustomobject]@{
+                    appname = $app.appname
+                    appid = $app.appid
+                    result = "unknown"
+                    command =  $mountcommand }
+            }
+        }
+    }
+       
+    if (!($textoutput))
+    {
+        $printarray
     }
 }
