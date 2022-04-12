@@ -632,11 +632,11 @@ Start-AGMLibPolicy
 ```
 We then run our command, for instance:
 ```
-PS /home/avw_google_com> Start-AGMLibPolicy -policyid 6393 -backuptype dblog
+PS > Start-AGMLibPolicy -policyid 6393 -backuptype dblog
 Starting job for hostname: mysqlsource   appname: mysqlsource   appid: 51919 using: snap policyID: 6393 from SLTName: PDSnaps
 Starting job for hostname: mysqltarget   appname: mysqltarget   appid: 36104 using: snap policyID: 6393 from SLTName: PDSnaps
 Starting job for hostname: tiny   appname: tiny   appid: 35590 using: snap policyID: 6393 from SLTName: PDSnaps
-PS /home/avw_google_com>
+PS >
 ```
 We can then monitor the jobs like this:
 ```
@@ -1202,11 +1202,11 @@ $newrun = New-AGMLibGCPInstanceMultiMount -instancelist april12test1.csv
 ```
 Then display the output like this:
 ```
-PS /home/avw_google_com> $newrun
+PS > $newrun
 ```
 You can then find all the jobs that didn't start like this:
 ```
-PS /home/avw_google_com> $newrun | where-object {$_.result -ne "started"}
+PS > $newrun | where-object {$_.result -ne "started"}
 ```
 Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
 ```
@@ -1219,7 +1219,7 @@ If you want to just see the output as each job is run, then add **-textoutput**
 
 The output will look like this:
 ```
-PS /home/avw_google_com>  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
 
 The following command encountered this error:       Instance Name already in use
 New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
@@ -1227,7 +1227,7 @@ New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instanc
 The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
 New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
 
-PS /home/avw_google_com>
+PS >
 ```
 
 
@@ -1388,7 +1388,7 @@ $newrun = New-AGMLibGCEConversionMulti -instancelist april12test1.csv
 ```
 Then display the output like this:
 ```
-PS /home/avw_google_com> $newrun
+PS > $newrun
 
 appname : Centos3
 appid   :
@@ -1406,7 +1406,7 @@ command : New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-
 ```
 You can then find all the jobs that didn't start like this:
 ```
-PS /home/avw_google_com> $newrun | where-object {$_.result -ne "started"}
+PS > $newrun | where-object {$_.result -ne "started"}
 
 appname : centos2
 appid   :
@@ -1426,7 +1426,7 @@ If you want to just see the output as each job is run, then add **-textoutput**
 
 The output will look like this:
 ```
-PS /home/avw_google_com>  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
 
 The following command encountered this error:       Instance Name already in use
 New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
@@ -1434,7 +1434,7 @@ New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instanc
 The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.avwlab2.internal_Image_0499948 started
 New-AGMLibGCEConversion -projectname avwlab2 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/avwlab2/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/avwlab2/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@avwlab2.iam.gserviceaccount.com" -preferedsource onvault
 
-PS /home/avw_google_com>
+PS >
 ```
 
 ### Managing the mounted GCE Instance 
