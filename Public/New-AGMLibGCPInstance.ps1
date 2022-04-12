@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
 {
     <#
     .SYNOPSIS
@@ -29,7 +29,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
     -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
     -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
-    -credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work
     -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
     -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
@@ -201,13 +200,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
             }
             $appname =  $vmgrab.appname[($vmselection - 1)]
             $appid = $vmgrab.id[($vmselection - 1)]
-        }
-    }
-    else 
-    {
-        if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
-        {
-            $appname = read-host "AppName of the source VM"
         }
     }
 
@@ -990,8 +982,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         return
     }
 
-    if ($srcid) { $credentialid = $srcid}
-    if (!($credentialid))
+
+    if (!($srcid))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a credential src ID for the new instance with -srcid.  Learn this with Get-AGMCredential"
         return

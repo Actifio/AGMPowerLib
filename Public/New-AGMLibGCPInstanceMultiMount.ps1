@@ -57,6 +57,13 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     if ($recoverylist.zone.count -eq 0) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
     if (($recoverylist.appname.count -eq 0) -and ($recoverylist.appid.count -eq 0))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
 
+
+    write-host ""
+    if (!($textoutput))
+    {
+        $printarray = @()
+    }
+
     foreach ($app in $recoverylist)
     {
         $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
