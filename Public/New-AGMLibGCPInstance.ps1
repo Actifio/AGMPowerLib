@@ -149,13 +149,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         }
 
         Write-host ""
-        $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&clusterid=$mountapplianceid" | sort-object appname         
+        Write-host ""
+        write-host "Select application status for GCPInstance apps with images on $mountappliancename"
+        Write-host ""
+        Write-Host "1`: Managed local apps (default)"
+        Write-Host "2`: Unmanaged local apps"
+        # Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
+        Write-Host ""
+        [int]$userselectionapps = Read-Host "Please select from this list (1-2)"
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
+        # if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
-            Get-AGMErrorMessage -messagetoprint "There are no GCE Instances to list" 
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed GCPInstance apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged GCPInstance apps to list" }
+            # if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
-
+        if ($vmgrab.count -eq 1)
+        {
+            $appname =  $vmgrab.appname
+            $appid = $vmgrab.id
+            write-host "Found one app $appname"
+            write-host ""
+        }
         else
         {
             Clear-Host
@@ -181,17 +199,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
                     break
                 }
             }
-            if ($vmgrab.count -eq 1)
-            {
-                $appname =  $vmgrab.appname
-                $appid = $vmgrab.id
-            }
-            else 
-            {
-                $appname =  $vmgrab.appname[($vmselection - 1)]
-                $appid = $vmgrab.id[($vmselection - 1)]
-            }
-
+            $appname =  $vmgrab.appname[($vmselection - 1)]
+            $appid = $vmgrab.id[($vmselection - 1)]
         }
     }
     else 
