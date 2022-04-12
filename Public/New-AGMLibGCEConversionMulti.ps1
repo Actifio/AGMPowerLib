@@ -50,24 +50,29 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
         return;
     }
 
+    if (!($recoverylist.srcid)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
+    if (!($recoverylist.projectname)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
+    if (!($recoverylist.machinetype)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
+    if (!($recoverylist.instancename)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
+    if (!($recoverylist.nic0network)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
+    if (!($recoverylist.nic0subnet)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
+    if (!($recoverylist.region)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: region" ;return }
+    if (!($recoverylist.zone)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
+    if ((!($recoverylist.appname)) -and (!($recoverylist.appid)))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
+
     write-host ""
 
     foreach ($app in $recoverylist)
     {
-        if ((!($app.appname)) -and (!($app.appid))) 
-        { 
-            Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns"
-            return;
-        }
-        $mountcommand = 'New-AGMLibGCEConversion -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
+        $mountcommand = 'New-AGMLibGCEConversion -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename "' +$app.instancename +'" -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         $mountcommand = $mountcommand + ' -region "' +$app.region +'"' 
         $mountcommand = $mountcommand + ' -zone "' +$app.zone +'"' 
         $mountcommand = $mountcommand + ' -srcid "' +$app.srcid +'"' 
-        $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"' 
         if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
         if ((!($app.appname)) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if ($app.sharedvpcprojectid) { $mountcommand = $mountcommand + ' -sharedvpcprojectid "' +$app.sharedvpcprojectid +'"' } 
+        if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"' } 
         if ($app.nodegroup) { $mountcommand = $mountcommand + ' -nodegroup "' +$app.nodegroup +'"' } 
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
         if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
@@ -81,9 +86,19 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist)
         if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
         if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
         if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip }         
-        write-host "About to run the following command:"
-        write-host ""
-        $mountcommand
-        Invoke-Expression $mountcommand 
+
+        $runcommand = Invoke-Expression $mountcommand 
+        if ($runcommand.errormessage)
+        { 
+            write-host "The following command encountered this error: " $runcommand.errormessage 
+            $mountcommand
+            write-host ""
+        }
+        else 
+        {
+            write-host "The following command started a job: " $runcommand
+            $mountcommand 
+            write-host ""
+        }
     }
 }

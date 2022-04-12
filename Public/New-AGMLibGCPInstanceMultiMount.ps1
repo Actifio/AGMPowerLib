@@ -48,10 +48,20 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist)
     }
 
 
+    if (!($recoverylist.srcid)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: srcid" ;return }
+    if (!($recoverylist.projectname)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: projectname" ;return }
+    if (!($recoverylist.machinetype)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: machinetype" ;return }
+    if (!($recoverylist.instancename)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
+    if (!($recoverylist.nic0network)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
+    if (!($recoverylist.nic0subnet)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
+    if (!($recoverylist.zone)) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
+    if ((!($recoverylist.appname)) -and (!($recoverylist.appid)))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
+
     foreach ($app in $recoverylist)
     {
-        $mountcommand = 'New-AGMLibGCPInstance -appid ' +$app.appid  +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
-        if ($app.credentialid) { $mountcommand = $mountcommand + ' -credentialid "' +$app.credentialid +'"' } 
+        $mountcommand = 'New-AGMLibGCPInstance -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
+        if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
         if ($app.srcid) { $mountcommand = $mountcommand + ' -srcid "' +$app.srcid +'"' } 
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
         if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 

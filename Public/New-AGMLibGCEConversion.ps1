@@ -11,7 +11,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
 
     .DESCRIPTION
     To learn which Applications are suitable use this command (note the ApplianceName is where the images were created):
-    Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
+    Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}},apptype | sort-object appname
 
     To learn which Cloud Credential srcids are available use this command:
     Get-AGMLibCredentialSrcID
@@ -846,22 +846,33 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
 
         if ($volumelist)
         {
-            if (!($disktype))
+            Write-Host ""
+            Write-Host "Disk type Selection"
+            Write-Host "1`: pd-balanced"
+            Write-Host "2`: pd-extreme"
+            Write-Host "3`: pd-ssd"
+            Write-Host "4`: pd-standard"
+            Write-Host ""
+            Write-host ""
+           
+            While ($true) 
             {
-                Write-Host ""
-                Write-Host "Disk type Selection"
-                Write-Host "1`: pd-balanced (default)"
-                Write-Host "2`: pd-extreme"
-                Write-Host "3`: pd-ssd"
-                Write-Host "4`: pd-standard"
-                Write-Host ""
-                [int]$diskselection = Read-Host "Please select from this list (1-4)"
-                if ($diskselection -eq "") { $diskselection -eq 1 }
-                if ($diskselection -eq 1) { $disktype = "pd-balanced" }
-                if ($diskselection -eq 2) { $disktype = "pd-extreme" }
-                if ($diskselection -eq 3) { $disktype = "pd-ssd" }
-                if ($diskselection -eq 4) { $disktype = "pd-standard" }
+                Write-host ""
+                $listmax = 4
+                [int]$diskselection = Read-Host "Please select a disk type (1-$listmax)"
+                if ($diskselection -lt 1 -or $diskselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
             }
+            if ($diskselection -eq 1) { $disktype = "pd-balanced" }
+            if ($diskselection -eq 2) { $disktype = "pd-extreme" }
+            if ($diskselection -eq 3) { $disktype = "pd-ssd" }
+            if ($diskselection -eq 4) { $disktype = "pd-standard" }
 
             foreach ($row in ($volumelist.children.rows.disktype)) {
                 if ($row.selected -eq "True")
@@ -872,12 +883,12 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
             foreach ($row in ($volumelist.children.rows.disktype)) {
                 if ($row.name -eq $disktype)
                 {
-                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -Force
                 }
             }
             $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
         }
-        Clear-Host
+        Write-Host ""
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "New-AGMLibGCEConversion -srcid $srcid -imageid $imageid -appid $appid -projectname `"$projectname`""
