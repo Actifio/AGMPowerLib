@@ -76,7 +76,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
 
 
     # GUIDED MODE kicks in if we dont have an image or app preference
-    if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
+    if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)))
     {
         $guided = $TRUE
         write-host "Running guided mode"

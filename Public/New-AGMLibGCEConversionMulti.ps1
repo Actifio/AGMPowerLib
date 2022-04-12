@@ -22,8 +22,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
     srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
     391360,296433,"Centos2","project1","hostproject1","europe-west2","europe-west2-a","newvm1","n1-standard-2","systemstaterecovery@project1.iam.gserviceaccount.com","nodegroup1","https-server",False,True,status:failover,onvault,pd-standard,https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/project1/global/networks/default,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,,  
     
-    Note you can specify appid or appname or both.
-    If you specify both then the appid will be used.  The appname is helpful so you know the name of the source VM.
+    If you specify both appanme and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
 
     Note that the the labels and networktags fields can contain commas, so need to be double quoted to ensure they do no escape the wrong field
     #>
@@ -73,20 +72,27 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
     {
         $printarray = @()
     }
-    $row = 1
+
+
+    # dry run for srcid and appname
+    $row =1
+    foreach ($app in $recoverylist)
+    {
+        if ($app.srcid -eq "") { write-host  "The following mandatory value is missing: srcid in row $row" ; return }
+        $row += 1
+    }
+    $row =1
+    foreach ($app in $recoverylist)
+    {
+        if ($app.appname -eq "")  { write-host "The following mandatory value is missing: appname row $row" ; return}
+        $row += 1
+    }
+    
+
+
 
     foreach ($app in $recoverylist)
     {
-        $badrowmesssage = ""
-        if ($app.srcid -eq $null) { $badrowmesssage = "The following mandatory value is missing: srcid in row $row" }
-        if ($app.projectname -eq "") { $badrowmesssage = "The following mandatory value is missing: projectname row $row" }
-        if ($app.machinetype -eq "") { $badrowmesssage = "The following mandatory value is missing: machinetype row $row" }
-        if ($app.instancename -eq "") { $badrowmesssage = "The following mandatory value is missing: instancename row $row" }
-        if ($app.nic0network -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0network row $row" }
-        if ($app.nic0subnet -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0subnet row $row" }
-        if ($app.region -eq "") { $badrowmesssage = "The following mandatory value is missing: region row $row" }
-        if ($app.zone.count -eq 0) { $badrowmesssage = "The following mandatory value is missing: zone row $row" }
-        if (($app.appname -eq "") -and ($app.appid -eq ""))  { $badrowmesssage = "Could not find either appid or appname value in row $row" }
 
         $mountcommand = 'New-AGMLibGCEConversion -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename "' +$app.instancename +'" -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         $mountcommand = $mountcommand + ' -region "' +$app.region +'"' 
@@ -111,28 +117,9 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
         if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
         if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip }         
 
-        if ($badrowmesssage -eq "") 
-        {
-            $runcommand = Invoke-Expression $mountcommand 
-        }
-        if ($badrowmesssage -ne "") 
-        {
-            if ($textoutput)
-            {
-                write-host "The following command encountered this error: " $badrowmesssage
-                $mountcommand
-                write-host ""
-            }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    result = "failed"
-                    message = $badrowmesssage
-                    command =  $mountcommand }
-            }
-        }
-        elseif ($runcommand.errormessage)
+        $runcommand = Invoke-Expression $mountcommand 
+        
+        if ($runcommand.errormessage)
         { 
             if ($textoutput)
             {
@@ -201,7 +188,6 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                     command =  $mountcommand }
             }
         }
-        $row += 1
     }
        
     if (!($textoutput))

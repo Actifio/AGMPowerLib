@@ -1182,7 +1182,7 @@ New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
 This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  They will run in parallel but be started serially.
  
-If you specify both appid and appname, then the appname column will be ignored.  However having appname is handy as it gives you the name of the source application.
+If you specify both appid and appname, then the appname column will be ignored.  However having appname is mandatory as it gives you the name of the source application.
 
 What is not supported right now:
 
@@ -1358,7 +1358,7 @@ If you want to manually construct the output, or get some variables to tweak the
 
 We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
 
-If the applications are not yet imported you can use the appname instead, meaning the heading will be *appname* rather than *appid*.  In which case dont add an appid column.
+If the applications are not yet imported you can use the appname  field provided the VMnames are unique.
 Here is an example of the CSV file:
 ```
 srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip

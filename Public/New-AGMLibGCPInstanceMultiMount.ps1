@@ -18,11 +18,12 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    appid,srcid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
-    35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
-    51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,TRUE
-    36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
-   
+    srcid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
+    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
+    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
+    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
+ 
+    If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -63,6 +64,19 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     if ($recoverylist.zone -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
     if (($recoverylist.appname -eq $null) -and ($recoverylist.appid -eq $null))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
 
+    # dry run for srcid and appname
+    $row =1
+    foreach ($app in $recoverylist)
+    {
+        if ($app.srcid -eq "") { write-host  "The following mandatory value is missing: srcid in row $row" ; return }
+        $row += 1
+    }
+    $row =1
+    foreach ($app in $recoverylist)
+    {
+        if ($app.appname -eq "")  { write-host "The following mandatory value is missing: appname row $row" ; return}
+        $row += 1
+    }
 
 
     write-host ""
@@ -70,19 +84,9 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     {
         $printarray = @()
     }
-    $row = 1
     foreach ($app in $recoverylist)
     {
-        $badrowmesssage = ""
-        if ($app.srcid -eq "") { $badrowmesssage =  "The following mandatory value is missing: srcid in row $row" }
-        if ($app.projectname -eq "") { $badrowmesssage = "The following mandatory value is missing: projectname row $row" }
-        if ($app.machinetype -eq "") { $badrowmesssage = "The following mandatory value is missing: machinetype row $row" }
-        if ($app.instancename -eq "") { $badrowmesssage = "The following mandatory value is missing: instancename row $row" }
-        if ($app.nic0network -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0network row $row" }
-        if ($app.nic0subnet -eq "") { $badrowmesssage = "The following mandatory value is missing: nic0subnet row $row" }
-        if ($app.zone.count -eq 0) { $badrowmesssage = "The following mandatory value is missing: zone row $row" }
-        if (($app.appname -eq "") -and ($app.appid -eq ""))  { $badrowmesssage = "Could not find either appid or appname value in row $row" }
-
+    
         $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
         if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
         if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
@@ -105,28 +109,10 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
         if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
         if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
         if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
-        if ($badrowmesssage -eq "") 
-        {
-            $runcommand = Invoke-Expression $mountcommand 
-        }
-        if ($badrowmesssage -ne "") 
-        {
-            if ($textoutput)
-            {
-                write-host "The following command encountered this error: " $badrowmesssage
-                $mountcommand
-                write-host ""
-            }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    result = "failed"
-                    message = $badrowmesssage
-                    command =  $mountcommand }
-            }
-        }
-        elseif ($runcommand.errormessage)
+
+        $runcommand = Invoke-Expression $mountcommand 
+       
+        if ($runcommand.errormessage)
         { 
             if ($textoutput)
             {
@@ -195,7 +181,6 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                     command =  $mountcommand }
             }
         }
-        $row += 1
     }
        
     if (!($textoutput))
