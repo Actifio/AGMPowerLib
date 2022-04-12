@@ -67,8 +67,8 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     foreach ($app in $recoverylist)
     {
         $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
-        if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
-        if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+        if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
         if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 
         if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
