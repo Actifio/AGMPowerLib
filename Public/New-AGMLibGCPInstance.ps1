@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagename,[string]$srcid,[string]$credentialid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
 {
     <#
     .SYNOPSIS
@@ -29,7 +29,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
     -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
     -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
-    -credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work
     -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
     -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
@@ -77,6 +76,852 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
+
+    #GUIDED MODE kicks in if we dont have an image or app preference
+    if ( (!($appname)) -and (!($imagename)) -and (!($imageid)) -and (!($appid)) )
+    {
+        $guided = $TRUE
+        write-host "Running guided mode"
+        write-host ""
+        $credentialgrab = Get-AGMLibCredentialSrcID
+        if ($credentialgrab.credentialid)
+        {
+            $credarray = @()
+            $i = 1
+            foreach ($credential in $credentialgrab)
+            {
+                $credarray += [pscustomobject]@{
+                    id = $i
+                    appliancename = $credential.appliancename
+                    applianceid = $credential.applianceid
+                    credentialname = $credential.credentialname
+                    credentialid = $credential.credentialid
+                    srcid = $credential.srcid
+                }
+                $i++
+            }
+        }
+        
+        if ($credarray.credentialid.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "There are no Credentials.  Please add a credential"
+            return
+        }
+        else
+        {
+            Clear-Host
+            write-host "Welcome to the Guided Menu for GCE Conversion. "
+            write-host "You will be offered selections to build a command to run a mount job that will create a new GCE Instance"
+            write-host ""
+            write-host "Credential Selection menu"
+            write-host "The Credential is used to authenticate GCE commands.  Ensure you select the credential on the correct appliance since this will determine which appliance runs the recovery job"
+            Write-host ""
+            $credarray | Format-Table
+            While ($true)
+            {
+                Write-host ""
+                $listmax = $credarray.credentialname.count
+                [int]$credselection = Read-Host "Please select a credential (1-$listmax)"
+                if ($credselection -lt 1 -or $credselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                }
+                else
+                {
+                    break
+                }
+            }
+            if ($credarray.credentialid.count -eq 1)
+            {
+                $srcid = $credarray.srcid
+                $mountapplianceid = $credarray.applianceid
+                $mountappliancename = $credarray.appliancename
+                $credentialid =$credarray.credentialid
+            }
+            else 
+            {
+                $srcid = $credarray.srcid[($credselection - 1)]
+                $mountapplianceid = $credarray.applianceid[($credselection - 1)]
+                $mountappliancename = $credarray.appliancename[($credselection - 1)]
+                $credentialid =$credarray.credentialid[($credselection - 1)]
+            }
+        }
+
+        Write-host ""
+        Write-host ""
+        write-host "Select application status for GCPInstance apps with images on $mountappliancename"
+        Write-host ""
+        Write-Host "1`: Managed local apps (default)"
+        Write-Host "2`: Unmanaged local apps"
+        # Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
+        Write-Host ""
+        [int]$userselectionapps = Read-Host "Please select from this list (1-2)"
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
+        # if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
+        if ($vmgrab.count -eq 0)
+        {
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed GCPInstance apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged GCPInstance apps to list" }
+            # if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibOnVault first" }
+            return
+        }
+        if ($vmgrab.count -eq 1)
+        {
+            $appname =  $vmgrab.appname
+            $appid = $vmgrab.id
+            write-host "Found one app $appname"
+            write-host ""
+        }
+        else
+        {
+            Clear-Host
+            write-host "VM Selection menu"
+            Write-host ""
+            $i = 1
+            foreach ($vm in $vmgrab)
+            { 
+                Write-Host -Object "$i`: $($vm.appname) ($($vm.apptype) AppID $($vm.id)) on $($vm.cluster.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $vmgrab.appname.count
+                [int]$vmselection = Read-Host "Please select an application (1-$listmax)"
+                if ($vmselection -lt 1 -or $vmselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $appname =  $vmgrab.appname[($vmselection - 1)]
+            $appid = $vmgrab.id[($vmselection - 1)]
+        }
+    }
+
+    if ( ($appname) -and (!($appid)) )
+    {
+        $appgrab = Get-AGMApplication -filtervalue "appname=$appname&apptype=GCPInstance"
+        if ($appgrab.id.count -ne 1)
+        { 
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $appname to a unique valid GCE Instance app.  Use Get-AGMLibApplicationID and try again specifying -appid"
+            return
+        }
+        else {
+            $appid = $appgrab.id
+        }
+    }
+
+    
+
+    # learn about the image
+    if ($imagename)
+    {
+        $imagegrab = Get-AGMImage -filtervalue backupname=$imagename
+        if ($imagegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find $imagename using:  Get-AGMImage -filtervalue backupname=$imagename"
+            return
+        }
+        else 
+        {
+            $imageid = $imagegrab.id
+        }
+    }
+    if ((!($imagename)) -and ($imageid))
+    {
+        $imagegrab = Get-AGMImage -id $imageid
+        if ($imagegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find imagename using:  Get-AGMImage -id $imageid"
+            return
+        }
+        else 
+        {
+            $imagename = $imagegrab.backupname
+        }
+    }
+
+    # this if for guided menu
+    if ($guided)
+    {
+        if (!($imagename))
+        {
+            # prefered sourcce
+            write-host ""
+            $userselection = ""
+            Write-Host "Image selection"
+            Write-Host "1`: Use the most recent backup for lowest RPO (default)"
+            Write-Host "2`: Select a backup"
+            Write-Host ""
+            While ($true) 
+            {
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq "") { $userselection = 1 }
+                if ($userselection -lt 1 -or $userselection -gt 2)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if ($userselection -eq 1)
+            {
+
+                $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                
+                if ($imagegrab.count -eq 1)
+                {   
+                    $copygrab = $imagegrab.copies
+                    $consistencydate = $imagegrab.consistencydate
+                    $jobclass = $imagegrab.jobclass
+                    $imagename = $imagegrab.backupname
+                    $imageid =  $imagegrab.id 
+                    Write-host ""
+                    write-host "Found $jobclass imageID $imageid with consistency date: $consistencydate"
+                    Write-host ""
+                }
+                else 
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot for appid $appid on appliance with clusterID $mountapplianceid"   
+                    return
+                }
+            }
+            if ($userselection -eq 2) 
+            { 
+                write-host "Fetching Image list from AGM"
+                $imagelist = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,id,targetuds,jobclass,cluster,diskpool,copies | Sort-Object consistencydate
+                if ($imagelist.id.count -eq 0)
+                {
+                    if (!($preferedsource))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                    }
+                    else 
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch any $preferedsource Images for appid $appid"
+                    }
+                    return
+                }
+                Clear-Host
+                Write-Host "Image list.  Choose based on the best consistency date and location"
+                $i = 1
+                foreach
+                ($image in $imagelist)
+                { 
+                    $target = $image.cluster.name
+                    Write-Host -Object "$i`:  $($image.consistencydate) (Appliance: $target)"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $imagelist.Length
+                    [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $imagename = $imagelist[($imageselection - 1)].backupname
+                $imageid =  $imagelist[($imageselection - 1)].id 
+            }
+        }
+        # system recovery data grab
+        write-host "Getting image data"
+        # we get this blindly without specifying cloud credential
+        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
+        if ($recoverygrab.fields)
+        {
+            # the first thing to check is to grab the data weith correct srcid
+            ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "cloudcredential" }).choices | where-object { $_.selected -eq $true }).selected = $false
+            ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "cloudcredential"}).choices | where-object {$_.name -eq $srcid}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+            $recoverygrab.PSObject.Properties.Remove('@type')
+            $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+            $newjson = $recoverygrab | convertto-json -depth 10 -compress
+            $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+            #now read the data
+            $projectlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
+            $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
+            $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
+            $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+            $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
+            $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
+            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+        }
+
+        # project name
+        if (!($projectname))
+        {
+            if ($projectlist.name)
+            {
+                write-host ""
+                write-host "Project Name Selection"
+                write-host ""
+                $i = 1
+                foreach ($project in $projectlist.name)
+                { 
+                    Write-Host -Object "$i`: $project"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $projectlist.count
+                    [int]$projselection = Read-Host "Please select a project (1-$listmax)"
+                    if ($projselection -lt 1 -or $projselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $projectname = $projectlist.name[($projselection - 1)]
+            }
+            else {
+                While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
+            }
+            
+        }
+
+
+        # zone
+        if (!($zone))
+        {
+            if ($zonelist.name)
+            {
+                write-host ""
+                write-host "Zone Name Selection"
+                write-host ""
+                $i = 1
+                foreach ($zon in $zonelist.name)
+                { 
+                    Write-Host -Object "$i`: $zon"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $zonelist.count
+                    [int]$zonselection = Read-Host "Please select a zone (1-$listmax)"
+                    if ($zonselection -lt 1 -or $zonselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $zone =  $zonelist.name[($zonselection - 1)]
+            }
+            else 
+            {
+                While ($true)  { if ($zone -eq "") { [string]$zone= Read-Host "Zone" } else { break } }
+            }
+        }
+
+        # learn name of new VM
+        if (!($instancename))
+        {
+            write-host ""
+            While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+        }
+
+        # machine type
+        if (!($machinetype))
+        {
+            if ($machinetypelist.name)
+            {
+                $displayname  = ($machinetypelist| where-object { $_.selected -eq $true }).displayName
+                write-host ""
+                Write-Host "Machine type selection"
+                Write-Host "1`: Use $displayname (default)"
+                Write-Host "2`: Select a different type"
+                Write-Host ""
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq 2) 
+                {
+                    write-host ""
+                    write-host "Machine Type Selection"
+                    write-host ""
+                    $i = 1
+                    foreach ($machine in $machinetypelist.displayName)
+                    { 
+                        Write-Host -Object "$i`: $machine"
+                        $i++
+                    }
+                    While ($true) 
+                    {
+                        Write-host ""
+                        $listmax = $machinetypelist.count
+                        [int]$machselection = Read-Host "Please select a machine type (1-$listmax)"
+                        if ($machselection -lt 1 -or $machselection -gt $listmax)
+                        {
+                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                    $machinetype =  $machinetypelist.name[($machselection - 1)]
+                }
+                else
+                {  
+                    $machinetype = ($machinetypelist| where-object { $_.selected -eq $true }).name 
+                }
+            }
+            else 
+            {
+                While ($true)  { if ($machinetype -eq "") { [string]$machinetype= Read-Host "Machine Type" } else { break } }
+            }
+        }
+
+        # service account
+        if (!($serviceaccount))
+        {
+            if ($serviceaccountgrab) 
+            { 
+                write-host ""
+                write-host "Suggested service account (optional): $serviceaccountgrab" 
+            }
+           [string]$serviceaccount= Read-Host "Service Account" 
+  
+        }
+        
+
+        #network tags
+        if (!($networktags))
+        {
+            write-host ""
+            [string]$networktags= Read-Host "Network tags (optional)" 
+        }
+
+        # poweroff after recovery
+        [int]$userselection = ""
+        write-host ""
+        Write-Host "Power on after creation?"
+        Write-Host "1`: Power on after recovery (default)"
+        Write-Host "2`: Power off after recovery"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  $poweronvm = $false  } else {  $poweronvm = $true  } 
+
+    
+        # labels
+        if (!($labels))
+        {
+            write-host ""
+            [string]$labels= Read-Host "Labels (optional).  Separate key and value  with colon, and each pair with a comma, for instance:   pet:cat,food:fish" 
+        }
+
+
+        #networks
+
+        write-host ""
+        Write-Host "Network Interfaces?"
+        Write-Host "1`: One Nic (default)"
+        Write-Host "2`: Two Nics"
+        Write-Host ""
+        [int]$niccount = Read-Host "Please select from this list (1-2)"
+     
+        write-host ""
+        Write-host "NIC0 settings"
+        Write-Host ""
+
+        if (($projectname -ne $selectedproject) -or ($zone -ne $selectedzone))
+        {
+            if ($projectname -ne $selectedproject) 
+            {
+                foreach ($row in $recoverygrab.fields)
+                {
+                    $row.modified = $false
+                }
+                foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                {
+                    $row.modified = $false
+                }
+                ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
+                (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
+                ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+            }
+            if ($zone -ne $selectedzone)
+            {
+                foreach ($row in $recoverygrab.fields)
+                {
+                    $row.modified = $false
+                }
+                foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                {
+                    $row.modified = $false
+                }
+                ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
+                (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).modified = $true
+                foreach ($row in ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }))
+                {
+                    $row.selected = $false
+                }
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).choices | where-object {$_.name -eq $zone}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+        
+            }
+            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayName
+            $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+        }
+
+        if ($networklist.name)
+        {
+            write-host ""
+            write-host "Network Selection"
+            write-host ""
+            $i = 1
+            foreach ($net in $networklist.displayName)
+            { 
+                Write-Host -Object "$i`: $net"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $networklist.count
+                [int]$netselection = Read-Host "Please select a network (1-$listmax)"
+                if ($netselection -lt 1 -or $netselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if  ($networklist.name.count -eq 1)
+            {
+                $nic0network = $networklist.name
+                $selectednic0network = $networklist.displayName
+            } else {
+                $nic0network = $networklist.name[($netselection - 1)]
+                $selectednic0network = $networklist.displayName[($netselection - 1)]
+            }
+        }
+        else 
+        {
+            While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
+        }
+
+        # if the network changes then the subnets will change
+        if ($selectednic0network -ne $selectednetwork)
+        {
+            if ($recoverygrab.fields)
+            {
+                write-host "Fetching subnet list for nic0"
+                # we need to send a modified packet backto learn the subnets in the users selected network
+                foreach ($row in $recoverygrab.fields)
+                {
+                    $row.modified = $false
+                }
+                ($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).modified = $true
+                ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).modified = $true
+                foreach ($row in (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }))
+                {
+                    $row.selected = $false
+                }
+          
+                (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic0network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                write-host ""
+                $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+                $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+            }
+        }
+        if ($subnetlist.name)
+        {
+            write-host ""
+            write-host "Subnet Selection for nic0"
+            write-host ""
+            $i = 1
+            foreach ($sub in $subnetlist.displayName)
+            { 
+                Write-Host -Object "$i`: $sub"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $subnetlist.name.count
+                [int]$subselection = Read-Host "Please select a network (1-$listmax)"
+                if ($subselection -lt 1 -or $subselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if  ($subnetlist.name.count -eq 1)
+            {
+                $nic0subnet = $subnetlist.name
+            } else {
+                $nic0subnet = $subnetlist.name[($subselection - 1)]
+            }
+        }
+        if (!($nic0subnet))
+        {
+            While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
+        }
+       
+        [int]$userselection = ""
+        Write-Host "NIC0 External IP?"
+        Write-Host "1`: None (default)"
+        Write-Host "2`: Auto Assign"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  [string]$nic0externalip = "auto" }
+        [int]$userselection = ""
+        Write-Host ""
+        Write-Host "NIC0 Internal IP?"
+        Write-Host "1`: Auto Assign (default)"
+        Write-Host "2`: Manual Assign"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) { [string]$nic0internalip = Read-Host "IP address" }
+
+        if ($niccount -eq 2)
+        {
+            write-host ""
+            Write-host "NIC1 settings"
+            Write-Host ""
+            if ($networklist.name)
+            {
+                write-host ""
+                write-host "Network Selection"
+                write-host ""
+                $i = 1
+                foreach ($net in $networklist.displayName)
+                { 
+                    Write-Host -Object "$i`: $net"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $networklist.count
+                    [int]$netselection = Read-Host "Please select a network (1-$listmax)"
+                    if ($netselection -lt 1 -or $netselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                if  ($networklist.name.count -eq 1)
+                {
+                    $nic1network = $networklist.name
+                    $selectednic1network = $networklist.displayName
+                } else {
+                    $nic1network = $networklist.name[($netselection - 1)]
+                    $selectednic1network = $networklist.displayName[($netselection - 1)]
+                }
+            }
+            else 
+            {
+                While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID (mandatory)" } else { break } }
+            }
+            if ($selectednic1network -ne $selectednetwork)
+            {
+                if ($recoverygrab.fields)
+                {
+                    write-host "Fetching subnet list"
+                    # we need to send a modified packet backto learn the subnets in the users selected network
+                    ($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).modified = $true
+                    ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).modified = $true
+                    foreach ($row in (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }))
+                    {
+                        $row.selected = $false
+                    }
+                    (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic1network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                    $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                    write-host ""
+                    $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+                }
+                if ($subnetlist.name)
+                {
+                    write-host ""
+                    write-host "Subnet Selection"
+                    write-host ""
+                    $i = 1
+                    foreach ($sub in $subnetlist.displayName)
+                    { 
+                        Write-Host -Object "$i`: $sub"
+                        $i++
+                    }
+                    While ($true) 
+                    {
+                        Write-host ""
+                        $listmax = $subnetlist.name.count
+                        [int]$subselection = Read-Host "Please select a network (1-$listmax)"
+                        if ($subselection -lt 1 -or $subselection -gt $listmax)
+                        {
+                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                    if  ($subnetlist.name.count -eq 1)
+                    {
+                        $nic1subnet = $subnetlist.name
+                    } else {
+                        $nic1subnet = $subnetlist.name[($subselection - 1)]
+                    }
+                }
+                if (!($nic1subnet))
+                {
+                    While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID (mandatory)" } else { break } }
+                }
+            }
+            else 
+            {
+                While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID (mandatory)" } else { break } }
+            }
+            [int]$userselection = ""
+            Write-Host "NIC1 External IP?"
+            Write-Host "1`: None (default)"
+            Write-Host "2`: Auto Assign"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) {  [string]$nic1externalip = "auto" }
+            [int]$userselection = ""
+            Write-Host ""
+            Write-Host "NIC1 Internal IP?"
+            Write-Host "1`: Auto Assign (default)"
+            Write-Host "2`: Manual Assign"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) { [string]$nic1internalip = Read-Host "IP address" }
+        }
+
+        #disk selection
+        $volumelist = ($recoverygrab.fields | where-object { $_.name -eq "volumes" })
+
+
+        if ($volumelist)
+        {
+            if (!($disktype))
+            {
+                Write-Host ""
+                Write-Host "Disk type Selection"
+                Write-Host "1`: pd-balanced"
+                Write-Host "2`: pd-extreme"
+                Write-Host "3`: pd-ssd"
+                Write-Host "4`: pd-standard"
+                Write-Host ""
+                Write-host ""
+               
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = 4
+                    [int]$diskselection = Read-Host "Please select a disk type (1-$listmax)"
+                    if ($diskselection -lt 1 -or $diskselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                if ($diskselection -eq 1) { $disktype = "pd-balanced" }
+                if ($diskselection -eq 2) { $disktype = "pd-extreme" }
+                if ($diskselection -eq 3) { $disktype = "pd-ssd" }
+                if ($diskselection -eq 4) { $disktype = "pd-standard" }
+            }
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.selected -eq "True")
+                {
+                    $row.selected = ""
+                }
+            }
+            foreach ($row in ($volumelist.children.rows.disktype)) {
+                if ($row.name -eq $disktype)
+                {
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -Force
+                }
+            }
+            $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
+        }
+        #Clear-Host
+        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host ""
+        Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
+        Write-Host -nonewline " -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`"" 
+        if ($serviceaccount) { Write-Host -nonewline " -serviceaccount `"$serviceaccount`"" }
+        if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
+        if ($poweronvm) { Write-Host -nonewline " -poweronvm $poweronvm" }
+        if ($labels) { Write-Host -nonewline " -labels `"$labels`"" } 
+        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network`""}
+        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
+        if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
+        if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
+        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
+        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
+        if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
+        if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
+        if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
+        if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
+        Write-Host ""
+        Write-Host "1`: Run the command now (default)"
+        Write-Host "2`: Show the JSON used to run this command, but don't run it"
+        Write-Host "3`: Write comma separated output.  This will mount the most recently created image for that application"
+        Write-Host "4`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-4)"
+        if ($userchoice -eq 2)
+        {
+            $jsonprint = "yes"
+        }
+        if ($userchoice -eq 4)
+        {
+            return
+        }
+        if ($userchoice -eq 3)
+        {
+            write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
+            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
+            write-host -nonewline ",$poweronvm,$labels,$disktype,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
+            write-host ""
+            return
+        }
+
+    }
+
+
+
 
     if ($disktype)
     {
@@ -137,8 +982,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
         return
     }
 
-    if ($srcid) { $credentialid = $srcid}
-    if (!($credentialid))
+
+    if (!($srcid))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a credential src ID for the new instance with -srcid.  Learn this with Get-AGMCredential"
         return
@@ -210,28 +1055,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
 
     # disktype 
-    if ($disktype)
-    {
+    #if ($disktype)
+    #{
         $disktypegrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
         if (!($disktypegrab.fields))
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find data for image ID $imageid.  Please check this is a valid image ID with Get-AGMImage -id $imageid"
         return
         }
-        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
-            if ($row.selected -eq "True")
-            {
-                $row.selected = ""
+        if ($disktype)
+        {
+            foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumes" }).children.rows.disktype) {
+                if ($row.selected -eq "True")
+                {
+                    $row.selected = ""
+                }
+            }
+            foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumes" }).children.rows.disktype) {
+                if ($row.name -eq $disktype)
+                {
+                    $row | Add-Member -MemberType NoteProperty -Name selected -Value "true" -force
+                }
             }
         }
-        foreach ($row in ($disktypegrab.fields | where-object { $_.name -eq "volumeselection" }).rows.disktype) {
-            if ($row.name -eq $disktype)
-            {
-                $row | Add-Member -MemberType NoteProperty -Name selected -Value "true"
-            }
-        }
-        $diskjson = $gcpdata.fields | where-object { $_.name -eq "volumeselection" } | ConvertTo-json -depth 5 -compress
-    }
+        $diskjson = $disktypegrab.fields | where-object { $_.name -eq "volumes" } | ConvertTo-json -depth 10 -compress
+   # }
 
     if ($retainlabel -eq "true")
     {
@@ -245,7 +1093,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$imageid,[string]$imagena
     }
 
     # cloud credentials
-    $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$credentialid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
+    $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1265,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$srcid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"1"},'
     #project name
     $json = $json + '{"displayName":"PROJECT NAME","name":"project","helpId":1265,"type":"selection","description":"","required":true,"modified":true,"dynamic":true,"choices":[{"displayName":"projectid","name":"' +$projectname +'","selected":true}],"_getchoices":"getAllProjects#handle,cloudcredential","_dependent":["zone","machinetype","networktag","vpc","subnet","privateips","externalip"],"_default":"projectid"},'
     # zone

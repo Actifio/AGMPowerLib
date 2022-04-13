@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.42'
+ModuleVersion = '0.0.0.43'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -76,6 +76,7 @@ RequiredModules = @('AGMPowerCLI')
 FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibActiveImage',
 'Get-AGMLibApplicationID',
+'Get-AGMLibApplianceParameter',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibContainerYAML',
 'Get-AGMLibCredentialSrcID',
@@ -97,6 +98,8 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
 'New-AGMLibFSMount',
+'New-AGMLibGCEConversion',
+'New-AGMLibGCEConversionMulti',
 'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
@@ -113,6 +116,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibVMExisting',
 'Remove-AGMLibMount',
 'Restore-AGMLibMount',
+'Set-AGMLibApplianceParameter',
 'Set-AGMLibImage',
 'Set-AGMLibMSSQLMigrate',
 'Set-AGMLibSLA',
@@ -157,6 +161,11 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.43] 2022-04-13
+        Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
+        Fixed disktype selection in  New-AGMLibGCPInstance  ALso removed option to use -credentialid, you have to use -srcid
+        Add New-AGMLibGCEConversion and New-AGMLibGCEConversionMulti, Set-AGMLibApplianceParameter,  Get-AGMLibApplianceParameter
+
         ## [0.0.0.42] 2022-03-08
         Fixed typo
 

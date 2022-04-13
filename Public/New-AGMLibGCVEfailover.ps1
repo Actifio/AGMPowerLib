@@ -12,11 +12,11 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    phase,sourcevmname,targetvmname,label,targetnetworkname,poweronvm,targetmacaddress
-    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest,true,
-    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest,false,01:50:56:81:11:6b
-    2,Centos1,centos1-rec,phase2,avtest,true,
-    2,Centos2,centos2-red,phase2,avtest,false
+    phase,sourcevmname,targetvmname,label,targetnetworkname,poweronvm,targetmacaddress,onvault,perfoption
+    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest,true,,true,StorageOptimized
+    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest,false,01:50:56:81:11:6b,true,StorageOptimized
+    2,Centos1,centos1-rec,phase2,avtest,true,,true,StorageOptimized
+    2,Centos2,centos2-red,phase2,avtest,false,,true,StorageOptimized
 
 
     #>
@@ -63,7 +63,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
         }
         if ($vcentergrab.counts -gt 1)
         {
-            Get-AGMErrorMessage -messagetoprint "Found too many vCenters, please learn the correct ID and specify it wiht -vcenterid"
+            Get-AGMErrorMessage -messagetoprint "Found too many vCenters, please learn the correct ID and specify it with -vcenterid"
             return;
         }
         $vcenterid = $vcentergrab.id
@@ -139,8 +139,10 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
             else {
                 $mountvmname = $app.sourcevmname
             }
-            $mountcommand = 'New-AGMLibVM -appname ' +$app.sourcevmname  +' -vmname ' +$mountvmname +' -datastore ' +$datastore +' -vcenterid ' +$vcenterid +' -esxhostid ' +$esxhostid +' -mountmode nfs  -onvault true'
+            $mountcommand = 'New-AGMLibVM -appname ' +$app.sourcevmname  +' -vmname ' +$mountvmname +' -datastore ' +$datastore +' -vcenterid ' +$vcenterid +' -esxhostid ' +$esxhostid +' -mountmode nfs'
             if ($app.label) { $mountcommand = $mountcommand + ' -label "' +$app.Label +'"' } 
+            if ($app.onvault) { $mountcommand = $mountcommand + ' -onvault "' +$app.onvault +'"' } 
+            if ($app.perfoption) { $mountcommand = $mountcommand + ' -perfoption "' +$app.perfoption +'"' }
             # if user asked for a MAC address, then we better keep power off the VM
             if ($app.targetmacaddress.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "false"' }
             elseif ($app.poweronvm.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 

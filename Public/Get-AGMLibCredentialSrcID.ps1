@@ -27,19 +27,30 @@ Function Get-AGMLibCredentialSrcID
        return
    }
    
-   $credentialgrab = Get-AGMCredential  | Select-Object sources
+   $credentialgrab = Get-AGMCredential  
    if ($credentialgrab.sources)
-   {
-        $printarray = @()
-       foreach ($source in $credentialgrab.sources)
-       {
-            $appliancename = $source.appliance 
-            $printarray += [pscustomobject]@{
-                credentialname = $source.name
-                appliancename = $appliancename.name
-                srcid = $source.srcid
+    {
+        $credarray = @()
+        foreach ($credential in $credentialgrab)
+        {
+            foreach ($source in $credential.sources)
+            {
+                $appliancename = $source.appliance 
+                $credarray += [pscustomobject]@{
+                    appliancename = $appliancename.name
+                    applianceid = $appliancename.clusterid
+                    credentialname = $source.name
+                    credentialid = $credential.id
+                    srcid = $source.srcid
+                }
             }
-       }
-   }
-   $printarray | Sort-Object credentialname,appliancename
+        }
+    }
+   $credarray | Sort-Object appliancename,credentialname
 }
+
+
+
+
+
+

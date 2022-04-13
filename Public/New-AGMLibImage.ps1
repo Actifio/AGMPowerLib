@@ -97,7 +97,6 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$backuptype,[
 
     if (!($policyid))
     {     
-        $jobclass = "snapshot"
         $appgrab = Get-AGMApplication -filtervalue appid=$appid 
         $sltid = $appgrab.sla.slt.id
         if (!($sltid))
@@ -185,7 +184,7 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$backuptype,[
                 $i=9
                 if ($monitor)
                 {
-                    $jobgrab| select-object jobname,status,progress,queuedate,startdate,duration,targethost | ft *
+                    $jobgrab| select-object jobname,status,progress,queuedate,startdate,duration,targethost | Format-Table *
                 }
                 else 
                 {

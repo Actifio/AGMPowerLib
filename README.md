@@ -15,6 +15,10 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
+**[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
+**[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 
 
@@ -628,11 +632,11 @@ Start-AGMLibPolicy
 ```
 We then run our command, for instance:
 ```
-PS /home/avw_google_com> Start-AGMLibPolicy -policyid 6393 -backuptype dblog
+PS > Start-AGMLibPolicy -policyid 6393 -backuptype dblog
 Starting job for hostname: mysqlsource   appname: mysqlsource   appid: 51919 using: snap policyID: 6393 from SLTName: PDSnaps
 Starting job for hostname: mysqltarget   appname: mysqltarget   appid: 36104 using: snap policyID: 6393 from SLTName: PDSnaps
 Starting job for hostname: tiny   appname: tiny   appid: 35590 using: snap policyID: 6393 from SLTName: PDSnaps
-PS /home/avw_google_com>
+PS >
 ```
 We can then monitor the jobs like this:
 ```
@@ -1042,11 +1046,39 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
-## User Story: Persistent Disk Snapshots
 
-In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.
+## User Story: Creating GCE Instance from PD Snapshots
+
+In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
+
+This command requires several inputs so first we explore how to get them.
 
 ### Creating a single GCE Instance from Snapshot
+
+The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCPInstance** command without any parameters.
+This starts what we called *guided mode* which will help you learn all the syntax to run the command.
+The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you will get several choices:
+
+1. Run the command
+1. Print out a simple command to run later.   Note you may want to edit this command as we explain in the next section.
+1. Print out a sample CSV file to use with  **New-AGMLibGCPInstanceMultiMount**
+
+#### Determining which image is used for the mount
+
+The sample command printed by guidedmode has an imageid, an appid and an appname. Consider:
+```
+-appid       If you specify this, then the most recent image for that app will be mounted.  This is the most exact choice to get the latest image.
+-appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   If the appname is not unique, then you will need to switch to appid.
+-imageid     If you specify this, then this image will be mounted. You will need to learn this imageid before you run the command.
+-imagename   If you specify this, then this image will be mounted. You will need to learn this imagename before you run the command.
+```
+In general the best choice is **-appid** as it saves you having to work out the imageid or imagename and gives you the most recent image (for the best RPO), 
+If constructing a CSV file for multi mount you always need to specify the appname, even if you are using the appid.  This is to ensure we can identify the source app.
+
+#### Manually constructing output
+
+If you want to manually construct the output, or get some variables to tweak the output, consider the following tips:
 
 To learn which Applications are suitable use this command:
 ```
@@ -1066,8 +1098,7 @@ There are many parameters that need to be supplied:
 -appid           The application ID of the source GCP Instance you want to mount.  If you use this you don't need to specify an image ID or name.   It will use the latest snapshot of that application.
 -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
 -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
--credentialid    This has been replaced with -srcid    If you use -credentialid it will continue to work but ideally switch to -srcid
--srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application.  Note this parameter replaced -credentialid
+-srcid           Learn this with Get-AGMLibCredentialSrcID.   You need to use the correct srcid that matches the appliance that is protecting the application. 
 -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential (which is the preferred method)
 -projectname     This is the unique Google Project name 
 -zone            This is the GCP Zone such as: australia-southeast1-c
@@ -1095,12 +1126,18 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 -disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
 You can specify any labels you want to supply for this new GCE VM with -label, for instance:
+
  **-label "pet:cat,drink:milk"**
+
 However if you add **-retainlabel true** then any labels that were used the GCE Instance when the snapshot was created will be applied to the new VM.
-Lets imagine the original VM had a label:  
+Lets imagine the original VM had a label:
+
 **bird:parrot** 
+
 and we specify the following:   
+
 **-retainlabel true -label "pet:cat,drink:milk"**  
+
 then the new VM will have all three labels (the two new ones and the retained one from the original VM).
 
 This brings us to a command like this one:
@@ -1108,63 +1145,301 @@ This brings us to a command like this one:
 New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -retainlabel true
 ```
 
-### Performing a multi-mount from file
 
-We can take our command to create a new GCP VM and store the parameters needed in a CSV file.  Here is an example of the CSV file:
+## User Story: GCE Disaster Recovery using GCE Instance PD Snapshots
+
+### GCE to GCE configuration
+
+The expected configuration in this scenario is that the end-user wants to recover workloads from one GCP zone into another one:
+
+| Production Site  | DR Site |
+| ------------- | ------------- |
+| GCP Zone | GCP Zone |
+
+The goal is to offer a simplified way to manage failover or failback where:
+* The backup mechanism is persistent disk snapshots
+* The images are created by a Backup Appliance in an alternate zone
+* DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
+
+### GCE to GCE CSV file
+
+In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  
+
+What we can do is store the parameters needed to run that command in a CSV file.  
+We can generate the CSV file by running **New-AGMLibGCPInstance** in guided mode.
+We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV file.
+
+Here is an example of the CSV file:
 ```
-appid,credentialid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
+appid,srcid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
 35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,, ,,,,pd-balanced,TRUE,TRUE
 51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/australia,auto,10.186.0.200,,,,
 36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,https://www.googleapis.com/compute/v1/projects/prodproject1/global/networks/default,https://www.googleapis.com/compute/v1/projects/prodproject1/regions/australia-southeast1/subnetworks/default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
 ```
-The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command.
+The main thing is the headers in the CSV file needs to be exactly as shown, as they are the parameters we pass to the command (although the field order is not important).
 We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs in series.
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  They will run in parallel but be started serially.
  
+If you specify both appid and appname, then the appname column will be ignored.  However having appname is mandatory as it gives you the name of the source application.
+
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
-    
-If you need either of these, please open an issue in Github.
 
-#### Maximum slot counts and mount jobs
+#### Monitoring the jobs created by a multi mount by creating an object
 
-The Appliance running the mount jobs may hit a slot limit, which means that you may see a case where mount jobs go into queued status waiting for free slots.   To resolve this we need to use Appliance PowerShell which can be found here:
+When you run a multimount, by default all jobs will run before any output is printed.   What we output is a nicely formatted object listing each line in the CSV, the app details, the command that was run and the results.  
 
-https://github.com/Actifio/ActPowerCLI/
-
-The method to change slots is here:
-
-https://github.com/Actifio/ActPowerCLI/blob/main/README.md#slot-management
-
-Specifically you will need to use:
-
-https://github.com/Actifio/ActPowerCLI/blob/main/README.md#mount-job-slot-command
-
-Validate the slot counts for ondemand jobs (this is Appliance CLI, which needs PowerShell Module ActPowerCLI):
+The best way to manage this is to load this output into your own object, so do something like this:
 ```
-udsinfo getparameter -param reservedondemandslots
-udsinfo getparameter -param maxondemandslots
+$newrun = New-AGMLibGCPInstanceMultiMount -instancelist april12test1.csv
 ```
-Set the slot counts to larger values like this:
+Then display the output like this:
 ```
-udstask setparameter -param reservedondemandslots -value 10
-udstask setparameter -param maxondemandslots -value 15
+PS > $newrun
+```
+You can then find all the jobs that didn't start like this:
+```
+PS > $newrun | where-object {$_.result -ne "started"}
+```
+Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
+```
+($newrun | where-object {$_.result -ne "started"}).command
+```
+
+
+#### Monitoring the jobs created by a multi mount by realtime output to the screen
+If you just want to see the status output as each job is run, then add **-textoutput**
+
+The output will look like this:
+```
+PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+
+The following command encountered this error:       Instance Name already in use
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.project1.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+
+PS >
+```
+
+## User Story: Creating GCE Instance from VMware Snapshots
+
+In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the **New-AGMLibGCEConversion** command.
+
+This command requires several inputs so first we explore how to get them.
+
+### Creating a single GCE Instance from VMware/System State Backup
+
+The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCEConversion** command without any parameters.
+This starts what we called *guided mode* which will help you learn all the syntax to run the command.
+The guided menus will ask questions in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you will get several choices:
+
+1. Run the command there and then
+1. Print out a simple command to run later.   Note you may want to edit this command as we explain in a moment.
+1. Print out a sample CSV file to use with  **New-AGMLibGCEConversionMulti**
+
+#### Determining which image is used for the mount
+
+The sample command printed by guidedmode has an imageid, an appid and an appname. Consider:
+```
+-appid       If you specify this, then the most recent image for that app will be mounted.  This is the most exact choice to get the latest image.
+-appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   If the appname is not unique, then you will need to switch to appid.
+-imageid     If you specify this, then this image will be mounted. You will need to learn this imageid before you run the command.
+-imagename   If you specify this, then this image will be mounted. You will need to learn this imagename before you run the command.
+```
+In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO).
+If constructing a CSV file for multi mount you always need to include the **appname**, even if you are using the **appid**.  This is to ensure we can identify the source app.
+
+#### Manually constructing output
+
+If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+
+To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances when using OnVault backups).
+```
+Get-AGMLibCredentialSrcID
+```
+To learn the AppIDs use this command (note the ApplianceName is where the images were created, in other words the source appliance, not the one running the mount):
+```
+Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup" | select id,appname,@{N='appliancename'; E={$_.cluster.name}} | sort-object appname
+```
+To learn the image ID or image name, you could use this command (change jobclass to snapshot or StreamSnap if needed):
+```
+Get-AGMImage -filtervalue "apptype=SystemState&apptype=VMBackup&jobclass=OnVault" | select appname,id,name,consistencydate,@{N='diskpoolname'; E={$_.diskpool.name}} | sort-object appname,consistencydate | format-table
+```
+
+There are many parameters that may need to be supplied:
+```
+-appid           The application ID of the source VMWare VM or System State you want to mount.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+-appname         The application name of the source VMWare VM or System State you want to mount.  This needs to be unique.  If you use this you don't need to specify an image ID or imagename.   It will use the latest image of that application.
+-imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+-imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image).  To avoid using this, you can specify -appid or -appname instead
+-srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is going to run the mount.
+-serviceaccount  The service account.
+-projectname     This is the unique Google Project name where the new instance will be created.
+-sharedvpcprojectid  If the instance is being created in a service project, what is the ID the project that is sharing the VPC (optional)
+-nodegroup       If creating an instance into a sole tenant node group, this is the name of the node group (optional)
+-region          This is the GCP Region such as:   australia-southeast1
+-zone            This is the GCP Zone such as: australia-southeast1-c
+-instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
+-machinetype     This is the GCP instance machine type such as:  e2-micro
+-networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
+-labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
+-nic0network     The network name in URL format for nic0
+-nic0subnet      The subnet name in URL format for nic0
+-nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
+-nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
+-poweroffvm      By default the new GCE Instance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
+-migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all data onto GCE PD, then specify this flag.
+-preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
+```
+Optionally you can request a second NIC using nic1:
+```
+-nic1network     The network name in URL format for nic1
+-nic1subnet      The subnet name in URL format for nic1
+-nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
+-nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
+```
+Optionally you can specify that all disks be a different type:
+```
+-disktype        Has to be one  of pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
+```
+This bring us to command like this one:
+```
+New-AGMLibGCEConversion -imageid 56410933 -srcid 1234 -region australia-southeast1 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweroffvm 
+```
+
+What is not supported right now:
+1)  Specifying more than one internal IP per subnet.
+2)  Specifying different disk types per disk
+
+If you get timeouts, then increase the timeout value with **-timeout 60** when running connect-agm
+
+## User Story: GCE Disaster Recovery using VMware VM Snapshots
+
+### VMware to GCE configuration
+
+The expected configuration in this scenario is that the end-user will be looking to recover workloads from VMware into a GCP Zone
+
+| Production Site  | DR Site |
+| ------------- | ------------- |
+| VMware | GCP Zone |
+
+The goal is to offer a simplified way to manage failover from Production to DR where:
+* The backup mechanism is to use VMware snapshots or System State backup
+* These images are created by an on-premises Backup Appliance and then replicated into cloud either in an OnVault pool or via StreamSnap.
+* DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
+* You may need to first run an OnVault import using this method: https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
+
+The best way to create the syntax for this command, at least for the first time you run it,  simply run the **New-AGMLibGCEConversion** command without any parameters.
+This starts what we called *guided mode* which will help you create the command.
+The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The end result is you wil get two choices:
+
+1. Print out a simple command
+1. Print out a sample CSV file to use with  **New-AGMLibGCEConversionMulti**
+
+If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
+
+
+### VMware to GCE CSV file
+
+We can take the **New-AGMLibGCEConversion** command to create a new GCP VM and store the parameters needed to run that command in a CSV file. 
+
+If the applications are not yet imported you can use the appname  field provided the VMnames are unique.
+Here is an example of the CSV file:
+```
+srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
+391360,296433,"Centos2","project1","hostproject1","europe-west2","europe-west2-a","newvm1","n1-standard-2","systemstaterecovery@project1.iam.gserviceaccount.com","nodegroup1","https-server",False,True,status:failover,onvault,pd-standard,https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/project1/global/networks/default,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,,  
+       
+```
+The main thing is the headers in the CSV file needs to be exactly as shown as they are the parameters we pass to the command (although the order is not important).
+We can then run a command like this specifying our CSV file:
+```
+New-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
+```
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
+   
+What is not supported right now:
+
+1.  Specifying more than one internal IP per subnet.
+1.  Specifying different disk types per disk
+1.  More than two NICS per instance
+
+#### Monitoring the jobs created by a multi mount by creating an object
+
+When you run a multimount, by default all jobs will run before any output is printed.   What we output is a nicely formatted object listing each line in the CSV, the app details, the command that was run and the results.  
+
+The best way to manage this is to load this output into your own object, so do something like this:
+```
+$newrun = New-AGMLibGCEConversionMulti -instancelist april12test1.csv
+```
+Then display the output like this:
+```
+PS > $newrun
+
+appname : Centos3
+appid   :
+result  : started
+message : Job_0866903Optional[Job_0866903] to mount londonsky.c.project1.internal_Image_0499948 started
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+
+appname : centos2
+appid   :
+result  : failed
+message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+```
+You can then find all the jobs that didn't start like this:
+```
+PS > $newrun | where-object {$_.result -ne "started"}
+
+appname : centos2
+appid   :
+result  : failed
+message : Failed to resolve centos2 to a unique valid VMBackup or System State app.  Use Get-AGMLibApplicationID and try again specifying -appid
+command : New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos2" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid
+          "391360" -appname "centos2" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+```
+Once you understand the error you can manually learn the command like this, so you can edit it and run it manually:
+```
+($newrun | where-object {$_.result -ne "started"}).command
+```
+
+
+#### Monitoring the jobs created by a multi mount by creating an object
+If you want to just see the output as each job is run, then add **-textoutput**
+
+The output will look like this:
+```
+PS >  New-AGMLibGCEConversionMulti -instancelist april12test1.csv -textoutput
+
+The following command encountered this error:       Instance Name already in use
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos1" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos1" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+
+The following command started this job:  Job_0867154Optional[Job_0867154] to mount londonsky.c.project1.internal_Image_0499948 started
+New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instancename "apr12test1centos3" -nic0network "https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz" -nic0subnet "https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/australia" -region "australia-southeast1" -zone "australia-southeast1-a" -srcid "391360" -appname "Centos3" -serviceaccount "systemstaterecovery@project1.iam.gserviceaccount.com" -preferedsource onvault
+
+PS >
 ```
 
 ### Managing the mounted GCE Instance 
 
-Once we have created a new GCP Instance, there is no dependency on Actifio because the disks for the instance were created from the snapshots stored in Google Cloud Storage, rather than an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
+Once we have created a new GCP Instance from PD snapshot, there is no dependency on Actifio because the disks for the instance are all Persistent Disks rather than shared disks from an Actifio Storage Pool,  but the mount is still shown as an Active Image, which means it needs to be managed.   We can see the Active Images with this command:
 ```
 PS /tmp/agmpowercli> Get-AGMLibActiveImage
 
 imagename        : Image_0021181
 apptype          : GCPInstance
-appliancename    : avwlab2sky
+appliancename    : project1sky
 hostname         : windows
 appname          : windows
 mountedhost      : avrecovery4
@@ -1187,6 +1462,90 @@ PS /tmp/agmpowercli>
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
+```
+### Appliance Slots and how they are used to control the number of running jobs
+
+The Appliance running your jobs may hit a slot limit, which means that you may see a case where jobs go into queued status waiting for free slots.   
+
+To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
+
+Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **project1sky** so we will use applianceid **361153**
+```
+PS > Get-AGMAppliance | select id,name
+
+id     name
+--     ----
+361153 project1sky
+296357 londonsky.c.project1.internal
+```
+Now depending on which job type, we modify different slots.
+#### Slot limits for mount jobs
+We need to learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
+* **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
+* **maxondemandslots** This controls the maximum number of ondemand jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Here is an example:
+```
+PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+
+reservedondemandslots
+---------------------
+3
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
+```
+Here is an example:
+```
+PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+
+reservedondemandslots changed from 3 to 10
+```
+#### Slot limits for OnVault jobs
+We need to learn the current value of the params that relate to **onvault** slots.  Note this is listed as **vault**
+* **reservedvaultslots** This is the guaranteed number of OnVault jobs that can run at any time.  
+* **maxvaultslots** This controls the maximum number of OnVault jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
+```
+#### Slot limits for snapshot jobs
+We need to learn the current value of the params that relate to **snapshot** slots.
+* **reservedsnapslots** This is the guaranteed number of snapshot jobs that can run at any time.  
+* **maxsnapslots** This controls the maximum number of snapshot jobs that can run at any time.  
+* **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
+
+We learn the values with:
+```
+Get-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
+```
+Set the slot counts to larger values like this:
+```
+Set-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
 ## User Story: Importing and Exporting AGM Policy Templates
 

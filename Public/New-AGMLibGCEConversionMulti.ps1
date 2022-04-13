@@ -1,29 +1,30 @@
-Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textoutput) 
+Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput) 
 {
     <#
     .SYNOPSIS
-    Uses a pre-prepared CSV list of GCP Instance data to create many new GCP Instances
+    Uses a pre-prepared CSV list of GCP Instance data to create many new GCP Instances from System State or VMware VM backups
 
     .EXAMPLE
-    New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
+    New-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 
-    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCPInstance jobs
+    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCEConversion jobs
 
     .EXAMPLE
-    New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv -textoutput
+    New-AGMLibGCEConversionMulti -instancelist recoverylist.csv -textoutput
 
-    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCPInstance jobs
+    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibGCEConversion jobs
     Rather than wait for all jobs to be attemped before reporting status, a report will be displayed after each job is attempted.
 
     .DESCRIPTION
-    This routine needs a well formatted CSV file.    Here is an example of such a file:
+    This routine needs a well formatted CSV file. The column order is not important.    
+    Here is an example of such a file:
 
-    srcid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
-    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
- 
-    If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
+    srcid,appid,appname,projectname,sharedvpcprojectid,region,zone,instancename,machinetype,serviceaccount,nodegroup,networktags,poweroffvm,migratevm,labels,preferedsource,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
+    391360,296433,"Centos2","project1","hostproject1","europe-west2","europe-west2-a","newvm1","n1-standard-2","systemstaterecovery@project1.iam.gserviceaccount.com","nodegroup1","https-server",False,True,status:failover,onvault,pd-standard,https://www.googleapis.com/compute/v1/projects/project1/global/networks/actifioanz,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,auto,,https://www.googleapis.com/compute/v1/projects/project1/global/networks/default,https://www.googleapis.com/compute/v1/projects/project1/regions/europe-west2/subnetworks/default,,  
+    
+    If you specify both appanme and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
+
+    Note that the the labels and networktags fields can contain commas, so need to be double quoted to ensure they do no escape the wrong field
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -61,8 +62,17 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     if ($recoverylist.instancename -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: instancename" ;return }
     if ($recoverylist.nic0network -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0network" ;return }
     if ($recoverylist.nic0subnet -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: nic0subnet" ;return }
+    if ($recoverylist.region -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: region" ;return }
     if ($recoverylist.zone -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: zone" ;return }
     if (($recoverylist.appname -eq $null) -and ($recoverylist.appid -eq $null))  {  Get-AGMErrorMessage -messagetoprint "Could not find either appid or appname columns" ; return }
+
+
+    write-host ""
+    if (!($textoutput))
+    {
+        $printarray = @()
+    }
+
 
     # dry run for srcid and appname
     $row =1
@@ -77,41 +87,38 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
         if ($app.appname -eq "")  { write-host "The following mandatory value is missing: appname row $row" ; return}
         $row += 1
     }
+    
 
 
-    write-host ""
-    if (!($textoutput))
-    {
-        $printarray = @()
-    }
+
     foreach ($app in $recoverylist)
     {
-    
-        $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
-        if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
-        if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+
+        $mountcommand = 'New-AGMLibGCEConversion -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename "' +$app.instancename +'" -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
+        $mountcommand = $mountcommand + ' -region "' +$app.region +'"' 
+        $mountcommand = $mountcommand + ' -zone "' +$app.zone +'"' 
+        $mountcommand = $mountcommand + ' -srcid "' +$app.srcid +'"' 
+        if (($app.appname) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if (($app.appname) -and (!($app.appid))) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+        if ((!($app.appname)) -and ($app.appid)) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+        if ($app.sharedvpcprojectid) { $mountcommand = $mountcommand + ' -sharedvpcprojectid "' +$app.sharedvpcprojectid +'"' } 
+        if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"' } 
+        if ($app.nodegroup) { $mountcommand = $mountcommand + ' -nodegroup "' +$app.nodegroup +'"' } 
         if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
-        if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 
         if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
+        if ($app.poweronvm -eq "true") { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
+        if ($app.migratevm -eq "true") { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
+        if ($app.preferedsource) { $mountcommand = $mountcommand + ' -preferedsource ' +$app.preferedsource } 
+        if ($app.disktype) { $mountcommand = $mountcommand + ' -disktype ' +$app.disktype } 
         if ($app.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$app.nic0externalip } 
         if ($app.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$app.nic0internalip } 
         if ($app.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$app.nic1network +'"'} 
         if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
         if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
-        if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip } 
-        if ($app.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$app.nic2network +'"'} 
-        if ($app.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$app.nic2subnet +'"'} 
-        if ($app.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$app.nic2internalip } 
-        if ($app.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$app.nic2externalip } 
-        if ($app.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$app.nic3network +'"'} 
-        if ($app.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$app.nic3subnet +'"'} 
-        if ($app.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$app.nic3internalip } 
-        if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
-        if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
-        if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
+        if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip }         
 
         $runcommand = Invoke-Expression $mountcommand 
-       
+        
         if ($runcommand.errormessage)
         { 
             if ($textoutput)
@@ -126,7 +133,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                     appid = $app.appid
                     instancename = $app.instancename
                     result = "failed"
-                    message = $runcommand.errormessage.Trim() 
+                    message = $runcommand.errormessage.Trim()
                     command =  $mountcommand }
             }
         }
@@ -180,6 +187,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
+                    instancename = $app.instancename
                     result = "unknown"
                     command =  $mountcommand }
             }
