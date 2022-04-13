@@ -126,7 +126,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                     appid = $app.appid
                     instancename = $app.instancename
                     result = "failed"
-                    message = $runcommand.errormessage 
+                    message = $runcommand.errormessage.Trim() 
                     command =  $mountcommand }
             }
         }
@@ -144,7 +144,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                     appid = $app.appid
                     instancename = $app.instancename
                     result = "failed"
-                    message = $runcommand.err_message
+                    message = $runcommand.err_message.Trim()
                     errorcode = $runcommand.err_code 
                     command =  $mountcommand }
             }
