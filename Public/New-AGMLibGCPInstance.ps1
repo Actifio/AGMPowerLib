@@ -156,8 +156,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         # Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-2)"
-        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&clusterid=$mountapplianceid" | sort-object appname }
-        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=GCPInstance&clusterid=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
         # if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.id.count -eq 0)
         {
