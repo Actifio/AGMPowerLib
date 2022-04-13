@@ -162,7 +162,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.44] 2022-04-13
-        
+        Remove spurious information from job details when runninng New-AGMLibGCEConversion and New-AGMLibGCPInstance, corrected issue with image count when 1 image is found in New-AGMLibGCEConversion
 
         ## [0.0.0.43] 2022-04-13
         Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well

@@ -327,7 +327,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                 {
                     $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
                 }
-                if ($imagegrab.count -eq 1)
+                if ($imagegrab.id.count -eq 1)
                 {   
                     $consistencydate = $imagegrab.consistencydate
                     $jobclass = $imagegrab.jobclass
@@ -409,7 +409,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                 While ($true) 
                 {
                     Write-host ""
-                    $listmax = $imagelist.Length
+                    $listmax = $imagelist.count
                     [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
                     if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
                     {
