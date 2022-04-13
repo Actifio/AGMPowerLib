@@ -151,6 +151,7 @@ Start-AGMLibWorkflow
 #### FileSystem Mounts:
 ```
 New-AGMLibFSMount
+New-AGMLibVMExisting 
 ```
 #### New GCE Instances:
 ```
@@ -166,7 +167,6 @@ New-AGMLibAzureVM
 ```
 New-AGMLibSystemStateToVM
 New-AGMLibVM 
-New-AGMLibVMExisting 
 ```
 
 ## User Story: Database Mounts
