@@ -3,7 +3,7 @@
 A Powershell module that allows PowerShell users to issue complex API calls to Actifio Global Manager. This module contains what we call composite functions, these being complex combination of API endpoints.  
 
 ### Table of Contents
-**[Prerequisites](#prerequisite)**<br>
+**[Prerequisites](#prerequisites)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
 **[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
@@ -14,7 +14,6 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
-**[User Story: Persistent Disk Snapshots](#user-story-persistent-disk-snapshots)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
