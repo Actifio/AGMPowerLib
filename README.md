@@ -1215,8 +1215,8 @@ Once you understand the error you can manually learn the command like this, so y
 ```
 
 
-#### Monitoring the jobs created by a multi mount by creating an object
-If you want to just see the output as each job is run, then add **-textoutput**
+#### Monitoring the jobs created by a multi mount by realtime output to the screen
+If you just want to see the status output as each job is run, then add **-textoutput**
 
 The output will look like this:
 ```
@@ -1242,11 +1242,11 @@ In this user story we are going to use VMware VM snapshots (or system state back
 
 This command requires several inputs so first we explore how to get them.
 
-### Creating a single GCE Instance from Snapshot
+### Creating a single GCE Instance from VMware/System State Backup
 
 The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCEConversion** command without any parameters.
 This starts what we called *guided mode* which will help you learn all the syntax to run the command.
-The guided menus will appear in roughly the same order as the menus appear in the AGM Web GUI.
+The guided menus will ask questions in roughly the same order as the menus appear in the AGM Web GUI.
 The end result is you will get several choices:
 
 1. Run the command there and then
@@ -1263,13 +1263,13 @@ The sample command printed by guidedmode has an imageid, an appid and an appname
 -imagename   If you specify this, then this image will be mounted. You will need to learn this imagename before you run the command.
 ```
 In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO).
-If constructing a CSV file for multi mount you always need to specify the appname, even if you are using the appid.  This is to ensure we can identify the source app.
+If constructing a CSV file for multi mount you always need to include the **appname**, even if you are using the **appid**.  This is to ensure we can identify the source app.
 
 #### Manually constructing output
 
 If you want to manually construct the output, or get some variables to tweak the output consider the following tips:
 
-To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances).
+To learn which Cloud Credential srcids are available use the following command.  Note that this is appliance specific, so when you specify a srcid you are specifing a service account that is stored on a specific appliance.  This means if you want to split the workload across multiple appliances, then you can do this by using the relevant srcid of each appliance (although this also need the relevant applications to be imported into the relative appliances when using OnVault backups).
 ```
 Get-AGMLibCredentialSrcID
 ```
