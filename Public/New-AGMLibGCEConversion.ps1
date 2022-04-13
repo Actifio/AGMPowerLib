@@ -411,9 +411,9 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                     Write-host ""
                     $listmax = $imagelist.id.count
                     [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                    if ($imageselection -lt 1 -or $imageselection -gt $listmax)
                     {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                     } 
                     else
                     {
