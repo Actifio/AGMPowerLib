@@ -166,38 +166,36 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             # if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
-        if ($vmgrab.count -eq 1)
+        
+        write-host ""
+        write-host "VM Selection menu"
+        Write-host ""
+        $i = 1
+        foreach ($vm in $vmgrab)
+        { 
+            Write-Host -Object "$i`: $($vm.appname) ($($vm.apptype) AppID $($vm.id)) on $($vm.cluster.name)"
+            $i++
+        }
+        While ($true) 
+        {
+            Write-host ""
+            $listmax = $vmgrab.appname.count
+            [int]$vmselection = Read-Host "Please select an application (1-$listmax)"
+            if ($vmselection -lt 1 -or $vmselection -gt $listmax)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+            } 
+            else
+            {
+                break
+            }
+        }
+        if ($vmgrab.id.count -eq 1)
         {
             $appname =  $vmgrab.appname
             $appid = $vmgrab.id
-            write-host "Found one app $appname"
-            write-host ""
         }
-        else
-        {
-            Clear-Host
-            write-host "VM Selection menu"
-            Write-host ""
-            $i = 1
-            foreach ($vm in $vmgrab)
-            { 
-                Write-Host -Object "$i`: $($vm.appname) ($($vm.apptype) AppID $($vm.id)) on $($vm.cluster.name)"
-                $i++
-            }
-            While ($true) 
-            {
-                Write-host ""
-                $listmax = $vmgrab.appname.count
-                [int]$vmselection = Read-Host "Please select an application (1-$listmax)"
-                if ($vmselection -lt 1 -or $vmselection -gt $listmax)
-                {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                } 
-                else
-                {
-                    break
-                }
-            }
+        else {
             $appname =  $vmgrab.appname[($vmselection - 1)]
             $appid = $vmgrab.id[($vmselection - 1)]
         }
@@ -322,11 +320,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 While ($true) 
                 {
                     Write-host ""
-                    $listmax = $imagelist.Length
+                    $listmax = $imagelist.id.count
                     [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                    if ($imageselection -lt 1 -or $imageselection -gt $listmax)
                     {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                     } 
                     else
                     {
@@ -1317,6 +1315,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     {
         $invalid = (($newgcp.fields | Select-Object children).children | Select-Object invalid).invalid
         Get-AGMErrorMessage -messagetoprint $invalid
+    }
+    elseif ($newgcp.jobstatus) 
+    {
+        $newgcp.jobstatus = $newgcp.jobstatus.replace('Optional',' ')
+        $newgcp | select-object jobstatus
     }
     else {
         $newgcp
