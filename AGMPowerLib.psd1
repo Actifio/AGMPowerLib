@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.43'
+ModuleVersion = '0.0.0.44'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -161,6 +161,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.44] 2022-04-13
+        
+
         ## [0.0.0.43] 2022-04-13
         Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
         Fixed disktype selection in  New-AGMLibGCPInstance  ALso removed option to use -credentialid, you have to use -srcid

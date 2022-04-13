@@ -1260,6 +1260,11 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         $invalid = (($newgcp.fields | Select-Object children).children | Select-Object invalid).invalid
         Get-AGMErrorMessage -messagetoprint $invalid
     }
+    elseif ($newgcp.jobstatus) 
+    {
+        $newgcp.jobstatus = $newgcp.jobstatus.replace('Optional',' ')
+        $newgcp | select-object jobstatus
+    }
     else {
         $newgcp
     }
