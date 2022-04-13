@@ -152,16 +152,22 @@ Start-AGMLibWorkflow
 ```
 New-AGMLibFSMount
 ```
-#### New VM mounts:
+#### New GCE Instances:
+```
+New-AGMLibGCEConversion
+New-AGMLibGCPInstance
+```
+#### New Other VMs
 ```
 New-AGMLibAWSVM
 New-AGMLibAzureVM
-New-AGMLibGCPVM
+```
+#### New VMWave VMs:
+```
 New-AGMLibSystemStateToVM
 New-AGMLibVM 
 New-AGMLibVMExisting 
 ```
-
 
 ## User Story: Database Mounts
 Here are some user stories for Database mounts
