@@ -409,7 +409,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                 While ($true) 
                 {
                     Write-host ""
-                    $listmax = $imagelist.count
+                    $listmax = $imagelist.id.count
                     [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
                     if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
                     {
