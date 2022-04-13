@@ -1066,14 +1066,15 @@ The end result is you will get several choices:
 
 #### Determining which image is used for the mount
 
-The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
+The sample command printed by guidedmode has an imageid, an appid and an appname. Consider:
 ```
--appid       If you specify this, then the most recent image for that app will be mounted.
--appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
--imageid     If you specify this, then this image will be mounted
--imagename   If you specify this, then this image will be mounted
+-appid       If you specify this, then the most recent image for that app will be mounted.  This is the most exact choice to get the latest image.
+-appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   If the appname is not unique, then you will need to switch to appid.
+-imageid     If you specify this, then this image will be mounted. You will need to learn this imageid before you run the command.
+-imagename   If you specify this, then this image will be mounted. You will need to learn this imagename before you run the command.
 ```
-In general the best choice is **-appid** as it saves you having to work out the imageid or imagename and gives you the most recent image (for the best RPO)
+In general the best choice is **-appid** as it saves you having to work out the imageid or imagename and gives you the most recent image (for the best RPO), 
+If constructing a CSV file for multi mount you always need to specify the appname, even if you are using the appid.  This is to ensure we can identify the source app.
 
 #### Manually constructing output
 
@@ -1254,14 +1255,15 @@ The end result is you will get several choices:
 
 #### Determining which image is used for the mount
 
-The sample command printed by guidedmode has an imageid, an appid and an appname.   But you actually only need one of these parameters.   Consider:
+The sample command printed by guidedmode has an imageid, an appid and an appname. Consider:
 ```
--appid        If you specify this, then the most recent image for that app will be mounted.
--appname      If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   Otherwise the command will fail
--imageid      If you specify this, then this image will be mounted
--imagename    If you specify this, then this image will be mounted
+-appid       If you specify this, then the most recent image for that app will be mounted.  This is the most exact choice to get the latest image.
+-appname     If you specify this, then the most recent image for that app will be mounted provided the appname is unique.   If the appname is not unique, then you will need to switch to appid.
+-imageid     If you specify this, then this image will be mounted. You will need to learn this imageid before you run the command.
+-imagename   If you specify this, then this image will be mounted. You will need to learn this imagename before you run the command.
 ```
-In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO)
+In general the best choice is **-appid** as it saves you having to work out the imageid or name and gives you the most recent image (for the latest RPO).
+If constructing a CSV file for multi mount you always need to specify the appname, even if you are using the appid.  This is to ensure we can identify the source app.
 
 #### Manually constructing output
 
