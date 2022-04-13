@@ -1189,9 +1189,6 @@ What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
-    
-If you need either of these, please open an issue in Github.
-
 
 #### Monitoring the jobs created by a multi mount by creating an object
 
@@ -1230,11 +1227,6 @@ New-AGMLibGCEConversion -projectname project1 -machinetype n1-standard-2 -instan
 
 PS >
 ```
-
-
-
-
-
 
 ## User Story: Creating GCE Instance from VMware Snapshots
 
@@ -1327,7 +1319,7 @@ What is not supported right now:
 1)  Specifying more than one internal IP per subnet.
 2)  Specifying different disk types per disk
 
-If you get timeouts, then increase the timeout value with -timeout xx when running connect-agm
+If you get timeouts, then increase the timeout value with **-timeout 60** when running connect-agm
 
 ## User Story: GCE Disaster Recovery using VMware VM Snapshots
 
