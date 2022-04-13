@@ -131,6 +131,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
+                    instancename = $app.instancename
                     result = "failed"
                     message = $runcommand.errormessage 
                     command =  $mountcommand }
@@ -148,6 +149,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
+                    instancename = $app.instancename
                     result = "failed"
                     message = $runcommand.err_message
                     errorcode = $runcommand.err_code 
@@ -167,6 +169,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
+                    instancename = $app.instancename
                     result = "started"
                     message = $runcommand.jobstatus 
                     command =  $mountcommand }
@@ -184,6 +187,7 @@ Function New-AGMLibGCEConversionMulti ([string]$instancelist,[switch]$textoutput
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
+                    instancename = $app.instancename
                     result = "unknown"
                     command =  $mountcommand }
             }
