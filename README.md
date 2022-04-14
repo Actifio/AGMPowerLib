@@ -1487,7 +1487,7 @@ id     name
 ```
 Now depending on which job type, we modify different slots.
 #### Slot limits for mount jobs
-We need to learn the current value of the params that relate to **ondemand** slots. Because a mount job is an ondemand job, each mount job uses one ondemand slot while it is running.
+We need to learn the current value of the params that relate to **ondemand** slots. This is because a mount job is an ondemand job, meaning each mount job uses one ondemand slot while it is running.  There are three relevant slots:
 * **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
 * **maxondemandslots** This controls the maximum number of ondemand jobs that can run at any time.  
 * **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
@@ -1506,7 +1506,7 @@ reservedondemandslots
 ---------------------
 3
 ```
-Set the slot counts to larger values like this:
+We can set the slots to larger values like this:
 ```
 Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
@@ -1530,7 +1530,7 @@ Get-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots
 Get-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots
 Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
 ```
-Set the slot counts to larger values like this:
+Set can the slots to larger values like this:
 ```
 Set-AGMLibApplianceParameter -applianceid 361153 -param reservedvaultslots -value 10
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxvaultslots -value 15
@@ -1548,7 +1548,7 @@ Get-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots
 Get-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots
 Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
 ```
-Set the slot counts to larger values like this:
+We set the slots to larger values like this:
 ```
 Set-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots -value 10
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots -value 15
