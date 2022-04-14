@@ -1470,9 +1470,11 @@ PS /tmp/agmpowercli>
 ```
 ### Appliance Slots and how they are used to control the number of running jobs
 
-The Appliance running your jobs may hit a slot limit, which means that you may see a case where jobs go into queued status waiting for free slots.   
+The Appliance running your jobs may hit a slot limit, which means that you may see a case where jobs go into queued status, waiting for free slots, rather than starting immediately. 
 
-To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can run in an appliance at any time.
+To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can be running on an appliance at any point in time.
+Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
+**Get-Command -module AGMPowerCLI**
 
 Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **project1sky** so we will use applianceid **361153**
 ```
