@@ -70,7 +70,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             $i = 1
             foreach ($pool in $diskpoolgrab)
             { 
-                Write-Host -Object "$i`: $($pool.name) on $($pool.cluster.name)"
+                Write-Host -Object "$i`: $($pool.name) ($($pool.id)) on $($pool.cluster.name)"
                 $i++
             }
             While ($true) 
@@ -103,7 +103,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         {
             $applianceid = $appliancegrab.cluster.clusterid
             $appliancename = $appliancegrab.cluster.name
-            write-host "Only one Appliance was found.  We will use this one:"  $appliancegrab.cluster.name
+            write-host "Only one Appliance was found.  We will use this one: $appliancename ($applianceid)"
         }
         else
         {
@@ -112,7 +112,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             $i = 1
             foreach ($appliance in $appliancegrab.cluster)
             { 
-                Write-Host -Object "$i`: $($appliance.name)"
+                Write-Host -Object "$i`: $($appliance.name) ($($appliance.clusterid))"
                 $i++
             }
             While ($true) 
@@ -134,7 +134,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         Write-Host ""
         write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
-        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid
+        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid -timeout 300
         if ($applicationgrab.host)
         {
             $printarray = @()
