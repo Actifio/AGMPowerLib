@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.44'
+ModuleVersion = '0.0.0.45'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -161,6 +161,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.45] 2022-04-14
+        Add more debug info to Import-AGMLibOnVault and increase timeout value to handle long pauses while fetching applications
+
         ## [0.0.0.44] 2022-04-13
         Remove spurious information from job details when runninng New-AGMLibGCEConversion and New-AGMLibGCPInstance, corrected issue with image count when 1 image is found in New-AGMLibGCEConversion
 
