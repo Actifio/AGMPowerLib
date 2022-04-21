@@ -93,6 +93,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibSLA',
 'Get-AGMLibWorkflowStatus',
 'Import-AGMLibOnVault',
+'Import-AGMLibPDSnapshot',
 'Import-AGMLibSLT',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
@@ -162,7 +163,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.46] 2022-04-15
-        
+        Add Import-AGMLibPDSnapshot
 
         ## [0.0.0.45] 2022-04-14
         Add more debug info to Import-AGMLibOnVault and increase timeout value to handle long pauses while fetching applications
