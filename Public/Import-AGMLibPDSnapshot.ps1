@@ -93,7 +93,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
 
         write-host "Inspecting the disk pool for source appliances"
         write-host ""
-        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters -extrarequests "jobclass=1"
+        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters -extrarequests "&jobclass=1"
         if ($appliancegrab.cluster.clusterid.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
@@ -134,7 +134,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         }
         Write-Host ""
         write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
-        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid -timeout 300 -extrarequests "jobclass=1"
+        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid -timeout 300 -extrarequests "&jobclass=1"
         if ($applicationgrab.host)
         {
             $printarray = @()
@@ -256,7 +256,12 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
             {   
                 $done = 1
                 $jobgrab
-            }    
+            }
+            elseif ($jobgrab.err_message)
+            {   
+                $done = 1
+                $jobgrab
+            }  
             elseif (!($jobgrab.status)) 
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to find import with ID $importid"

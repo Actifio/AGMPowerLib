@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
 {
     <#
     .SYNOPSIS
@@ -32,6 +32,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
     -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
+    -region          This is the GCP location such as: australia-southeast1 (used only by Actifio Sky Appliance)
     -zone            This is the GCP Zone such as: australia-southeast1-c
     -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
     -machinetype     This is the GCP instance machine type such as:  e2-micro
@@ -153,17 +154,17 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-host ""
         Write-Host "1`: Managed local apps (default)"
         Write-Host "2`: Unmanaged local apps"
-        # Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibOnVault"
+        Write-Host "3`: Imported/mirrored apps (from other Appliances).  If you cannot see imported apps, you may need to first run:  Import-AGMLibPDSnapshot"
         Write-Host ""
-        [int]$userselectionapps = Read-Host "Please select from this list (1-2)"
+        [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
         if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $vmgrab = Get-AGMApplication -filtervalue "managed=true&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname }
         if ($userselectionapps -eq 2) { $vmgrab = Get-AGMApplication -filtervalue "managed=false&apptype=GCPInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
-        # if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=SystemState&apptype=VMBackup&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 3) { $vmgrab = Get-AGMApplication -filtervalue "apptype=GCPInstance&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($vmgrab.count -eq 0)
         {
             if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed GCPInstance apps to list" }
             if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged GCPInstance apps to list" }
-            # if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibOnVault first" }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
         
@@ -357,6 +358,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
             $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
             $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+            if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
+            {
+                $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
+            }
         }
 
         # project name
@@ -394,7 +399,39 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             
         }
+        # region
+        if ((!($region)) -and ($regionlist))
+        {
+            if ($regionlist.name)
+            {
+                write-host ""
+                write-host "Region Name Selection"
+                write-host ""
+                # create an array out of the regionlist
 
+
+
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $regionlist.count
+                    [int]$rejselection = Read-Host "Please select a region (1-$listmax)"
+                    if ($rejselection -lt 1 -or $rejselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $region =  $regionlist.name[($rejselection - 1)]
+            }
+            else 
+            {
+                While ($true)  { if ($region -eq "") { [string]$region= Read-Host "Region" } else { break } }
+            }
+        }
 
         # zone
         if (!($zone))
