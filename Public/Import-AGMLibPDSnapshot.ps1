@@ -1,32 +1,32 @@
-Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
+Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
 {
     <#
     .SYNOPSIS
-    Imports or forgets OnVault images
-    There is no Forget-AGMOnVault command.   You can do import and forget from this function. 
+    Imports or forgets PD Snapshot images
+    There is no Forget-AGMLibPDSnapshot command.  You can do import and forget from this function. 
 
     .EXAMPLE
-    Import-AGMLibOnvault -diskpoolid 20060633 -applianceid 1415019931 
+    Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 
 
-    Imports all OnVault images from disk pool ID 20060633 onto Appliance ID 1415019931
+    Imports all PD Snapshot images from disk pool ID 20060633 onto Appliance ID 1415019931
 
     .EXAMPLE
-    Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
+    Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
     
-    Imports all OnVault images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
+    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
 
     .EXAMPLE
-    Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -owner
+    Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -owner
     
-    Imports all OnVault images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931 and takes ownership
+    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931 and takes ownership
 
     .EXAMPLE
-    Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -forget
+    Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -forget
     
-    Forgets all OnVault images imported from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
+    Forgets all PD Snapshot images imported from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
 
     .DESCRIPTION
-    A function to import OnVault images
+    A function to import PD Snapshot images
 
     #>
 
@@ -46,7 +46,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     {
 
         write-host ""
-        Write-Host "This function is used to import OnVault images into an Appliance."
+        Write-Host "This function is used to import PD Snapshot images into an Appliance."
         Write-host "We need to determine which pool to import from and which appliance created the images to import"
         Write-host "If importing we also need to decide whether the importing appliance (which owns the selected pool) should take ownership of the imported images"
         Write-host "Alternatively we can decide to have the appliance forget any previously imported images, rather than discover new ones"
@@ -94,7 +94,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
 
         write-host "Inspecting the disk pool for source appliances"
         write-host ""
-        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters
+        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters -extrarequests "&jobclass=1"
         if ($appliancegrab.cluster.clusterid.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
@@ -135,7 +135,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         Write-Host ""
         write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
-        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid 
+        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid  -extrarequests "&jobclass=1"
         if ($applicationgrab.host)
         {
             $printarray = @()
@@ -184,7 +184,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         Clear-Host
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "Import-AGMLibOnvault -diskpoolid $diskpoolid -applianceid $applianceid"  
+        Write-Host -nonewline "Import-AGMLibPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid"  
         if ($forget) { Write-Host -nonewline " -forget" }
         if ($owner) { Write-Host -nonewline " -owner" }
         if ($monitor) { Write-Host -nonewline " -monitor" }
@@ -203,11 +203,11 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     {
         if ($appid)
         {
-            $startcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
+            $startcount = Get-AGMImageCount -filtervalue "jobclass=snapshot&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
         }
         else
         {
-            $startcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&poolid=$diskpoolid"
+            $startcount = Get-AGMImageCount -filtervalue "jobclass=snapshot&sourceuds=$applianceid&poolid=$diskpoolid"
         }
     }
 
@@ -215,29 +215,29 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     {
         if ($owner)
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -owner
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -owner
         }
         elseif ($forget)
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -forget
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid -forget
         }
         else 
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid 
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid -appid $appid 
         }
     }
     else {
         if ($owner)
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -owner
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid -owner
         }
         elseif ($forget)
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid -forget
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid -forget
         }
         else 
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid  
+            $import = Import-AGMPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid  
         }
     }
 
@@ -257,7 +257,12 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             {   
                 $done = 1
                 $jobgrab
-            }    
+            }
+            elseif ($jobgrab.err_message)
+            {   
+                $done = 1
+                $jobgrab
+            }  
             elseif (!($jobgrab.status)) 
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to find import with ID $importid"
@@ -278,12 +283,12 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($appid)
         {
             Start-Sleep -seconds 10
-            $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
+            $endcount = Get-AGMImageCount -filtervalue "jobclass=snapshot&sourceuds=$applianceid&appid=$appid&poolid=$diskpoolid"
         }
         else
         {
             Start-Sleep -seconds 10
-            $endcount = Get-AGMImageCount -filtervalue "jobclass=OnVault&sourceuds=$applianceid&poolid=$diskpoolid"
+            $endcount = Get-AGMImageCount -filtervalue "jobclass=snapshot&sourceuds=$applianceid&poolid=$diskpoolid"
         }
         Write-host "Image count after import:  $endcount"
     }
