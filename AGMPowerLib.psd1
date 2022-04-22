@@ -163,7 +163,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.46] 2022-04-22
-        Add Import-AGMLibPDSnapshot,  improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
+        Add Import-AGMLibPDSnapshot,  Improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
 
         ## [0.0.0.45] 2022-04-14
         Add more debug info to Import-AGMLibOnVault and increase timeout value to handle long pauses while fetching applications
