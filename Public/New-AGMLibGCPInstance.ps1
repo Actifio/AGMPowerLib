@@ -60,10 +60,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     What is not supported right now:
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
+  
+    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds
     
-    If you need either of these, please open an issue in Github.
-    
-
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -352,7 +351,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $recoverygrab.PSObject.Properties.Remove('@type')
             $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
             $newjson = $recoverygrab | convertto-json -depth 10 -compress
-            $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+            $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
             #now read the data
             $projectlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
             $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -416,7 +415,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
 
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
                     $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
                     $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
@@ -508,7 +507,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.selected -eq $true}).selected = $false
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                         $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                        $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                        $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                         if ($recoverygrab.fields)
                         {
                             $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -569,7 +568,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                     ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).choices | where-object {$_.name -eq $zone}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
                     $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayName
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
@@ -752,7 +751,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic0network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
 
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                 write-host ""
                 $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
                 $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
@@ -868,7 +867,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                     (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic1network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     write-host ""
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
                 }

@@ -57,7 +57,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
 
-    If you get timeouts, then increase the timeout value with -timeout xx when running connect-agm
+    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds
     
     #>
 
@@ -444,7 +444,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         # system recovery data grab
         write-host "Getting image data"
-        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid 
         if ($recoverygrab.fields)
         {
             $projectlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
@@ -508,7 +508,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                         ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $project}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
                         $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                        $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                        $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson 
                         if ($recoverygrab.fields)
                         {
                             $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
@@ -589,7 +589,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson 
                     write-host ""
                     $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -822,7 +822,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
                     $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "newmount"
                 }
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson -timeout 60
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -body $newjson 
                 write-host ""
                 $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
             }
@@ -1014,7 +1014,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         }
         if ($disktype)
         {
-            $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+            $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid 
             #disk selection
             $volumelist = ($recoverygrab.fields | where-object { $_.name -eq "volumes" }) 
 
@@ -1113,7 +1113,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         {
             $disktype = "pd-balanced"
         }
-        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid -timeout 60
+        $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/systemrecovery/$credentialid 
         if ($recoverygrab.fields)
         {
             $volumelist = ($recoverygrab.fields | where-object { $_.name -eq "volumes" })
