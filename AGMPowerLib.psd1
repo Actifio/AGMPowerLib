@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.46'
+ModuleVersion = '0.0.0.47'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -162,6 +162,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.47] 2022-04-
+
         ## [0.0.0.46] 2022-04-22
         Add Import-AGMLibPDSnapshot,  Improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
 
