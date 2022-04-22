@@ -774,7 +774,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
             While ($true) 
             {
                 Write-host ""
-                $listmax = $networklist.count
+                $listmax = $networklist.displayName.count
                 [int]$netselection = Read-Host "Please select a network (1-$listmax)"
                 if ($netselection -lt 1 -or $netselection -gt $listmax)
                 {
