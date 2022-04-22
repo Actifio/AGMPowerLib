@@ -988,7 +988,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
         {
             $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
         }
-        if ($imagegrab.count -eq 1)
+        if ($imagegrab.id.count -eq 1)
         {   
             if ($imagegrab.copies)
             {

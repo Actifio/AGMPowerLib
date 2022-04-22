@@ -271,9 +271,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
 
                 $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
                 
-                if ($imagegrab.count -eq 1)
+                if ($imagegrab.id.count -eq 1)
                 {   
-                    $copygrab = $imagegrab.copies
                     $consistencydate = $imagegrab.consistencydate
                     $jobclass = $imagegrab.jobclass
                     $imagename = $imagegrab.backupname
@@ -1021,19 +1020,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Show the JSON used to run this command, but don't run it"
-        Write-Host "3`: Write comma separated output.  This will mount the most recently created image for that application"
-        Write-Host "4`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-4)"
-        if ($userchoice -eq 2)
-        {
-            $jsonprint = "yes"
-        }
-        if ($userchoice -eq 4)
+        Write-Host "2`: Write comma separated output.  This will mount the most recently created image for that application"
+        Write-Host "3`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-3)"
+        if ($userchoice -eq 3)
         {
             return
         }
-        if ($userchoice -eq 3)
+        if ($userchoice -eq 2)
         {
             write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
             write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
@@ -1061,7 +1055,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     if ( (!($imagename)) -and (!($imageid)) -and ($appid) )
     {
         $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&apptype=GCPInstance" -sort id:desc -limit 1
-        if ($imagecheck.count -eq 0)
+        if ($imagecheck.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any images for appid $appid"
             return
