@@ -361,6 +361,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
             {
                 $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
+                $selectedregion =  ($regionlist.choices | where-object {$_.selected -eq $true}).name
             }
         }
 
@@ -393,6 +394,33 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                 }
                 $projectname = $projectlist.name[($projselection - 1)]
+                # is the selected project changes, we need to relearn the world
+                if ($projectname -ne $selectedproject)
+                {
+                    # ensure we are using a different selected project
+                    ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
+                    (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
+                    ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+
+                    $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                    $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
+                    $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
+                    $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+                    $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
+                    $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
+                    $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+                    if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
+                    {
+                        $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
+                        $selectedregion =  ($regionlist.choices | where-object {$_.selected -eq $true}).name
+                    }
+                }
+
+
+
             }
             else {
                 While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
@@ -404,17 +432,32 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($regionlist.name)
             {
+ 
+                # create an array out of the regionlist
+                $regionarray = @()
+                $i = 1
+                foreach ($geo in $regionlist)
+                {
+                    $geoname = $geo.displayname
+                    foreach ($selection in $geo.choices)
+                    {
+                        $regionarray += [pscustomobject]@{
+                            id = $i
+                            geo = $geoname
+                            region = $selection.name
+                        }
+                        $i++
+                    }
+                }
                 write-host ""
                 write-host "Region Name Selection"
                 write-host ""
-                # create an array out of the regionlist
-
-
+                $regionarray | Format-Table
 
                 While ($true) 
                 {
                     Write-host ""
-                    $listmax = $regionlist.count
+                    $listmax = $regionarray.count
                     [int]$rejselection = Read-Host "Please select a region (1-$listmax)"
                     if ($rejselection -lt 1 -or $rejselection -gt $listmax)
                     {
@@ -425,7 +468,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         break
                     }
                 }
-                $region =  $regionlist.name[($rejselection - 1)]
+                $region =  $regionarray.region[($rejselection - 1)]
             }
             else 
             {
@@ -435,9 +478,45 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
 
         # zone
         if (!($zone))
-        {
+        { 
             if ($zonelist.name)
             {
+                # if region selectio is possible we need to validate we have the right list of zones
+                if ($selectedregion)
+                {
+                    if ($selectedregion -ne $region)
+                    {
+                        # check this
+                        foreach ($row in $recoverygrab.fields)
+                        {
+                            $row.modified = $false
+                        }
+                        foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                        {
+                            $row.modified = $false
+                        }
+                        # correct region
+                        (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
+                        ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.selected -eq $true}).selected = $false
+                        ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                        $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                        $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
+                        if ($recoverygrab.fields)
+                        {
+                            $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
+                            $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
+                            $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
+                            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
+                            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+                            $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
+                        } 
+                        else 
+                        {
+                            Get-AGMErrorMessage -messagetoprint "Failed to learn zone names for selected region."
+                            return
+                        }
+                    }
+                }
                 write-host ""
                 write-host "Zone Name Selection"
                 write-host ""
@@ -578,25 +657,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-host "NIC0 settings"
         Write-Host ""
 
-        if (($projectname -ne $selectedproject) -or ($zone -ne $selectedzone))
+        if ($zone -ne $selectedzone)
         {
-            if ($projectname -ne $selectedproject) 
-            {
-                foreach ($row in $recoverygrab.fields)
-                {
-                    $row.modified = $false
-                }
-                foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
-                {
-                    $row.modified = $false
-                }
-                ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
-                (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
-                ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
-                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-                $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson -timeout 60
-            }
             if ($zone -ne $selectedzone)
             {
                 foreach ($row in $recoverygrab.fields)
