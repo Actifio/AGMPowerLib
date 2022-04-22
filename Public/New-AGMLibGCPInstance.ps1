@@ -107,8 +107,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             Get-AGMErrorMessage -messagetoprint "There are no Credentials.  Please add a credential"
             return
-        }
-        else
+        } else
         {
             Clear-Host
             write-host "Welcome to the Guided Menu for GCE Conversion. "
@@ -126,8 +125,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 if ($credselection -lt 1 -or $credselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-                }
-                else
+                } else
                 {
                     break
                 }
@@ -138,8 +136,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $mountapplianceid = $credarray.applianceid
                 $mountappliancename = $credarray.appliancename
                 $credentialid =$credarray.credentialid
-            }
-            else 
+            } else 
             {
                 $srcid = $credarray.srcid[($credselection - 1)]
                 $mountapplianceid = $credarray.applianceid[($credselection - 1)]
@@ -332,8 +329,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         break
                     }
                 }
-                $imagename = $imagelist[($imageselection - 1)].backupname
-                $imageid =  $imagelist[($imageselection - 1)].id 
+                if ($imagelist.id.count -eq 1)
+                {
+                    $imagename = $imagelist.backupname
+                    $imageid =  $imagelist.id 
+                }
+                else {
+                    $imagename = $imagelist[($imageselection - 1)].backupname
+                    $imageid =  $imagelist[($imageselection - 1)].id 
+                }
             }
         }
         # system recovery data grab
@@ -393,10 +397,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         break
                     }
                 }
-                $projectname = $projectlist.name[($projselection - 1)]
+                if ($projectlist.name.count -eq 1)
+                {
+                    $projectname = $projectlist.name
+                }
+                else {
+                    $projectname = $projectlist.name[($projselection - 1)]
+                }
                 # is the selected project changes, we need to relearn the world
                 if ($projectname -ne $selectedproject)
                 {
+                    write-host "Fetching selection data for project $projectname"
+                    write-host ""
                     # ensure we are using a different selected project
                     ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
                     (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
@@ -418,11 +430,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $selectedregion =  ($regionlist.choices | where-object {$_.selected -eq $true}).name
                     }
                 }
-
-
-
-            }
-            else {
+            } else {
                 While ($true)  { if ($projectname -eq "") { [string]$projectname= Read-Host "Project Name" } else { break } }
             }
             
@@ -718,8 +726,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $nic0network = $networklist.name[($netselection - 1)]
                 $selectednic0network = $networklist.displayName[($netselection - 1)]
             }
-        }
-        else 
+        } else 
         {
             While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
         }
