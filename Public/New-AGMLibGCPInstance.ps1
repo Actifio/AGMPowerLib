@@ -62,7 +62,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     2)  Specifying different disk types per disk
   
     If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds
-    
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -345,13 +345,20 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
         if ($recoverygrab.fields)
         {
-            # the first thing to check is to grab the data weith correct srcid
-            ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "cloudcredential" }).choices | where-object { $_.selected -eq $true }).selected = $false
-            ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "cloudcredential"}).choices | where-object {$_.name -eq $srcid}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-            $recoverygrab.PSObject.Properties.Remove('@type')
-            $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
-            $newjson = $recoverygrab | convertto-json -depth 10 -compress
-            $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+            # if the selected credential doesnt equal the user chosen one we need to relearn
+            $selectedcredential = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "cloudcredential" }).choices | where-object { $_.selected -eq $true }).name
+            if ($selectedcredential -ne $srcid)
+            {
+                write-host "Fetching selection data for srcid $srcid"
+                write-host ""
+                # the first thing to check is to grab the data weith correct srcid
+                ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "cloudcredential" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "cloudcredential"}).choices | where-object {$_.name -eq $srcid}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                $recoverygrab.PSObject.Properties.Remove('@type')
+                $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+            }
             #now read the data
             $projectlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
             $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -413,7 +420,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
                     ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
                     ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-
+                    if (!($recoverygrab.formtype))
+                    {
+                        $recoverygrab.PSObject.Properties.Remove('@type')
+                        $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                    }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -506,6 +517,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.selected -eq $true}).selected = $false
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                        if (!($recoverygrab.formtype))
+                        {
+                            $recoverygrab.PSObject.Properties.Remove('@type')
+                            $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                        }
                         $newjson = $recoverygrab | convertto-json -depth 10 -compress
                         $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                         if ($recoverygrab.fields)
@@ -567,6 +583,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $row.selected = $false
                     }
                     ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).choices | where-object {$_.name -eq $zone}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                                        if (!($recoverygrab.formtype))
+                    {
+                        $recoverygrab.PSObject.Properties.Remove('@type')
+                        $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                    }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
