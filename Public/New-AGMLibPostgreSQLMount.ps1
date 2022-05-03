@@ -2,19 +2,19 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
 {
     <#
     .SYNOPSIS
-    Mounts an PostgreSQL Image
+    Mounts a PostgreSQL Image
 
     .EXAMPLE
     New-AGMLibPostgreSQLMount 
-    You will be prompted for Appname and target Hostname
+    You will be prompted through a guided menu
 
     .EXAMPLE
-    New-AGMLibPostgreSQLMount  -appid 5552336 -targethostname demo-sql-4 -label "TDM Mount" -dbname avtest -w
-    Mounts the latest snapshot from AppID 5552336 to host named demo-sql-4, creating a new DB called avtest on PostgreSQL Instance DEMO-SQL-4
+    New-AGMLibPostgreSQLMount -appid 17915 -mountapplianceid 143112195179 -targethostid 17692 -dbnamelist "proddb1,devtestdb1" -port "5433" -osuser "postgres" -basedir "/usr/pgsql-11"
+    Mounts a new instance with one DB, renaming the DB from proddb1 to devtestdb1.
 
     .EXAMPLE
-    New-AGMLibPostgreSQLMount -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "nonprod_" -dbnamesuffix "_av"
-    Mounts the latest snapshot from AppID 5534398 to host named demo-sql-5, creating two new DBs called nonprod_smalldb1_av and nonprod_smalldb2_av on SQL Instance DEMO-SQL-5
+    New-AGMLibPostgreSQLMount -appid 17915 -mountapplianceid 143112195179 -label "avtest" -targethostid 17692 -dbnamelist "testdb1,avtest1;companydata,avtest2" -port "5433" -osuser "postgres" -basedir "/usr/pgsql-11" -consistencygroupname avtestcg -mountpointperimage "/avtest1" -sltid 6717 -slpid 17984
+    Mounts a new instance with two DBs.  The instance is reprotected with the specified SLT and SLP.
 
     .DESCRIPTION
     A function to mount PostgreSQL Image
