@@ -671,6 +671,10 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         Write-Host ""
        
         Write-Host -nonewline "New-AGMLibPostgreSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        if ($consistencygroupname)
+        {
+            Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
+        }
         if ($recoverypoint)
         {
             Write-Host -nonewline " -recoverypoint $recoverypoint"
