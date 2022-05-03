@@ -108,6 +108,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibImage',
 'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
+'New-AGMLibPostgreSQLMount',
 'New-AGMLibVM',
 'New-AGMLibVMMultiMount',
 'New-AGMLibMultiVM',
@@ -162,7 +163,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.47] 2022-04-
+        ## [0.0.0.47] 2022-05-03    
+        Add New-AGMLibPostgreSQLMount
 
         ## [0.0.0.46] 2022-04-22
         Add Import-AGMLibPDSnapshot,  Improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
