@@ -570,7 +570,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
 
        
-        #take oer in-use port
+        #take over in-use port
         Clear-Host
         Write-Host "Take over in-use port"
         Write-Host "1`: No (default)"
