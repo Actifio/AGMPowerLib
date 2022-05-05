@@ -218,9 +218,9 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
 
         if ($applist.count -eq 0)
         {
-            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed SAP Hana apps to list" }
-            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged SAP Hana  apps to list" }
-            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported SAP Hana  apps to list.  You may need to run Import-AGMLibOnVault first" }
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed SAP HANA apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged SAP HANA apps to list" }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported SAP HANA apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
         if ($applist.id.count -eq 0)
