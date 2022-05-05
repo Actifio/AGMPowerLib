@@ -14,6 +14,9 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+
+## User Story: SAP HANA Database Mount
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
@@ -1049,6 +1052,22 @@ You can monitor this job with this command.  We need to know the App ID of the s
 status    startdate           enddate
 ------    ---------           -------
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
+```
+
+## User Story: SAP HANA Database Mount
+
+In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where 'act' is the name of the HANA database.
+```
+PS /Users/jeffoconnor> Get-AGMLibApplicationID act |ft
+
+id     friendlytype hostname   hostid appname appliancename applianceip applianceid  appliancetype managed
+--     ------------ --------   ------ ------- ------------- ----------- -----------  ------------- -------
+577110 SAPHANA      coe-hana-1 577093 act     sky1          10.60.1.7   141767697828 Sky              True
+```
+So now we know the id of the Database inside our HANA instance, we just need to specify the HANA user store key (userstorekey) that has rights to recover the database on the target host (targethostname), a new database SID (dbsid) to use, and lastly to specify a target host filesystem mount point (mountpointperimage) for the HANA instance to run from. We then run our mount command like this:
+
+```
+PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
 
 
