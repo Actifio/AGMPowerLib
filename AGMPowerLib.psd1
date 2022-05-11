@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.47'
+ModuleVersion = '0.0.0.48'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -165,6 +165,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.48] 2022-05-11
+        
+
         ## [0.0.0.47] 2022-05-11
         Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
 
