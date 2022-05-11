@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.46'
+ModuleVersion = '0.0.0.47'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -108,6 +108,9 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibImage',
 'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
+'New-AGMLibMySQLMount',
+'New-AGMLibPostgreSQLMount',
+'New-AGMLibSAPHANAMount',
 'New-AGMLibVM',
 'New-AGMLibVMMultiMount',
 'New-AGMLibMultiVM',
@@ -162,6 +165,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.47] 2022-05-11
+        Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
+
         ## [0.0.0.46] 2022-04-22
         Add Import-AGMLibPDSnapshot,  Improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
 

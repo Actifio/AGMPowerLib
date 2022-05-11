@@ -245,8 +245,16 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 break
             }
         }
-        $appname =  $applist.appname[($appselection - 1)]
-        $appid = $applist.id[($appselection - 1)]
+        if ($applist.count -eq 1)
+        {
+            $appname = $applist.appname
+            $appid = $applist.id
+        }
+        else 
+        {
+            $appname = $applist.appname[($appselection - 1)]
+            $appid = $applist.id[($appselection - 1)]
+        }
 
     }
 
