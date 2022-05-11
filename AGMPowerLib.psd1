@@ -165,7 +165,7 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.47] 2022-05-05 
+        ## [0.0.0.47] 2022-05-11
         Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
 
         ## [0.0.0.46] 2022-04-22
