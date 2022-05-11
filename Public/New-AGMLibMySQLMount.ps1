@@ -181,17 +181,68 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
         $guided = $true
+        # first we need to work out which appliance we are mounting from 
+        $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+        if ($appliancegrab.count -eq 0)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
+            return
+        }
+        if ($appliancegrab.count -eq 1)
+        {
+            $mountapplianceid = $appliancegrab.clusterid
+            $mountappliancename =  $appliancegrab.name
+        }
+        else
+        {
+            Clear-Host
+            write-host "Appliance selection menu - which Appliance will run this mount"
+            Write-host ""
+            $i = 1
+            foreach ($appliance in $appliancegrab)
+            { 
+                Write-Host -Object "$i`: $($appliance.name)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $appliancegrab.name.count
+                [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+            $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+        }
         write-host ""
         write-host "Running guided mode"
         write-host ""
-        write-host "Application Select menu"
-        write-host ""
-        $applist = Get-AGMApplication -filtervalue "apptype=MYSQLInstance" | sort-object appname
-        if ($applist.id.count -eq 0)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to find any $apptype apps"
+        write-host "Select application status for MySQL apps"
+        Write-host ""
+        Write-Host "1`: Managed local apps (default)"
+        Write-Host "2`: Unmanaged or imported apps"
+        Write-Host "3`: Imported/mirrored apps (from other Appliances). If you cannot see imported apps, you may need to first run: Import-AGMLibOnVault"
+        Write-Host ""
+        [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=MYSQLInstance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=MYSQLInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=MYSQLInstance&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
+
+        if ($applist.count -eq 0)
+        {
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed MySQL apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged MySQL apps to list" }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported MySQL apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
+        # print the app list
         $i = 1
         foreach ($app in $applist)
         { 
@@ -282,7 +333,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         
         if (!($imagename))
         {  
-            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
             if ($imagelist1.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
