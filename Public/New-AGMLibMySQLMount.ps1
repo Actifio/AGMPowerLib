@@ -615,14 +615,22 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $passwordenc = Read-Host -AsSecureString "Password"
             if ($passwordenc.length -ne 0)
             {
-                $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
-                $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
+                if ( $((get-host).Version.Major) -gt 5 )
+                {
+                    $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
+                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
+                }
+                else {
+                    $passwordbytes = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordenc)
+                    $plaintext = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($passwordbytes)
+                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($plaintext))
+                }
             }
         }
 
        
         #take over in-use port
-        Clear-Host
+        write-host ""
         Write-Host "Take over in-use port"
         Write-Host "1`: No (default)"
         Write-Host "2`: Yes"
@@ -746,6 +754,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             Write-Host -nonewline " -sltid $sltid -slpid $slpid"
         }        
+        if ($username) {Write-Host -nonewline " -username `"$username`""}
+        if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -909,6 +919,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         name = 'OSUSER'
         value = $osuser
     }
+    if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
     $provisioningoptions = $provisioningoptions +@{
         name = 'BASEDIR'
         value = $basedir

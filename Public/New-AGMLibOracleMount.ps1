@@ -498,8 +498,16 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
             $passwordenc = Read-Host -AsSecureString "Password"
             if ($passwordenc.length -ne 0)
             {
-                $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
-                $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
+                if ( $((get-host).Version.Major) -gt 5 )
+                {
+                    $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
+                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
+                }
+                else {
+                    $passwordbytes = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordenc)
+                    $plaintext = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($passwordbytes)
+                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($plaintext))
+                }
             }
             [string]$tnsadmindir = Read-Host "TNS ADMIN DIRECTORY PATH" 
             [int]$totalmemory = Read-Host "DATABASE MEMORY SIZE IN MB" 
@@ -817,7 +825,7 @@ Function New-AGMLibOracleMount ([string]$appid,[string]$targethostid,[string]$mo
         if ($norrecovery) { $provisioningoptions += @( @{ name = 'rrecovery'; value = "false" } ) } else { $provisioningoptions += @( @{ name = 'rrecovery'; value = "true" } ) }
         if ($useexistingorapw) { $provisioningoptions += @( @{ name = 'useexistingorapw'; value = "true" } ) } else { $provisioningoptions += @( @{ name = 'useexistingorapw'; value = "false" } ) }
         # all the options
-        if ($password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
+        if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
         if ($tnsadmindir) { $provisioningoptions += @( @{ name = 'tnsadmindir'; value = $tnsadmindir } ) } 
         if ($sgapct) { $provisioningoptions += @( @{ name = 'sgapct'; value = $sgapct } ) } 
         if ($redosize) { $provisioningoptions += @( @{ name = 'redosize'; value = $redosize } ) } 
