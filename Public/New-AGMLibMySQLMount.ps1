@@ -51,6 +51,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
     -messagesdir    Enter the path to the messages directory for the MySQL Instance on the target server (optional)
  
+
     * Reprotection:
 
     -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
@@ -907,34 +908,34 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if ($consistencygroupname)
     {
         $provisioningoptions = $provisioningoptions +
-            @{
+            [ordered]@{
                 name = 'ConsistencyGroupName'
                 value = $consistencygroupname
             }
     }
-    $provisioningoptions = $provisioningoptions + @{
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'PORT'
         value = $port
     }
-    $provisioningoptions = $provisioningoptions +@{
+    $provisioningoptions = $provisioningoptions + [ordered]@{
         name = 'OSUSER'
         value = $osuser
     }
-    if ($dbuser) { $provisioningoptions += @( @{ name = 'dbuser'; value = $dbuser } ) } 
-    if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
-    if ($messagesdir) { $provisioningoptions += @( @{ name = 'MESSAGES_DIR'; value = $messagesdir } ) } 
-    $provisioningoptions = $provisioningoptions +@{
+    if ($dbuser) { $provisioningoptions += @( [ordered]@{ name = 'dbuser'; value = $dbuser } ) } 
+    if ($base64password) { $provisioningoptions += @( [ordered]@{ name = 'password'; value = $base64password } ) } 
+    if ($messagesdir) { $provisioningoptions += @( [ordered]@{ name = 'MESSAGES_DIR'; value = $messagesdir } ) } 
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'BASEDIR'
         value = $basedir
     }
     if ($snatchport)
     {
-        $provisioningoptions = $provisioningoptions +@{
+        $provisioningoptions = $provisioningoptions +[ordered]@{
             name = 'snatchport'
             value = "yes"
         }
     } else {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions + [ordered]@{
             name = 'snatchport'
             value = 'no'        
         }
@@ -950,7 +951,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             name = 'TARGET_DATABASE_NAME'
             value = $targetdb 
         }
-        $provisioningoptions = $provisioningoptions + [ordered]@{
+        $provisioningoptions = $provisioningoptions +[ordered]@{
             name = 'restorableobject'
             value = $sourcedb       
             values = @( $targetvalue )
@@ -958,15 +959,15 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     }    
     if ($sltid)
     {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'reprotect'
             value = "true"
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slt'
             value = $sltid
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slp'
             value = $slpid
         }
