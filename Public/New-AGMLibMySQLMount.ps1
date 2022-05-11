@@ -1,4 +1,4 @@
-Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$username,[string]$password,[string]$base64password,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
+Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbuser,[string]$password,[string]$base64password,[string]$messagesdir,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -49,8 +49,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     -mountpointperimage
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
+    -messagesdir    Enter the path to the messages directory for the MySQL Instance on the target server (optional)
  
-
     * Reprotection:
 
     -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
@@ -58,9 +58,9 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     * Username and password:
     
-    -username  This is the username (optional)
-    -password   This is the password in plain text (not a good idea)
-    -base64password   This is the password in base 64 encoding
+    -dbuser  This is the taregt DB username (optional)
+    -password   This is the target DB password in plain text (not a good idea)
+    -base64password   This is the target DB password in base 64 encoding
     To create this:
     $password = 'passw0rd'
     $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
@@ -609,8 +609,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
         }
         Write-host ""
-        $username = read-host "Username (optional)"
-        if ($username)
+        $dbuser = read-host "MySQL Target DB User Name (optional)"
+        if ($dbuser)
         {
             $passwordenc = Read-Host -AsSecureString "Password"
             if ($passwordenc.length -ne 0)
@@ -627,7 +627,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 }
             }
         }
-
+        $messagesdir = read-host "MySQL Target messages directory path (optional)"
        
         #take over in-use port
         write-host ""
@@ -756,6 +756,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }        
         if ($username) {Write-Host -nonewline " -username `"$username`""}
         if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
+        if ($messagesdir) {Write-Host -nonewline " -messagesdir `"$messagesdir`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -919,7 +920,9 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         name = 'OSUSER'
         value = $osuser
     }
+    if ($dbuser) { $provisioningoptions += @( @{ name = 'dbuser'; value = $dbuser } ) } 
     if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
+    if ($messagesdir) { $provisioningoptions += @( @{ name = 'MESSAGES_DIR'; value = $messagesdir } ) } 
     $provisioningoptions = $provisioningoptions +@{
         name = 'BASEDIR'
         value = $basedir

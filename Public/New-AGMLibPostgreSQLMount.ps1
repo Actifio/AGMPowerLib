@@ -1,4 +1,4 @@
-Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$username,[string]$password,[string]$base64password,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
+Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbuser,[string]$password,[string]$base64password,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -58,9 +58,9 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
 
     * Username and password:
     
-    -username  This is the username (optional)
-    -password   This is the password in plain text (not a good idea)
-    -base64password   This is the password in base 64 encoding
+    -dbuser  This is the Target DB username (optional)
+    -password   This is the Target DB username password in plain text (not a good idea)
+    -base64password   This is the Target DB username password in base 64 encoding
     To create this:
     $password = 'passw0rd'
     $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
@@ -608,8 +608,8 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             }
         }
         Write-host ""
-        $username = read-host "Username (optional)"
-        if ($username)
+        $dbuser = read-host "PostgreSQL Target DB User Name (optional)"
+        if ($dbuser)
         {
             $passwordenc = Read-Host -AsSecureString "Password"
             if ($passwordenc.length -ne 0)
@@ -753,7 +753,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         {
             Write-Host -nonewline " -sltid $sltid -slpid $slpid"
         }        
-        if ($username) {Write-Host -nonewline " -username `"$username`""}
+        if ($dbuser) {Write-Host -nonewline " -dbuser `"$dbuser`""}
         if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
@@ -918,6 +918,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         name = 'OSUSER'
         value = $osuser
     }
+    if ($dbuser) { $provisioningoptions += @( @{ name = 'dbuser'; value = $dbuser } ) } 
     if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
     $provisioningoptions = $provisioningoptions +@{
         name = 'BASEDIR'
