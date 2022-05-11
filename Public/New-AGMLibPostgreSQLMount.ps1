@@ -955,7 +955,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         $sourcedb = $dbsplit.Split(",") | Select-object -First 1
         $targetdb = $dbsplit.Split(",") | Select-object -skip 1
         
-        $targetvalue = @{
+        $targetvalue = [ordered]@{
             name = 'TARGET_DATABASE_NAME'
             value = $targetdb 
         }
