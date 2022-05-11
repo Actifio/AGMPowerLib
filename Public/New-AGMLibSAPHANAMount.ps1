@@ -655,7 +655,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         Write-Host -nonewline "New-AGMLibSAPHANAMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbsid `"$dbsid`" -userstorekey `"$userstorekey`" -mountpointperimage `"$mountpointperimage`""
         if ($recoverypoint)
         {
-            Write-Host -nonewline " -recoverypoint $recoverypoint"
+            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
         }
         if ($mountmode)
         {

@@ -728,7 +728,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         if ($recoverypoint)
         {
-            Write-Host -nonewline " -recoverypoint $recoverypoint"
+            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
         }
         if ($mountmode)
         {

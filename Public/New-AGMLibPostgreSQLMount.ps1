@@ -727,7 +727,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
         if ($recoverypoint)
         {
-            Write-Host -nonewline " -recoverypoint $recoverypoint"
+            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
         }
         if ($mountmode)
         {
