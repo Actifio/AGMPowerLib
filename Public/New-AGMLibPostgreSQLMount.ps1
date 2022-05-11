@@ -871,7 +871,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     {
         if ($restoreoptions)
         {
-            $imagemountpoint = @{
+            $imagemountpoint = [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -880,7 +880,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         else 
         {
             $restoreoptions = @(
-            @{
+            [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -905,33 +905,45 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     if ($consistencygroupname)
     {
         $provisioningoptions = $provisioningoptions +
-            @{
+            [ordered]@{
                 name = 'ConsistencyGroupName'
                 value = $consistencygroupname
             }
     }
-    $provisioningoptions = $provisioningoptions + @{
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'PORT'
         value = $port
     }
-    $provisioningoptions = $provisioningoptions +@{
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'OSUSER'
         value = $osuser
     }
-    if ($dbuser) { $provisioningoptions += @( @{ name = 'dbuser'; value = $dbuser } ) } 
-    if ($base64password) { $provisioningoptions += @( @{ name = 'password'; value = $base64password } ) } 
-    $provisioningoptions = $provisioningoptions +@{
+    if ($dbuser)
+    {
+        $provisioningoptions = $provisioningoptions +[ordered]@{
+            name = 'dbuser'
+            value = $dbuser
+        }
+    }
+    if ($base64password)
+    {
+        $provisioningoptions = $provisioningoptions +[ordered]@{
+            name = 'password'
+            value = $base64password
+        }
+    }
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'BASEDIR'
         value = $basedir
     }
     if ($snatchport)
     {
-        $provisioningoptions = $provisioningoptions +@{
+        $provisioningoptions = $provisioningoptions +[ordered]@{
             name = 'snatchport'
             value = "yes"
         }
     } else {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'snatchport'
             value = 'no'        
         }
@@ -955,15 +967,15 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     }    
     if ($sltid)
     {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'reprotect'
             value = "true"
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slt'
             value = $sltid
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slp'
             value = $slpid
         }
