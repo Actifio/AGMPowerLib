@@ -921,7 +921,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     if ($dbuser)
     {
         $provisioningoptions = $provisioningoptions +[ordered]@{
-            name = 'dbuser'
+            name = 'DBUSER'
             value = $dbuser
         }
     }

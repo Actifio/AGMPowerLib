@@ -921,7 +921,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         name = 'OSUSER'
         value = $osuser
     }
-    if ($dbuser) { $provisioningoptions += @( [ordered]@{ name = 'dbuser'; value = $dbuser } ) } 
+    if ($dbuser) { $provisioningoptions += @( [ordered]@{ name = 'DBUSER'; value = $dbuser } ) } 
     if ($base64password) { $provisioningoptions += @( [ordered]@{ name = 'password'; value = $base64password } ) } 
     if ($messagesdir) { $provisioningoptions += @( [ordered]@{ name = 'MESSAGES_DIR'; value = $messagesdir } ) } 
     $provisioningoptions = $provisioningoptions +[ordered]@{
