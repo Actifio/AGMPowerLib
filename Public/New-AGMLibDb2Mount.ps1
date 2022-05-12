@@ -401,8 +401,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     
         if ( (!($targethostname)) -and (!($targethostid)))
         {
-            $hostgrab1 = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid"
-            $hostgrab = $hostgrab1 | select-object id,name | sort-object name 
+            $hostgrab = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid" | sort-object name
             if ($hostgrab -eq "" )
             {
                 Get-AGMErrorMessage -messagetoprint "Cannot find any Linux hosts"
@@ -411,11 +410,21 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
             Clear-Host
             Write-Host "Target host selection menu"
             $i = 1
-            foreach ($name in $hostgrab.name)
+            $printarray = @()
+            foreach ($listedhost in $hostgrab)
             { 
-                Write-Host -Object "$i`: $name"
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    hostname = $listedhost.name
+                    hostid = $listedhost.id
+                    vmtype = $listedhost.vmtype
+                }
                 $i++
             }
+            #print the list
+            $printarray | Format-table 
+            write-host ""
+
             While ($true) 
             {
                 $listmax = $hostgrab.name.count
@@ -587,7 +596,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         Write-Host "3`: Yes"
         Write-Host ""
         $overwritedatabase = "no"
-        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        [int]$userselection = Read-Host "Please select from this list (1-3)"
         if ($userselection -eq 2) {  $overwritedatabase = "stale" }
         if ($userselection -eq 3) {  $overwritedatabase = "yes"  }
 
@@ -784,17 +793,17 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
 
     if ($mountmode -eq "vrdm")
     {
-        $physicalrdm = 0
+        $physicalrdm = "0"
         $rdmmode = "independentvirtual"
     }
     if ($mountmode -eq "prdm")
     {
-        $physicalrdm = 1
+        $physicalrdm = "1"
         $rdmmode = "physical"
     }
     if ($mountmode -eq "nfs")
     {
-        $physicalrdm = 2
+        $physicalrdm = "2"
         $rdmmode = "nfs"
     }
 

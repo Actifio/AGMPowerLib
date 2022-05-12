@@ -421,8 +421,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     
         if ( (!($targethostname)) -and (!($targethostid)))
         {
-            $hostgrab1 = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid"
-            $hostgrab = $hostgrab1 | select-object id,name | sort-object name 
+            $hostgrab = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid" | sort-object name
             if ($hostgrab -eq "" )
             {
                 Get-AGMErrorMessage -messagetoprint "Cannot find any Linux hosts"
@@ -431,11 +430,20 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             Clear-Host
             Write-Host "Target host selection menu"
             $i = 1
-            foreach ($name in $hostgrab.name)
+            $printarray = @()
+            foreach ($listedhost in $hostgrab)
             { 
-                Write-Host -Object "$i`: $name"
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    hostname = $listedhost.name
+                    hostid = $listedhost.id
+                    vmtype = $listedhost.vmtype
+                }
                 $i++
             }
+            #print the list
+            $printarray | Format-table 
+            write-host ""
             While ($true) 
             {
                 $listmax = $hostgrab.name.count
@@ -849,17 +857,17 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
 
     if ($mountmode -eq "vrdm")
     {
-        $physicalrdm = 0
+        $physicalrdm = "0"
         $rdmmode = "independentvirtual"
     }
     if ($mountmode -eq "prdm")
     {
-        $physicalrdm = 1
+        $physicalrdm = "1"
         $rdmmode = "physical"
     }
     if ($mountmode -eq "nfs")
     {
-        $physicalrdm = 2
+        $physicalrdm = "2"
         $rdmmode = "nfs"
     }
 
