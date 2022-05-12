@@ -126,8 +126,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             $appid = $imagegrab.application.id
             $apptype = $imagegrab.apptype      
             $restorableobjects = $imagegrab.restorableobjects
-            $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass    
+            $mountapplianceid = $imagegrab.cluster.clusterid   
         }
     }
 
@@ -149,7 +148,6 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             $apptype = $imagegrab.apptype      
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -428,8 +426,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
                     $apptype = $imagegrab.apptype      
                     $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
                     $mountapplianceid = $imagegrab.cluster.clusterid
-                    $mountappliancename = $imagegrab.cluster.name
-                    $imagejobclass = $imagegrab.jobclass   
+                    $mountappliancename = $imagegrab.cluster.name 
                 }
              }
         }
@@ -662,7 +659,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             }
         }
         #volume info section
-        $logicalnamelist = $restorableobjects.volumeinfo | select-object logicalname,capacity,uniqueid | sort-object logicalname | Get-Unique -asstring
+        #$logicalnamelist = $restorableobjects.volumeinfo | select-object logicalname,capacity,uniqueid | sort-object logicalname | Get-Unique -asstring
         Clear-Host  
         
 
