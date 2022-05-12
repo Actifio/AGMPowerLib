@@ -184,12 +184,12 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $guided = $true
         # first we need to work out which appliance we are mounting from 
         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
-        if ($appliancegrab.name.count -eq 0)
+        if ($appliancegrab.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
             return
         }
-        if ($appliancegrab.count -eq 1)
+        if ($appliancegrab.name.count -eq 1)
         {
             $mountapplianceid = $appliancegrab.clusterid
             $mountappliancename =  $appliancegrab.name

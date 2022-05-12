@@ -125,6 +125,11 @@ Function Get-AGMLibImageRange([string]$csvfile,[string]$appid,[string]$jobclass,
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
             return
         }
+        if ($appliancegrab.name.count -eq 1)
+        {
+            $clusterid =  $appliancegrab.clusterid
+            $appliancename =  $appliancegrab.name
+        }
         if ($appliancegrab.count -gt 1)
         {
             Clear-Host

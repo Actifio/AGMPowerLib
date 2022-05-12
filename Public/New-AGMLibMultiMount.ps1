@@ -139,7 +139,7 @@ Function New-AGMLibMultiMount ([string]$csvfile,[array]$imagelist,[array]$hostli
                 Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to work with"
                 return
             }
-            if ($appliancegrab.count -eq 1)
+            if ($appliancegrab.name.count -eq 1)
             {
                 $mountapplianceid = $appliancegrab.clusterid
             }
