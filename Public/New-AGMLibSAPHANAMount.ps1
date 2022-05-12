@@ -859,13 +859,9 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         }
     }
     $selectedobjects = @()
-    foreach ($dbsplit in $dbnamelist.Split(";"))
-    {
-        $sourcedb = $dbsplit.Split(",") | Select-object -First 1
-        $selectedobjects = $selectedobjects + [ordered]@{
-            restorableobject = $sourcedb
-        }
-    } 
+    $selectedobjects = $selectedobjects + [ordered]@{
+        restorableobject = $appname
+    }
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
