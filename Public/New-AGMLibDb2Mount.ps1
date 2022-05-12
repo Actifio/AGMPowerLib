@@ -431,11 +431,24 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
             }
             if ($hostgrab.name.count -eq 1)
             {
-                $targethostname =  $hostgrab.name
+                $targethostname = $hostgrab.name
                 $targethostid = $hostgrab.id
             } else {
-                $targethostname =  $hostgrab.name[($hostselection - 1)]
+                $targethostname = $hostgrab.name[($hostselection - 1)]
                 $targethostid = $hostgrab.id[($hostselection - 1)]
+            }
+
+            $hostgrab = Get-AGMHost -id $targethostid
+            $targethostid = $hostgrab.id
+            $vmtype = $hostgrab.vmtype
+            $transport = $hostgrab.transport
+            $diskpref = $hostgrab.diskpref
+            $vcenterid = $hostgrab.vcenterhost.id
+            #if the VM doesn't have a transport, then the vCenter must have one
+            if ( ($vmtype -eq "vmware") -and (!($transport)) )
+            {
+                $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
+                $transport = $vcgrab.transport
             }
 
         }

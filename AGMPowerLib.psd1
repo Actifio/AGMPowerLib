@@ -27,7 +27,7 @@ Author = 'Anthony Vandewerdt'
 CompanyName = 'Actifio'
 
 # Copyright statement for this module
-Copyright = '(c) 2021 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2022 Actifio, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
