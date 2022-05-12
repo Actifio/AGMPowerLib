@@ -996,6 +996,14 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             value = $slpid
         }
     }
+    $selectedobjects = @()
+    foreach ($dbsplit in $dbnamelist.Split(";"))
+    {
+        $sourcedb = $dbsplit.Split(",") | Select-object -First 1
+        $selectedobjects = $selectedobjects + [ordered]@{
+            restorableobject = $sourcedb
+        }
+    } 
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
@@ -1005,7 +1013,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;
         appaware = "true";
-        provisioningoptions = $provisioningoptions
+        provisioningoptions = $provisioningoptions;
+        selectedobjects = $selectedobjects
     }
     if ($restoreoptions)
     {
