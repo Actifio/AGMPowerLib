@@ -188,7 +188,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
              Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
              return
          }
-         if ($appliancegrab.count -eq 1)
+         if ($appliancegrab.name.count -eq 1)
          {
              $mountapplianceid = $appliancegrab.clusterid
              $mountappliancename =  $appliancegrab.name
@@ -980,7 +980,10 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             value = $slpid
         }
     }
-    $body = [ordered]@{
+    $body = [ordered]@{}
+    if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
+    if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    $body = $body + [ordered]@{
         label = $label;
         image = $imagename;
         host = @{id=$targethostid};

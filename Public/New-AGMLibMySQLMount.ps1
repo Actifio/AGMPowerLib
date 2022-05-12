@@ -184,7 +184,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $guided = $true
         # first we need to work out which appliance we are mounting from 
         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
-        if ($appliancegrab.count -eq 0)
+        if ($appliancegrab.name.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
             return
@@ -972,8 +972,10 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             value = $slpid
         }
     }
-    $body = [ordered]@{
-        label = $label;
+    $body = [ordered]@{}
+    if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
+    if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;

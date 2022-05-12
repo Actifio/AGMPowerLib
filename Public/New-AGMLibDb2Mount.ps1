@@ -1,19 +1,23 @@
-Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$dbsid,[string]$userstorekey,[string]$mountpointperimage,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$sltid,[string]$slpid,[string]$jsonprint,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$targetnodenumber,[string]$targetinstance,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[string]$overwritedatabase,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
-    Mounts a SAP HANA Database Image
+    Mounts a Db2 Image
 
     .EXAMPLE
-    New-AGMLibSAPHANAMount 
+    New-AGMLibDb2Mount 
     You will be prompted through a guided menu
 
     .EXAMPLE
-    New-AGMLibSAPHANAMount -appid 577110 -mountapplianceid 141767697828 -targethostid 483699 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt"
-    Mounts an SAP HANA Database with new SID to the desired mountpoint.
+     New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1" -targetinstance "db2inst2"
+    Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1.
+
+    .EXAMPLE
+    New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -label "label" -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1;DB2DB,DB2DB1" -targetinstance "db2inst2" -targetnodenumber "0" -overwritedatabase "yes" -consistencygroupname "cg1" -recoverypoint "2022-05-12 00:01:48" -sltid 760948 -slpid 6297
+    Mounts a new instance with two DBs.  The instance is reprotected with the specified SLT and SLP.
 
     .DESCRIPTION
-    A function to mount SAP HANA Image
+    A function to mount Db2 Image
 
     * Image selection can be done three ways:
 
@@ -22,7 +26,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
     This will use the latest snapshot, StreamSnap or OnVault image on that appliance
 
-    Note default values don't need to specified.  
+    Note default values don't need to specified.  So for instance these are both unnecessary:   -recoverdb true 
 
     * label
     -label   Label for mount, recommended
@@ -31,21 +35,28 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     -targethostname   The target host specified by name.  Ideally use the next option
     -targethostid   The target host specified by id
 
-    * mounted instance required settings
-    -userstorekey xxxx   name of the HANA database user store key on the target server where a new SAP HANA Instance will get created.
-    -mountpointperimage xxxx  path to the base directory where the configuration & database files for SAP HANA Instance on the target server are located.
-    
+    *  mounted app names
+    -dbnamelist    semicolon separated list of comma separated source db and target db.  So if we have two source DBs, prod1 and prod2 and we mount them as dev1 and dev2 then:   prod1,dev1;prod2,dev2
+    -consistencygroupname  If mounting more than one DB then you will need to specify a CG name.  This is used on the Appliance side to group the new apps, the mounted host wont see this name
+
+    * mounted instance
+    -targetinstance  XXXX    The target DB2 instance. Select a target DB2 instance to manage the new database. Mounting back to the same host and same instance is not supported
+    -targetnodenumber  YYYY   DB2 target node number to be used for app aware mount. It will use 0 by default if no value is specified     
+    -overwritedatabase    no, stale or yes     Specifies when, if ever, to overwrite a database on the target server that has the same name as the new database(s) being mounted.   Default is no
+
     * Other options
 
+    -mountpointperimage
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
+ 
 
     * Reprotection:
 
     -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
-    -slpid yyyy (short for Service Level Profile ID) - if specified along with an sltid, will reprotect the mounted child app with the specified template and profile    
+    -slpid yyyy (short for Service Level Profile ID) - if specified along with an sltid, will reprotect the mounted child app with the specified template and profile
 
     * VMware specific options
-    -mountmode    use either nfs, vrdm or prdm
+    -mountmode    use either   nfs, vrdm or prdm
     -mapdiskstoallesxhosts   Either true to do this or false to not do this.  Default is false.  
 
     * Monitoring options:
@@ -77,13 +88,12 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         }
         else {
             $appid = $appgrab.id
-            $apptype = $appgrab.apptype
         }
     }
 
     if ( ($appid) -and (!($appname)) )
     {
-        $appgrab = Get-AGMApplication -id $appid
+        $appgrab = Get-AGMApplication -filtervalue id=$appid
         if(!($appgrab))
         {
             Get-AGMErrorMessage -messagetoprint "Cannot find appid $appid"
@@ -92,7 +102,6 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         else 
         {
             $appname = ($appgrab).appname
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -123,11 +132,9 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass    
         }
     }
 
@@ -145,11 +152,9 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -159,8 +164,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
         $guided = $true
-
-        # first we need to work out which appliance we are mounting from 
+         # first we need to work out which appliance we are mounting from 
         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
         if ($appliancegrab.count -eq 0)
         {
@@ -203,29 +207,22 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         write-host ""
         write-host "Running guided mode"
         write-host ""
-        write-host "Application Select menu"
-        write-host ""
-        write-host "Select application status for SAP HANA apps with images"
+        write-host "Select application status for Db2Instance apps"
         Write-host ""
         Write-Host "1`: Managed local apps (default)"
         Write-Host "2`: Unmanaged or imported apps"
         Write-Host "3`: Imported/mirrored apps (from other Appliances). If you cannot see imported apps, you may need to first run: Import-AGMLibOnVault"
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
-        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=SAPHANA&sourcecluster=$mountapplianceid" | sort-object appname }
-        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=SAPHANA&sourcecluster=$mountapplianceid" | sort-object appname  }
-        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=SAPHANA&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
-
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=DB2Instance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=DB2Instance&sourcecluster=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=DB2Instance&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
+ 
         if ($applist.count -eq 0)
         {
-            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed SAP HANA apps to list" }
-            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged SAP HANA apps to list" }
-            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported SAP HANA apps to list.  You may need to run Import-AGMLibOnVault first" }
-            return
-        }
-        if ($applist.id.count -eq 0)
-        { 
-            Get-AGMErrorMessage -messagetoprint "Failed to find any $apptype apps"
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed Db2Instance apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged Db2Instance apps to list" }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported Db2Instance apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
         $i = 1
@@ -291,7 +288,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         $hostgrab = Get-AGMHost -filtervalue id=$targethostid
         if (!($hostgrab))
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to resolve $targethostid to a single host ID. Use Get-AGMLibHostID and try again specifying -targethostid"
+            Get-AGMErrorMessage -messagetoprint "Failed to resolve $targethostid to a single host ID.  Use Get-AGMLibHostID and try again specifying -targethostid"
             return
         }
         $targethostid = $targethostid
@@ -318,120 +315,68 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         
         if (!($imagename))
         {  
-             # prefered sourcce
-             write-host ""
-             $userselection = ""
-             Write-Host "Image selection"
-             Write-Host "1`: Use the most recent backup for lowest RPO (default)"
-             Write-Host "2`: Select a backup"
-             Write-Host ""
-             While ($true) 
-             {
-                 [int]$userselection = Read-Host "Please select from this list (1-2)"
-                 if ($userselection -eq "") { $userselection = 1 }
-                 if ($userselection -lt 1 -or $userselection -gt 2)
-                 {
-                     Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
-                 } 
-                 else
-                 {
-                     break
-                 }
-             }
-             if ($userselection -eq 1)
-             {
- 
-                 $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
-                 
-                 if ($imagelist1.id.count -eq 1)
-                 {   
-                    $imagegrab = Get-AGMImage -id $($imagelist).id
-                    $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id
-                    $apptype = $imagegrab.apptype      
-                    $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
-                    $jobclass = $imagegrab.jobclass
-                    $mountapplianceid = $imagegrab.cluster.clusterid
-                    $mountappliancename = $imagegrab.cluster.name
-                    write-host "Found one $jobclass image $imagename, consistency date $consistencydate on $mountappliancename"
-                     Write-host ""
-                 }
-                 else 
-                 {
-                     Get-AGMErrorMessage -messagetoprint "Failed to fetch an image for appid $appid"   
-                     return
-                 }
-             }
-             if ($userselection -eq 2) 
-             { 
-                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | Sort-Object consistencydate,jobclass
-                if ($imagelist1.id.count -eq 0)
-                {
-                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
-                    return
+            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+            if ($imagelist1.id.count -eq 0)
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                return
+            }
+            $imagelist = $imagelist1  | Sort-Object consistencydate
+            if ($imagelist1.id.count -eq 1)
+            {
+                $imagegrab = Get-AGMImage -id $($imagelist).id
+                $imagename = $imagegrab.backupname                
+                $consistencydate = $imagegrab.consistencydate
+                $endpit = $imagegrab.endpit
+                $appname = $imagegrab.appname
+                $appid = $imagegrab.application.id    
+                $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
+                $jobclass = $imagegrab.jobclass
+                $mountapplianceid = $imagegrab.cluster.clusterid
+                $mountappliancename = $imagegrab.cluster.name
+                write-host "Found one $jobclass image $imagename, consistency date $consistencydate on $mountappliancename"
+            } 
+            else
+            {
+                Clear-Host
+                Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
+                write-host ""
+                $i = 1
+                foreach ($image in $imagelist)
+                { 
+                    $image | Add-Member -NotePropertyName select -NotePropertyValue $i
+                    $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
+                    $i++
                 }
-                $imagelist = $imagelist1  | Sort-Object consistencydate
-                if ($imagelist1.id.count -eq 1)
+                #print the list
+                $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+                # ask the user to choose
+                While ($true) 
                 {
-                    $imagegrab = Get-AGMImage -id $($imagelist).id
-                    $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id
-                    $apptype = $imagegrab.apptype      
-                    $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
-                    $jobclass = $imagegrab.jobclass
-                    $mountapplianceid = $imagegrab.cluster.clusterid
-                    $mountappliancename = $imagegrab.cluster.name
-                    write-host "Found one $jobclass image $imagename, consistency date $consistencydate on $mountappliancename"
-                } 
-                else
-                {
-                    Clear-Host
-                    Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
-                    write-host ""
-                    $i = 1
-                    foreach ($image in $imagelist)
-                    { 
-                        $image | Add-Member -NotePropertyName select -NotePropertyValue $i
-                        $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
-                        $i++
-                    }
-                    #print the list
-                    $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
-                    # ask the user to choose
-                    While ($true) 
+                    Write-host ""
+                    $listmax = $imagelist.Length
+                    [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
                     {
-                        Write-host ""
-                        $listmax = $imagelist.Length
-                        [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                        if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
-                        {
-                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
-                        } 
-                        else
-                        {
-                            break
-                        }
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                    } 
+                    else
+                    {
+                        break
                     }
-                    $imageid =  $imagelist[($imageselection - 1)].id
-                    $imagegrab = Get-AGMImage -id $imageid
-                    $imagename = $imagegrab.backupname                
-                    $consistencydate = $imagegrab.consistencydate
-                    $endpit = $imagegrab.endpit
-                    $appname = $imagegrab.appname
-                    $appid = $imagegrab.application.id
-                    $apptype = $imagegrab.apptype      
-                    $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
-                    $mountapplianceid = $imagegrab.cluster.clusterid
-                    $mountappliancename = $imagegrab.cluster.name
-                    $imagejobclass = $imagegrab.jobclass   
                 }
-             }
+                $imageid =  $imagelist[($imageselection - 1)].id
+                $imagegrab = Get-AGMImage -id $imageid
+                $imagename = $imagegrab.backupname                
+                $consistencydate = $imagegrab.consistencydate
+                $endpit = $imagegrab.endpit
+                $appname = $imagegrab.appname
+                $appid = $imagegrab.application.id    
+                $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
+                $mountapplianceid = $imagegrab.cluster.clusterid
+                $mountappliancename = $imagegrab.cluster.name  
+            }
+            
         }
         
         # now we check the log date
@@ -494,6 +439,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             }
 
         }
+
         
         # reprotection
         Clear-Host
@@ -558,49 +504,79 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
             $slpid =  $objectgrab[($objectselection - 1)].id
         }
 
+
+        # now we look for restoreable objects
+        
+        if (!($restorableobjects))
+        {
+            Write-Host -Object "The image did not have any restoreable objects"
+            return
+        }
+        write-host ""
+        foreach
+        ($db in $restorableobjects.name)
+        { 
+            $mountedname =
+            [string]$mountedname = Read-Host "Target name for $db (press enter to skip)"
+            if ($mountedname)
+            {
+                if ($dbnamelist)
+                {
+                    $dbnamelist = $dbnamelist + ";$db,$mountedname"
+                } else {
+                    $dbnamelist = "$db,$mountedname"
+                }
+            }
+        }
+         # if the dbnamelist has only one DB in it,  we need to get a DB name, otherwise we need to enter CG processing.
+         write-host ""
+         if ($dbnamelist.Split(";").count -gt 1)
+        {
+            # consistency group is mandatory
+            Clear-Host
+            While ($true) 
+            {
+                $consistencygroupname = Read-Host "Name of Consistency Group"
+                if ($consistencygroupname -eq "")
+                {
+                    Write-Host -Object "The CG Name cannot be blank"
+                } 
+                else
+                {
+                    break
+                }
+            }
+        }
        
         write-host ""
-        
         While ($true) 
         {
-            $dbsid = read-host "SAP HANA Target database SID"
-            if ($dbsid -eq "")
+            $targetinstance = read-host "Db2 Target Instance name"
+            if ($targetinstance -eq "")
             {
-                Write-Host -Object "The Target database SID cannot be blank"
+                Write-Host -Object "The Db2 Target Instance name cannot be blank"
             } 
             else
             {
                 break
             }
         }
-        write-host ""
-        While ($true) 
+        $targetnodenumber = read-host "Db2 Target node Number (hit enter for default of 0)"
+        if ($targetnodenumber -eq "")
         {
-            $userstorekey = read-host "SAP HANA Target user store key"
-            if ($userstorekey -eq "")
-            {
-                Write-Host -Object "The Target user store key cannot be blank"
-            } 
-            else
-            {
-                break
-            }
-        }
-        write-host ""
-        While ($true) 
-        {
-            $mountpointperimage = read-host "SAP HANA Target filesystem mount point"
-            if ($mountpointperimage -eq "")
-            {
-                Write-Host -Object "The Target Server filesystem mount point cannot be blank"
-            } 
-            else
-            {
-                break
-            }
-        }
+            $targetnodenumber = 0
+        } 
+        #take over in-use port
         Write-host ""
-
+        Write-Host "Overwrite existing database"
+        Write-Host "1`: No (default)"
+        Write-Host "2`: Only if stale"
+        Write-Host "3`: Yes"
+        Write-Host ""
+        $overwritedatabase = "no"
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq 2) {  $overwritedatabase = "stale" }
+        if ($userselection -eq 3) {  $overwritedatabase = "yes"  }
 
         # if this is a VMTarget
         if ($vmtype -eq "vmware")
@@ -647,12 +623,55 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         Clear-Host  
         
 
+        if ($logicalnamelist.count -eq 1)
+        {
+            Write-Host "This image has only one drive. You can change mount point used or allow the Connector to determine this"
+            Write-Host ""
+            $mountpointperimage = ""
+            $mountpointperimage = Read-Host "Mount Location (optional)"
+            
+        }
+        if ($logicalnamelist.count -gt 1)
+        {
+            Write-Host "This image has more than one drive. You can enter a Mount Location, or press enter to set mount points per drive. "
+            Write-Host ""
+            $mountpointperimage = ""
+            $mountpointperimage = Read-Host "Mount Location (optional)"
+            if ($mountpointperimage -eq "")
+            {
+                Clear-Host
+                $mountpointspervol = ""
+                $mountpointspervol1 = ""
+                Write-Host "Set mount Locations per drive, or press enter to allow the Connector to determine this."
+                foreach ($logicalname in $logicalnamelist)
+                { 
+                    $capacity = [math]::Round($logicalname.capacity / 1073741824,1)
+                    $diskname = $logicalname.logicalname
+                    $uniqueid = $logicalname.uniqueid
+                    $mountpointgrab = ""
+                    [string]$mountpointgrab = Read-Host "$diskname   $capacity GiB"
+                    if ($mountpointgrab -ne "")
+                    {
+                        $mountpointspervol1 = $mountpointspervol1 + "," + "$uniqueid" + "=" + "$mountpointgrab"
+                    }
+                    if ($mountpointspervol1 -ne "")
+                    {
+                        $mountpointspervol = $mountpointspervol1.substring(1)
+                    }
+                }
+            }
+        }
+
         # we are done
        Clear-Host  
-        Write-Host "Guided selection is complete. The values entered would result in the following command:"
+        Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibSAPHANAMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbsid `"$dbsid`" -userstorekey `"$userstorekey`" -mountpointperimage `"$mountpointperimage`""
+        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -targetnodenumber `"$targetnodenumber`" -overwritedatabase `"$overwritedatabase`""
+        if ($consistencygroupname)
+        {
+            Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
+        }
         if ($recoverypoint)
         {
             Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
@@ -661,11 +680,20 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         {
             Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
         }
-
+        if ($mountpointperimage)
+        {
+            Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
+        }
+        if ($mountpointspervol)
+        {
+            Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
+        }
         if ($sltid)
         {
             Write-Host -nonewline " -sltid $sltid -slpid $slpid"
         }        
+        if ($dbuser) {Write-Host -nonewline " -dbuser `"$dbuser`""}
+        if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -682,6 +710,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
 
     }
 
+        
     if ($targethostid -eq "")
     {
         Get-AGMErrorMessage -messagetoprint "Cannot proceed without a targethostid or targethostname"
@@ -706,12 +735,12 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
 
     if ( ($sltid) -and (!($slpid)) )
     {
-        Get-AGMErrorMessage -messagetoprint "An sltid $sltid was specified without an slpid with -slpid yyyy. Please specify both"
+        Get-AGMErrorMessage -messagetoprint "An sltid $sltid was specified without an slpid with -slpid yyyy.   Please specify both"
         return
     }
     if ( (!($sltid)) -and ($slpid) )
     {
-        Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx. Please specify both"
+        Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx.    Please specify both"
         return
     }
     
@@ -727,27 +756,16 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     {
         $recoverytime = Convert-ToUnixDate $recoverypoint
     }
+
     
     if (!($label))
     {
         $label = ""
     }
 
-    if (!($dbsid))
+    if (!($dbnamelist))
     {
-        Get-AGMErrorMessage -messagetoprint "No database SID was specified"
-        return
-    }
-
-    if (!($userstorekey))
-    {
-        Get-AGMErrorMessage -messagetoprint "No HANA user store key was specified"
-        return
-    }
-
-    if (!($mountpointperimage))
-    {
-        Get-AGMErrorMessage -messagetoprint "No Target directory mount point was specified"
+        Get-AGMErrorMessage -messagetoprint "No dbnamelist was specified"
         return
     }
 
@@ -771,7 +789,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     {
         if (($mapdiskstoallesxhosts -ne "true") -and  ($mapdiskstoallesxhosts -ne "false"))
         {
-            Get-AGMErrorMessage -messagetoprint "The value of Map to all ESXi hosts of $mapdiskstoallesxhosts is not valid. Must be true or false"
+            Get-AGMErrorMessage -messagetoprint "The value of Map to all ESX hosts of $mapdiskstoallesxhosts is not valid.  Must be true or false"
             return
         }
         $restoreoptions = @(
@@ -786,7 +804,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     {
         if ($restoreoptions)
         {
-            $imagemountpoint = @{
+            $imagemountpoint = [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -795,7 +813,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         else 
         {
             $restoreoptions = @(
-            @{
+            [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -803,40 +821,85 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         }
     }
 
+    if ($mountpointspervol)
+    {
+        $restoreobjectmappings = @(
+            foreach ($mapping in $mountpointspervol.Split(","))
+            {
+                $firstword = $mapping.Split("=") | Select-object -First 1
+                $secondword = $mapping.Split("=") | Select-object -skip 1
+                [pscustomobject]@{
+                    restoreobject = $firstword
+                    mountpoint = $secondword}
+            } 
+        )
+    }
     $provisioningoptions = @()
     if ($consistencygroupname)
     {
-        $provisioningoptions = $provisioningoptions +@{
+        $provisioningoptions = $provisioningoptions +
+            [ordered]@{
                 name = 'ConsistencyGroupName'
                 value = $consistencygroupname
             }
     }
-    $provisioningoptions = $provisioningoptions +@{
-        name = 'dbsid'
-        value = $dbsid
+    $provisioningoptions = $provisioningoptions +[ordered]@{
+        name = 'TARGET_INSTANCE'
+        value = $targetinstance
     }
-    $provisioningoptions = $provisioningoptions +@{
-        name = 'DBUSER'
-        value = $userstorekey
+    if (!($targetnodenumber)) { $targetnodenumber = 0}
+    $provisioningoptions = $provisioningoptions +[ordered]@{
+        name = 'TARGET_NODE_NUM'
+        value = $targetnodenumber
     }
-    
+    if ($overwritedatabase)
+    {
+        $provisioningoptions = $provisioningoptions +[ordered]@{
+            name = 'overwritedatabase'
+            value = $overwritedatabase
+        }
+    } else {
+        $provisioningoptions= $provisioningoptions +[ordered]@{
+            name = 'overwritedatabase'
+            value = 'no'        
+        }
+    }
+
+    # {"name":"restorableobject","value":"testdb1","values":[{"name":"TARGET_DATABASE_NAME","value":"teddy"}]},
+    foreach ($dbsplit in $dbnamelist.Split(";"))
+    {
+        $sourcedb = $dbsplit.Split(",") | Select-object -First 1
+        $targetdb = $dbsplit.Split(",") | Select-object -skip 1
+        
+        $targetvalue = [ordered]@{
+            name = 'TARGET_DATABASE_NAME'
+            value = $targetdb 
+        }
+        $provisioningoptions = $provisioningoptions + [ordered]@{
+            name = 'restorableobject'
+            value = $sourcedb       
+            values = @( $targetvalue )
+        }
+    }    
     if ($sltid)
     {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'reprotect'
             value = "true"
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slt'
             value = $sltid
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slp'
             value = $slpid
         }
     }
-    $body = [ordered]@{
-        label = $label;
+    $body = [ordered]@{}
+    if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
+    if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;
@@ -868,7 +931,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         $compressedjson = $body | ConvertTo-Json -compress -depth 10
         Write-host "This is the final command:"
         Write-host ""
-        Write-host "Post-AGMAPIData -endpoint /backup/$imageid/mount -body `'$compressedjson`'"
+        Write-host "Post-AGMAPIData  -endpoint /backup/$imageid/mount -body `'$compressedjson`'"
         return
     }
 
