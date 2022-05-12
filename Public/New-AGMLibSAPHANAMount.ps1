@@ -671,7 +671,11 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         Write-Host "Guided selection is complete. The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibSAPHANAMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbsid `"$dbsid`" -userstorekey `"$userstorekey`" -mountpointperimage `"$mountpointperimage`""
+        Write-Host -nonewline "New-AGMLibSAPHANAMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbsid `"$dbsid`" -userstorekey `"$userstorekey`" -mountpointperimage `"$mountpointperimage`""
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
         if ($recoverypoint)
         {
             Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
@@ -857,8 +861,8 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    if ($label) { $body = $body + [ordered]@{ label = $label; }}
     $body = $body + [ordered]@{
-        label = $label;
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;

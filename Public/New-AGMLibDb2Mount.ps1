@@ -689,7 +689,11 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -targetnodenumber `"$targetnodenumber`" -overwritedatabase `"$overwritedatabase`""
+        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -targetnodenumber `"$targetnodenumber`" -overwritedatabase `"$overwritedatabase`""
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
         if ($consistencygroupname)
         {
             Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
@@ -921,6 +925,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    if ($label) { $body = $body + [ordered]@{ label = $label; }}
     $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};

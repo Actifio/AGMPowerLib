@@ -99,7 +99,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
         else {
             $appid = $appgrab.id
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -114,7 +113,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         else 
         {
             $appname = ($appgrab).appname
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -145,11 +143,9 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass    
         }
     }
 
@@ -167,11 +163,9 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id     
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -346,8 +340,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id   
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
                 $jobclass = $imagegrab.jobclass
                 $mountapplianceid = $imagegrab.cluster.clusterid
@@ -389,14 +382,11 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id   
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
                 $mountapplianceid = $imagegrab.cluster.clusterid
-                $mountappliancename = $imagegrab.cluster.name
-                $imagejobclass = $imagegrab.jobclass   
+                $mountappliancename = $imagegrab.cluster.name 
             }
-            
         }
         
         # now we check the log date
@@ -747,7 +737,11 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibPostgreSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        Write-Host -nonewline "New-AGMLibPostgreSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
         if ($consistencygroupname)
         {
             Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
@@ -968,7 +962,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
     }
 
-    # {"name":"restorableobject","value":"testdb1","values":[{"name":"TARGET_DATABASE_NAME","value":"teddy"}]},
     foreach ($dbsplit in $dbnamelist.Split(";"))
     {
         $sourcedb = $dbsplit.Split(",") | Select-object -First 1
@@ -1002,8 +995,8 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    if ($label) { $body = $body + [ordered]@{ label = $label; }}
     $body = $body + [ordered]@{
-        label = $label;
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;

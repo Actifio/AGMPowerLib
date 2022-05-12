@@ -750,7 +750,11 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibMySQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        Write-Host -nonewline "New-AGMLibMySQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
         if ($consistencygroupname)
         {
             Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
@@ -995,6 +999,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    if ($label) { $body = $body + [ordered]@{ label = $label; }}
     $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};
