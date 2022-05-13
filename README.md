@@ -1106,6 +1106,12 @@ To learn which Applications are suitable use this command:
 ```
 Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
 ```
+You could use the same command to export to CSV, like this:
+```
+Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname | Export-Csv -Path ./applist.csv
+Get-Content ./applist.csv
+```
+
 To learn which Cloud Credential srcids are available use this command:
 ```
 Get-AGMLibCredentialSrcID
