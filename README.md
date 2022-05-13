@@ -1195,7 +1195,10 @@ The goal is to offer a simplified way to manage failover or failback where:
 
 ### Demo video
 
-This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
+This video will help you understand how to use this command:   
+
+https://youtu.be/hh1seRvRZos
+
 Note this is the same as the video linked in the previous section.
 
 ### GCE to GCE CSV file
