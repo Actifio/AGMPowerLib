@@ -148,12 +148,12 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                 }
                 $label = $printarray.label[($userselection2 - 1)]        
             }
-            if ($userchcoice -eq "3")
+            if ($userchoice -eq "3")
             {
                 $gceinstanceforget = $true
             }
         }
-        if (!($gceinstanceforget))
+        if ($gceinstanceforget -eq $false)
         {
             Write-Host ""
             Write-host "Delete setting"
