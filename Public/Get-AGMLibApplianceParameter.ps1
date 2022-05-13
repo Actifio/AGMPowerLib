@@ -47,8 +47,6 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
         if ($appliancegrab.id.count -eq 1)
         {
             $applianceid = $appliancegrab.id
-            write-host "Applianceid is $applianceid"
-            write-host ""
         }
         if ($appliancegrab.id.count -gt 1)
         {

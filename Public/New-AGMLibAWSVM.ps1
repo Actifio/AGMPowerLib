@@ -112,7 +112,7 @@ Function New-AGMLibAWSVM ([string]$appid,[string]$appname,[string]$mountapplianc
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
             return
         }
-        if ($appliancegrab.count -eq 1)
+        if ($appliancegrab.name.count -eq 1)
         {
             $mountapplianceid = $appliancegrab.clusterid
             $mountappliancename =  $appliancegrab.name

@@ -99,7 +99,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
         else {
             $appid = $appgrab.id
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -114,7 +113,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         else 
         {
             $appname = ($appgrab).appname
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -145,11 +143,9 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass    
         }
     }
 
@@ -167,11 +163,9 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id     
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -188,7 +182,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
              Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
              return
          }
-         if ($appliancegrab.count -eq 1)
+         if ($appliancegrab.name.count -eq 1)
          {
              $mountapplianceid = $appliancegrab.clusterid
              $mountappliancename =  $appliancegrab.name
@@ -346,8 +340,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id   
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
                 $jobclass = $imagegrab.jobclass
                 $mountapplianceid = $imagegrab.cluster.clusterid
@@ -389,14 +382,11 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id   
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
                 $mountapplianceid = $imagegrab.cluster.clusterid
-                $mountappliancename = $imagegrab.cluster.name
-                $imagejobclass = $imagegrab.jobclass   
+                $mountappliancename = $imagegrab.cluster.name 
             }
-            
         }
         
         # now we check the log date
@@ -421,8 +411,7 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
     
         if ( (!($targethostname)) -and (!($targethostid)))
         {
-            $hostgrab1 = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid"
-            $hostgrab = $hostgrab1 | select-object id,name | sort-object name 
+            $hostgrab = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid" | sort-object name
             if ($hostgrab -eq "" )
             {
                 Get-AGMErrorMessage -messagetoprint "Cannot find any Linux hosts"
@@ -431,11 +420,20 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             Clear-Host
             Write-Host "Target host selection menu"
             $i = 1
-            foreach ($name in $hostgrab.name)
+            $printarray = @()
+            foreach ($listedhost in $hostgrab)
             { 
-                Write-Host -Object "$i`: $name"
+                $printarray += [pscustomobject]@{
+                    id = $i
+                    hostname = $listedhost.name
+                    hostid = $listedhost.id
+                    vmtype = $listedhost.vmtype
+                }
                 $i++
             }
+            #print the list
+            $printarray | Format-table 
+            write-host ""
             While ($true) 
             {
                 $listmax = $hostgrab.name.count
@@ -457,7 +455,18 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
                 $targethostname =  $hostgrab.name[($hostselection - 1)]
                 $targethostid = $hostgrab.id[($hostselection - 1)]
             }
-
+            $hostgrab = Get-AGMHost -id $targethostid
+            $targethostid = $hostgrab.id
+            $vmtype = $hostgrab.vmtype
+            $transport = $hostgrab.transport
+            $diskpref = $hostgrab.diskpref
+            $vcenterid = $hostgrab.vcenterhost.id
+            #if the VM doesn't have a transport, then the vCenter must have one
+            if ( ($vmtype -eq "vmware") -and (!($transport)) )
+            {
+                $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
+                $transport = $vcgrab.transport
+            }
         }
 
         
@@ -728,7 +737,11 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibPostgreSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        Write-Host -nonewline "New-AGMLibPostgreSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
         if ($consistencygroupname)
         {
             Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
@@ -838,17 +851,17 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
 
     if ($mountmode -eq "vrdm")
     {
-        $physicalrdm = 0
+        $physicalrdm = "0"
         $rdmmode = "independentvirtual"
     }
     if ($mountmode -eq "prdm")
     {
-        $physicalrdm = 1
+        $physicalrdm = "1"
         $rdmmode = "physical"
     }
     if ($mountmode -eq "nfs")
     {
-        $physicalrdm = 2
+        $physicalrdm = "2"
         $rdmmode = "nfs"
     }
 
@@ -949,7 +962,6 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
         }
     }
 
-    # {"name":"restorableobject","value":"testdb1","values":[{"name":"TARGET_DATABASE_NAME","value":"teddy"}]},
     foreach ($dbsplit in $dbnamelist.Split(";"))
     {
         $sourcedb = $dbsplit.Split(",") | Select-object -First 1
@@ -980,13 +992,25 @@ Function New-AGMLibPostgreSQLMount ([string]$appid,[string]$targethostid,[string
             value = $slpid
         }
     }
-    $body = [ordered]@{
-        label = $label;
+    $selectedobjects = @()
+    foreach ($dbsplit in $dbnamelist.Split(";"))
+    {
+        $sourcedb = $dbsplit.Split(",") | Select-object -First 1
+        $selectedobjects = $selectedobjects + [ordered]@{
+            restorableobject = $sourcedb
+        }
+    }    
+    $body = [ordered]@{}
+    if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
+    if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
+    if ($label) { $body = $body + [ordered]@{ label = $label; }}
+    $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;
         appaware = "true";
-        provisioningoptions = $provisioningoptions
+        provisioningoptions = $provisioningoptions;
+        selectedobjects = $selectedobjects
     }
     if ($restoreoptions)
     {

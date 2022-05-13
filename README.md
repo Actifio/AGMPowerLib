@@ -1075,6 +1075,10 @@ In this user story we are going to use Persistent Disk Snapshots to create a new
 
 This command requires several inputs so first we explore how to get them.
 
+### Demo video
+
+This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
+
 ### Creating a single GCE Instance from Snapshot
 
 The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCPInstance** command without any parameters.
@@ -1106,6 +1110,12 @@ To learn which Applications are suitable use this command:
 ```
 Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname,@{N='appliancename'; E={$_.cluster.name}}
 ```
+You could use the same command to export to CSV, like this:
+```
+Get-AGMApplication -filtervalue "apptype=GCPInstance&managed=True" | select id,appname | Export-Csv -Path ./applist.csv
+Get-Content ./applist.csv
+```
+
 To learn which Cloud Credential srcids are available use this command:
 ```
 Get-AGMLibCredentialSrcID
@@ -1183,6 +1193,11 @@ The goal is to offer a simplified way to manage failover or failback where:
 * The images are created by a Backup Appliance in an alternate zone
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
 
+### Demo video
+
+This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
+Note this is the same as the video linked in the previous section.
+
 ### GCE to GCE CSV file
 
 In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  
@@ -1211,6 +1226,16 @@ What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
+
+#### Cleaning up after a multi-mount run
+
+After the multi-mount has finished you may have a large number of GCE Instances to clean up or retain.
+One simple strategy is to run this command:
+```
+Remove-AGMLibMount -gceinstanceforget
+```
+This will remove the mounted info from AGM side, but leave the instances in place on Google Side.
+Then on the Google Console side, keep or delete them as you wish.
 
 #### Monitoring the jobs created by a multi mount by creating an object
 

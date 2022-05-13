@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.47'
+ModuleVersion = '0.0.0.48'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -27,7 +27,7 @@ Author = 'Anthony Vandewerdt'
 CompanyName = 'Actifio'
 
 # Copyright statement for this module
-Copyright = '(c) 2021 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2022 Actifio, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
@@ -98,6 +98,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
+'New-AGMLibDb2Mount',
 'New-AGMLibFSMount',
 'New-AGMLibGCEConversion',
 'New-AGMLibGCEConversionMulti',
@@ -165,6 +166,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.48] 2022-05-12
+        Add New-AGMLibDb2Mount.  Corrected selection logic error with several reports on PS5 where AGM had only a single appliance.   Added GCE forget function to Remove-AGMLibMount
+
         ## [0.0.0.47] 2022-05-11
         Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
 

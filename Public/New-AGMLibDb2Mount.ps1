@@ -1,23 +1,23 @@
-Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbuser,[string]$password,[string]$base64password,[string]$messagesdir,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
+Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$targetnodenumber,[string]$targetinstance,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[string]$overwritedatabase,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
-    Mounts a MySQL Image
+    Mounts a Db2 Image
 
     .EXAMPLE
-    New-AGMLibMySQLMount 
+    New-AGMLibDb2Mount 
     You will be prompted through a guided menu
 
     .EXAMPLE
-    New-AGMLibMySQLMount -appid 17915 -mountapplianceid 143112195179 -targethostid 17692 -dbnamelist "proddb1,devtestdb1" -port "5433" -osuser "mysql" -basedir "/var/lib/mysql"
-    Mounts a new instance with one DB, renaming the DB from proddb1 to devtestdb1.
+     New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1" -targetinstance "db2inst2"
+    Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1.
 
     .EXAMPLE
-    New-AGMLibMySQLMount -appid 17915 -mountapplianceid 143112195179 -label "avtest" -targethostid 17692 -dbnamelist "testdb1,avtest1;companydata,avtest2" -port "5433" -osuser "mysql" -basedir "/var/lib/mysql" -consistencygroupname avtestcg -mountpointperimage "/avtest1" -sltid 6717 -slpid 17984
+    New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -label "label" -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1;DB2DB,DB2DB1" -targetinstance "db2inst2" -targetnodenumber "0" -overwritedatabase "yes" -consistencygroupname "cg1" -recoverypoint "2022-05-12 00:01:48" -sltid 760948 -slpid 6297
     Mounts a new instance with two DBs.  The instance is reprotected with the specified SLT and SLP.
 
     .DESCRIPTION
-    A function to mount MySQL Image
+    A function to mount Db2 Image
 
     * Image selection can be done three ways:
 
@@ -40,32 +40,20 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     -consistencygroupname  If mounting more than one DB then you will need to specify a CG name.  This is used on the Appliance side to group the new apps, the mounted host wont see this name
 
     * mounted instance
-    -port xxxx     port number on the target server where a new MySQL Instance will get created for the new child databases
-    -osuser xxxx   name of the operating system user on the target server where a new MySQL Instance will get created.
-    -basedir xxxx  path to the base directory where the configuration files for MySQL Instance on the target server are stored.
-    -snatchport    if set will stop the existing instance and take over the port if the target port is already in use by an existing instance
+    -targetinstance  XXXX    The target DB2 instance. Select a target DB2 instance to manage the new database. Mounting back to the same host and same instance is not supported
+    -targetnodenumber  YYYY   DB2 target node number to be used for app aware mount. It will use 0 by default if no value is specified     
+    -overwritedatabase    no, stale or yes     Specifies when, if ever, to overwrite a database on the target server that has the same name as the new database(s) being mounted.   Default is no
 
     * Other options
 
     -mountpointperimage
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
-    -messagesdir    Enter the path to the messages directory for the MySQL Instance on the target server (optional)
  
 
     * Reprotection:
 
     -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
     -slpid yyyy (short for Service Level Profile ID) - if specified along with an sltid, will reprotect the mounted child app with the specified template and profile
-
-    * Username and password:
-    
-    -dbuser  This is the taregt DB username (optional)
-    -password   This is the target DB password in plain text (not a good idea)
-    -base64password   This is the target DB password in base 64 encoding
-    To create this:
-    $password = 'passw0rd'
-    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
-    $base64password =[Convert]::ToBase64String($Bytes)
 
     * VMware specific options
     -mountmode    use either   nfs, vrdm or prdm
@@ -100,7 +88,6 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         else {
             $appid = $appgrab.id
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -115,7 +102,6 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         else 
         {
             $appname = ($appgrab).appname
-            $apptype = $appgrab.apptype
         }
     }
 
@@ -146,11 +132,9 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass    
         }
     }
 
@@ -168,11 +152,9 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $consistencydate = $imagegrab.consistencydate
             $endpit = $imagegrab.endpit
             $appname = $imagegrab.appname
-            $appid = $imagegrab.application.id
-            $apptype = $imagegrab.apptype      
+            $appid = $imagegrab.application.id    
             $restorableobjects = $imagegrab.restorableobjects
             $mountapplianceid = $imagegrab.cluster.clusterid
-            $imagejobclass = $imagegrab.jobclass   
         }
     }
 
@@ -182,7 +164,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
         $guided = $true
-        # first we need to work out which appliance we are mounting from 
+         # first we need to work out which appliance we are mounting from 
         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
         if ($appliancegrab.count -eq 0)
         {
@@ -225,25 +207,24 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         write-host ""
         write-host "Running guided mode"
         write-host ""
-        write-host "Select application status for MySQL apps"
+        write-host "Select application status for Db2Instance apps"
         Write-host ""
         Write-Host "1`: Managed local apps (default)"
         Write-Host "2`: Unmanaged or imported apps"
         Write-Host "3`: Imported/mirrored apps (from other Appliances). If you cannot see imported apps, you may need to first run: Import-AGMLibOnVault"
         Write-Host ""
         [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
-        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=MYSQLInstance&sourcecluster=$mountapplianceid" | sort-object appname }
-        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=MYSQLInstance&sourcecluster=$mountapplianceid" | sort-object appname  }
-        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=MYSQLInstance&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
-
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=DB2Instance&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=DB2Instance&sourcecluster=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=DB2Instance&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
+ 
         if ($applist.count -eq 0)
         {
-            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed MySQL apps to list" }
-            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged MySQL apps to list" }
-            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported MySQL apps to list.  You may need to run Import-AGMLibOnVault first" }
+            if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { Get-AGMErrorMessage -messagetoprint "There are no managed Db2Instance apps to list" }
+            if ($userselectionapps -eq 2)  { Get-AGMErrorMessage -messagetoprint "There are no unmanaged Db2Instance apps to list" }
+            if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported Db2Instance apps to list.  You may need to run Import-AGMLibOnVault first" }
             return
         }
-        # print the app list
         $i = 1
         foreach ($app in $applist)
         { 
@@ -348,8 +329,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id    
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false} 
                 $jobclass = $imagegrab.jobclass
                 $mountapplianceid = $imagegrab.cluster.clusterid
@@ -391,12 +371,10 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $consistencydate = $imagegrab.consistencydate
                 $endpit = $imagegrab.endpit
                 $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
+                $appid = $imagegrab.application.id    
                 $restorableobjects = $imagegrab.restorableobjects | where-object {$_.systemdb -eq $false}
                 $mountapplianceid = $imagegrab.cluster.clusterid
-                $mountappliancename = $imagegrab.cluster.name
-                $imagejobclass = $imagegrab.jobclass   
+                $mountappliancename = $imagegrab.cluster.name  
             }
             
         }
@@ -462,12 +440,13 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             if ($hostgrab.name.count -eq 1)
             {
-                $targethostname =  $hostgrab.name
+                $targethostname = $hostgrab.name
                 $targethostid = $hostgrab.id
             } else {
-                $targethostname =  $hostgrab.name[($hostselection - 1)]
+                $targethostname = $hostgrab.name[($hostselection - 1)]
                 $targethostid = $hostgrab.id[($hostselection - 1)]
             }
+
             $hostgrab = Get-AGMHost -id $targethostid
             $targethostid = $hostgrab.id
             $vmtype = $hostgrab.vmtype
@@ -480,6 +459,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
                 $transport = $vcgrab.transport
             }
+
         }
 
         
@@ -593,73 +573,32 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         write-host ""
         While ($true) 
         {
-            $port = read-host "MySQL Target Server Port"
-            if ($port -eq "")
+            $targetinstance = read-host "Db2 Target Instance name"
+            if ($targetinstance -eq "")
             {
-                Write-Host -Object "The Target Server Port cannot be blank"
+                Write-Host -Object "The Db2 Target Instance name cannot be blank"
             } 
             else
             {
                 break
             }
         }
-        write-host ""
-        While ($true) 
+        $targetnodenumber = read-host "Db2 Target node Number (hit enter for default of 0)"
+        if ($targetnodenumber -eq "")
         {
-            $osuser = read-host "MySQL Target OS User Name"
-            if ($osuser -eq "")
-            {
-                Write-Host -Object "The Target OS User Name cannot be blank"
-            } 
-            else
-            {
-                break
-            }
-        }
-        write-host ""
-        While ($true) 
-        {
-            $basedir = read-host "MySQL Target Home Directory"
-            if ($basedir -eq "")
-            {
-                Write-Host -Object "The Target Server Home Directory cannot be blank"
-            } 
-            else
-            {
-                break
-            }
-        }
-        Write-host ""
-        $dbuser = read-host "MySQL Target DB User Name (optional)"
-        if ($dbuser)
-        {
-            $passwordenc = Read-Host -AsSecureString "Password"
-            if ($passwordenc.length -ne 0)
-            {
-                if ( $((get-host).Version.Major) -gt 5 )
-                {
-                    $UnsecurePassword = ConvertFrom-SecureString -SecureString $passwordenc -AsPlainText
-                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($UnsecurePassword))
-                }
-                else {
-                    $passwordbytes = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($passwordenc)
-                    $plaintext = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($passwordbytes)
-                    $base64password = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($plaintext))
-                }
-            }
-        }
-        $messagesdir = read-host "MySQL Target messages directory path (optional)"
-       
+            $targetnodenumber = 0
+        } 
         #take over in-use port
-        write-host ""
-        Write-Host "Take over in-use port"
+        Write-host ""
+        Write-Host "Overwrite existing database"
         Write-Host "1`: No (default)"
-        Write-Host "2`: Yes"
+        Write-Host "2`: Only if stale"
+        Write-Host "3`: Yes"
         Write-Host ""
-        [int]$userselection = Read-Host "Please select from this list (1-2)"
-        if ($userselection -eq "") { $snatchport = $false }
-        if ($userselection -eq 1) {  $snatchport = $false }
-        if ($userselection -eq 2) {  $snatchport = $true  }
+        $overwritedatabase = "no"
+        [int]$userselection = Read-Host "Please select from this list (1-3)"
+        if ($userselection -eq 2) {  $overwritedatabase = "stale" }
+        if ($userselection -eq 3) {  $overwritedatabase = "yes"  }
 
         # if this is a VMTarget
         if ($vmtype -eq "vmware")
@@ -750,7 +689,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibMySQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -port `"$port`" -osuser `"$osuser`" -basedir `"$basedir`""
+        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -targetnodenumber `"$targetnodenumber`" -overwritedatabase `"$overwritedatabase`""
         if ($label)
         {
             Write-Host -nonewline " -label `"$label`""
@@ -779,9 +718,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             Write-Host -nonewline " -sltid $sltid -slpid $slpid"
         }        
-        if ($username) {Write-Host -nonewline " -username `"$username`""}
+        if ($dbuser) {Write-Host -nonewline " -dbuser `"$dbuser`""}
         if ($base64password) {Write-Host -nonewline " -base64password `"$base64password`""}
-        if ($messagesdir) {Write-Host -nonewline " -messagesdir `"$messagesdir`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -851,12 +789,6 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $label = ""
     }
 
-    if ($password)
-    {
-        $Bytes = [System.Text.Encoding]::Unicode.GetBytes($password)
-        $base64password =[Convert]::ToBase64String($Bytes)
-    }
-
     if (!($dbnamelist))
     {
         Get-AGMErrorMessage -messagetoprint "No dbnamelist was specified"
@@ -898,7 +830,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
     {
         if ($restoreoptions)
         {
-            $imagemountpoint = @{
+            $imagemountpoint = [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -907,7 +839,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         else 
         {
             $restoreoptions = @(
-            @{
+            [ordered]@{
                 name = 'mountpointperimage'
                 value = "$mountpointperimage"
             }
@@ -938,29 +870,23 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
     }
     $provisioningoptions = $provisioningoptions +[ordered]@{
-        name = 'PORT'
-        value = $port
+        name = 'TARGET_INSTANCE'
+        value = $targetinstance
     }
-    $provisioningoptions = $provisioningoptions + [ordered]@{
-        name = 'OSUSER'
-        value = $osuser
-    }
-    if ($dbuser) { $provisioningoptions += @( [ordered]@{ name = 'DBUSER'; value = $dbuser } ) } 
-    if ($base64password) { $provisioningoptions += @( [ordered]@{ name = 'password'; value = $base64password } ) } 
-    if ($messagesdir) { $provisioningoptions += @( [ordered]@{ name = 'MESSAGES_DIR'; value = $messagesdir } ) } 
+    if (!($targetnodenumber)) { $targetnodenumber = 0}
     $provisioningoptions = $provisioningoptions +[ordered]@{
-        name = 'BASEDIR'
-        value = $basedir
+        name = 'TARGET_NODE_NUM'
+        value = $targetnodenumber
     }
-    if ($snatchport)
+    if ($overwritedatabase)
     {
         $provisioningoptions = $provisioningoptions +[ordered]@{
-            name = 'snatchport'
-            value = "yes"
+            name = 'overwritedatabase'
+            value = $overwritedatabase
         }
     } else {
-        $provisioningoptions= $provisioningoptions + [ordered]@{
-            name = 'snatchport'
+        $provisioningoptions= $provisioningoptions +[ordered]@{
+            name = 'overwritedatabase'
             value = 'no'        
         }
     }
@@ -971,11 +897,11 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $sourcedb = $dbsplit.Split(",") | Select-object -First 1
         $targetdb = $dbsplit.Split(",") | Select-object -skip 1
         
-        $targetvalue = @{
+        $targetvalue = [ordered]@{
             name = 'TARGET_DATABASE_NAME'
             value = $targetdb 
         }
-        $provisioningoptions = $provisioningoptions +[ordered]@{
+        $provisioningoptions = $provisioningoptions + [ordered]@{
             name = 'restorableobject'
             value = $sourcedb       
             values = @( $targetvalue )
@@ -1003,7 +929,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $selectedobjects = $selectedobjects + [ordered]@{
             restorableobject = $sourcedb
         }
-    } 
+    }  
     $body = [ordered]@{}
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}

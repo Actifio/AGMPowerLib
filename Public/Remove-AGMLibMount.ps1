@@ -1,4 +1,4 @@
-function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[switch][alias("d")]$delete,[switch][alias("p")]$preservevm,[switch][alias("f")]$force)
+function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[switch][alias("d")]$delete,[switch][alias("g")]$gceinstanceforget,[switch][alias("p")]$preservevm,[switch][alias("f")]$force)
 {
     <#
     .SYNOPSIS
@@ -27,6 +27,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
     -delete (-d)      Is used to unmount and delete an image.  If not specified then an unmount is done, but the image is retained on the Actifio Side
     -force (-f)       Removes the mount even if the host-side command to remove the mounted application fails.   This can leave artifacts on the Host and should be used with caution
     -preservevm (-p)  This applies to GCE Instances created from PD Snapshot.   When used the Actifio Image of the mount is removed, but on the GCP side the new VM is retained.   
+    -gceinstanceforget  Forgets all mounted GCE Instance.  This is the same as running -preservevm against them
 
     #>
 
@@ -42,7 +43,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         return
     }
 
-    if ((!($imagename)) -and (!($label)) -and (!($imageid)))
+    if ((!($imagename)) -and (!($label)) -and (!($imageid)) -and (!($gceinstanceforget)))
     {
         Clear-Host
         Write-Host "This function is designed to assist you removing mounted images."
@@ -95,13 +96,14 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
             Write-host "Unmount selection method:"
             Write-Host "1`: Select one image by ImageName"
             Write-Host "2`: Select a label"
+            Write-Host "3`: Forget all GCE Instances"
         
             While ($true) 
             {
-                $userchoice = Read-Host "Please select from this list [1-2]"
-                if ($userchoice -lt "1" -or $userchoice -gt "2")
+                $userchoice = Read-Host "Please select from this list [1-3]"
+                if ($userchoice -lt "1" -or $userchoice -gt "3")
                 {
-                    Write-Host -Object "Invalid selection. Please enter either 1 or 2"
+                    Write-Host -Object "Invalid selection. Please enter either 1-3"
                 } 
                 else
                 {
@@ -146,39 +148,46 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                 }
                 $label = $printarray.label[($userselection2 - 1)]        
             }
-        }
-        Write-Host ""
-        Write-host "Delete setting"
-        Write-Host "1`: Unmount and delete"
-        Write-Host "2`: Unmount"
-        $userchoice = ""
-        While ($true) 
-        {
-            [int]$userchoice = Read-Host "Please select from this list (1-2)"
-            if ($userchoice -lt 1 -or $userchoice -gt 2)
+            if ($userchoice -eq "3")
             {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-2)]"
-            } 
-            else
-            {
-                break
+                $gceinstanceforget = $true
             }
         }
-        if ($userchoice -eq 1) { $delete = $true }
-        write-host ""
-        Write-host "Force setting"
-        Write-Host "1`: Do not force the unmount if host side commands do not release the disk (default)"
-        Write-Host "2`: Force the unmount"
-        [int]$userchoice = Read-Host "Please select from this list (1-2)"
-        if ($userchoice -eq 2) { $force = $true }
-        if (($apptype -eq "GCPInstance") -or ($label))
+        if ($gceinstanceforget -eq $false)
         {
+            Write-Host ""
+            Write-host "Delete setting"
+            Write-Host "1`: Unmount and delete"
+            Write-Host "2`: Unmount"
+            $userchoice = ""
+            While ($true) 
+            {
+                [int]$userchoice = Read-Host "Please select from this list (1-2)"
+                if ($userchoice -lt 1 -or $userchoice -gt 2)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if ($userchoice -eq 1) { $delete = $true }
             write-host ""
-            Write-host "Preserve VM setting (this only applies to GCE mounts in Google Cloud)"
-            Write-Host "1`: Delete the VM on both the GCP side and the Actifio Side (default)"
-            Write-Host "2`: Preserve the VM on the GCP side"
+            Write-host "Force setting"
+            Write-Host "1`: Do not force the unmount if host side commands do not release the disk (default)"
+            Write-Host "2`: Force the unmount"
             [int]$userchoice = Read-Host "Please select from this list (1-2)"
-            if ($userchoice -eq 2) { $preservevm = $true }
+            if ($userchoice -eq 2) { $force = $true }
+            if (($apptype -eq "GCPInstance") -or ($label))
+            {
+                write-host ""
+                Write-host "Preserve VM setting (this only applies to GCE mounts in Google Cloud)"
+                Write-Host "1`: Delete the VM on both the GCP side and the Actifio Side (default)"
+                Write-Host "2`: Preserve the VM on the GCP side"
+                [int]$userchoice = Read-Host "Please select from this list (1-2)"
+                if ($userchoice -eq 2) { $preservevm = $true }
+            }
         }
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
@@ -188,6 +197,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         if ($delete) { write-host -nonewline " -delete" }
         if ($force) { write-host -nonewline " -force" }
         if ($preservevm) { write-host -nonewline " -preservevm" }
+        if ($gceinstanceforget) { write-host -nonewline " -gceinstanceforget" }
         Write-Host ""
         Write-Host "1`: Run the command now and exit (default)"
         Write-Host "2`: Exit without running the command"
@@ -259,7 +269,18 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
             }
         }
     }
-    else 
+    elseif ($gceinstanceforget) 
+    {
+        $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}
+        foreach ($mount in $mountlist)
+        {
+            $id = $mount.id
+            $body = @{delete=$true;preservevm=$true}
+            $json = $body | ConvertTo-Json
+            Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+        }
+    }
+    else
     {
         $body = @{delete=$deleterequest;force=$forcerequest;preservevm=$preservevmrequest}
         $json = $body | ConvertTo-Json
