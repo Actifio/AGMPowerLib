@@ -1075,6 +1075,10 @@ In this user story we are going to use Persistent Disk Snapshots to create a new
 
 This command requires several inputs so first we explore how to get them.
 
+### Demo video
+
+This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
+
 ### Creating a single GCE Instance from Snapshot
 
 The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCPInstance** command without any parameters.
