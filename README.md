@@ -1220,13 +1220,13 @@ What is not supported right now:
 
 #### Cleaning up after a multi-mount run
 
-After the multi-mount has finished you may have a large number of GCE Instances to clean up or retaibn.
-One simple strategy is in AGMPower Shell run this command:
+After the multi-mount has finished you may have a large number of GCE Instances to clean up or retain.
+One simple strategy is to run this command:
 ```
 Remove-AGMLibMount -gceinstanceforget
 ```
 This will remove the mounted info from AGM side, but leave the instances in place on Google Side.
-Then on Google Console side, keep or delete them as you wish.
+Then on the Google Console side, keep or delete them as you wish.
 
 #### Monitoring the jobs created by a multi mount by creating an object
 
