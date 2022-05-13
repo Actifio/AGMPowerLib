@@ -1,4 +1,4 @@
-Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel,[switch]$diagmode) 
 {
     <#
     .SYNOPSIS
@@ -134,13 +134,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $srcid = $credarray.srcid
                 $mountapplianceid = $credarray.applianceid
                 $mountappliancename = $credarray.appliancename
-                $credentialid =$credarray.credentialid
             } else 
             {
                 $srcid = $credarray.srcid[($credselection - 1)]
                 $mountapplianceid = $credarray.applianceid[($credselection - 1)]
                 $mountappliancename = $credarray.appliancename[($credselection - 1)]
-                $credentialid =$credarray.credentialid[($credselection - 1)]
             }
         }
 
@@ -356,6 +354,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $recoverygrab.PSObject.Properties.Remove('@type')
                 $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                if ($diagmode) { $newjson }
                 $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
             }
             #now read the data
@@ -366,7 +365,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
             $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
             $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+            # if the lists are empty then we have no choices, only defaults
+            if (!($networklist)) { $defaultnetwork = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" })._default }
+            if (!($subnetlist)) { $defaultsubnet = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" })._default }
             if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
             {
                 $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
@@ -425,6 +427,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
                     $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
@@ -432,7 +435,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
                     $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
                     $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                    # if the lists are empty then we have no choices, only defaults
+                    if (!($networklist)) { $defaultnetwork = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" })._default }
+                    if (!($subnetlist)) { $defaultsubnet = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" })._default }
                     if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
                     {
                         $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
@@ -498,7 +504,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         { 
             if ($zonelist.name)
             {
-                # if region selectio is possible we need to validate we have the right list of zones
+                # if region selection is possible we need to validate we have the right list of zones
                 if ($selectedregion)
                 {
                     if ($selectedregion -ne $region)
@@ -522,6 +528,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                             $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                         }
                         $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                        if ($diagmode) { $newjson }
                         $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                         if ($recoverygrab.fields)
                         {
@@ -529,9 +536,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                             $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
                             $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
                             $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+                            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
                             $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
                             $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
+                             # if the lists are empty then we have no choices, only defaults
+                             if (!($networklist)) { $defaultnetwork = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" })._default }
+                             if (!($subnetlist)) { $defaultsubnet = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" })._default }
                         } 
                         else 
                         {
@@ -588,10 +598,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayName
+                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+                    # if the lists are empty then we have no choices, only defaults
+                    if (!($networklist)) { $defaultnetwork = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" })._default }
+                    if (!($subnetlist)) { $defaultsubnet = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" })._default }
                 }
             }
             else 
@@ -740,12 +754,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if  ($networklist.name.count -eq 1)
             {
                 $nic0network = $networklist.name
-                $selectednic0network = $networklist.displayName
+                $selectednic0network = $networklist.name
             } else {
                 $nic0network = $networklist.name[($netselection - 1)]
-                $selectednic0network = $networklist.displayName[($netselection - 1)]
+                $selectednic0network = $networklist.name[($netselection - 1)]
             }
-        } else 
+        } elseif ($defaultnetwork) 
+        {
+            write-host "nic0network:  $defaultnetwork"
+            write-host ""
+            $nic0network = $defaultnetwork
+        } 
+        else
         {
             While ($true)  { if ($nic0network -eq "") { [string]$nic0network = Read-Host "NIC0 Network ID (mandatory)" } else { break } }
         }
@@ -771,10 +791,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic0network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
 
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                if ($diagmode) { $newjson }
                 $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                 write-host ""
                 $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
-                $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).displayname
+                $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                # if the lists are empty then we have no choices, only defaults
+                if (!($networklist)) { $defaultnetwork = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" })._default }
+                if (!($subnetlist)) { $defaultsubnet = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" })._default }
             }
         }
         if ($subnetlist.name)
@@ -809,7 +833,13 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $nic0subnet = $subnetlist.name[($subselection - 1)]
             }
         }
-        if (!($nic0subnet))
+        elseif ($defaultsubnet) 
+        {
+            $nic0subnet = $defaultsubnet
+            write-host "nic0subnet:  $defaultsubnet"
+            write-host ""
+        } 
+        elseif (!($nic0subnet))
         {
             While ($true)  { if ($nic0subnet -eq "") { [string]$nic0subnet = Read-Host "NIC0 Subnet ID (mandatory)" } else { break } }
         }
@@ -863,12 +893,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 if  ($networklist.name.count -eq 1)
                 {
                     $nic1network = $networklist.name
-                    $selectednic1network = $networklist.displayName
+                    $selectednic1network = $networklist.name
                 } else {
                     $nic1network = $networklist.name[($netselection - 1)]
-                    $selectednic1network = $networklist.displayName[($netselection - 1)]
+                    $selectednic1network = $networklist.name[($netselection - 1)]
                 }
             }
+            elseif ($defaultnetwork) 
+            {
+                $nic1network = $defaultnetwork
+                write-host "nic1network:  $defaultnetwork"
+                write-host ""
+            } 
             else 
             {
                 While ($true)  { if ($nic1network -eq "") { [string]$nic1network = Read-Host "NIC1 Network ID (mandatory)" } else { break } }
@@ -887,6 +923,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                     (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic1network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     write-host ""
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
@@ -923,6 +960,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $nic1subnet = $subnetlist.name[($subselection - 1)]
                     }
                 }
+                elseif ($defaultnetwork) 
+                {
+                    $nic1subnet = $defaultsubnet
+                    write-host "nic1subnet:  $defaultsubnet"
+                    write-host ""
+                } 
                 if (!($nic1subnet))
                 {
                     While ($true)  { if ($nic1subnet -eq "") { [string]$nic1subnet = Read-Host "NIC1 Subnet ID (mandatory)" } else { break } }
@@ -1020,7 +1063,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Write comma separated output.  This will mount the most recently created image for that application"
+        Write-Host "2`: Write comma separated output.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
         Write-Host "3`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 3)
