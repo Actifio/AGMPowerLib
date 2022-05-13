@@ -1218,6 +1218,16 @@ What is not supported right now:
 1.  Specifying more than one internal IP per subnet.
 1.  Specifying different disk types per disk
 
+#### Cleaning up after a multi-mount run
+
+After the multi-mount has finished you may have a large number of GCE Instances to clean up or retaibn.
+One simple strategy is in AGMPower Shell run this command:
+```
+Remove-AGMLibMount -gceinstanceforget
+```
+This will remove the mounted info from AGM side, but leave the instances in place on Google Side.
+Then on Google Console side, keep or delete them as you wish.
+
 #### Monitoring the jobs created by a multi mount by creating an object
 
 When you run a multimount, by default all jobs will run before any output is printed.   What we output is a nicely formatted object listing each line in the CSV, the app details, the command that was run and the results.  
