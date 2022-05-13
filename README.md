@@ -1193,6 +1193,11 @@ The goal is to offer a simplified way to manage failover or failback where:
 * The images are created by a Backup Appliance in an alternate zone
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
 
+### Demo video
+
+This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
+Note this is the same as the video linked in the previous section.
+
 ### GCE to GCE CSV file
 
 In the previous section we explored using the **New-AGMLibGCPInstance** command to create a new GCP VM.  
