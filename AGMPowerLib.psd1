@@ -167,7 +167,7 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.48] 2022-05-12
-        Add New-AGMLibDb2Mount.  Corrected selection logic error with several reports on PS5 where AGM had only a single appliance
+        Add New-AGMLibDb2Mount.  Corrected selection logic error with several reports on PS5 where AGM had only a single appliance.   Added GCE forget function to Remove-AGMLibMount
 
         ## [0.0.0.47] 2022-05-11
         Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
