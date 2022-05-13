@@ -153,7 +153,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                 $gceinstanceforget = $true
             }
         }
-        if ($gceinstanceforget -eq $false)
+        if (!($gceinstanceforget))
         {
             Write-Host ""
             Write-host "Delete setting"
