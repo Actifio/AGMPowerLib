@@ -900,7 +900,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         
         $targetvalue = [ordered]@{
             name = 'TARGET_DATABASE_NAME'
-            value = $targetdb 
+            value = $targetdb.ToLower() 
         }
         $provisioningoptions = $provisioningoptions + [ordered]@{
             name = 'restorableobject'
@@ -935,24 +935,20 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     if ($rdmmode) { $body = $body + [ordered]@{ rdmmode = $rdmmode; }}
     if ($physicalrdm) { $body = $body + [ordered]@{ physicalrdm = $physicalrdm; }}
     if ($label) { $body = $body + [ordered]@{ label = $label; }}
+    if ($recoverytime) { $body = $body + [ordered]@{ recoverytime = [string]$recoverytime }}
     $body = $body + [ordered]@{
         image = $imagename;
         host = @{id=$targethostid};
         hostclusterid = $mountapplianceid;
         appaware = "true";
         provisioningoptions = $provisioningoptions;
+        restoreobjectmappings = $restoreobjectmappings;
         selectedobjects = $selectedobjects
     }
     if ($restoreoptions)
     {
         $body = $body + @{ restoreoptions = $restoreoptions }
     }
-    if ($recoverytime)
-    {
-        $body = $body + @{ recoverytime = [string]$recoverytime }
-    }
-
-    $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
 
     $json = $body | ConvertTo-Json -depth 10
 
