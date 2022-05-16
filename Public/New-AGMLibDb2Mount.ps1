@@ -9,7 +9,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     You will be prompted through a guided menu
 
     .EXAMPLE
-     New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1" -targetinstance "db2inst2"
+     New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -targethostid 759773 -dbnamelist "SAMPLE,SAMPLE1" -targetinstance "db2inst2"
     Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1, using the latest image for that appid
 
     .EXAMPLE
@@ -753,7 +753,9 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         if ($imagegrab.count -eq 1)
         {   
             $imageid = $imagegrab.id
-            $imagename = $imagegrab.backupname
+            $imagename = $imagegrab.backupname            
+            $consistencydate = $imagegrab.consistencydate
+            $endpit = $imagegrab.endpit   
         }
         else 
         {
