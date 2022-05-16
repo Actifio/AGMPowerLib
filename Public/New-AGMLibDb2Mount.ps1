@@ -951,10 +951,8 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     {
         $body = $body + @{ recoverytime = [string]$recoverytime }
     }
-    if ($restoreobjectmappings)
-    {
-        $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
-    }
+
+    $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
 
     $json = $body | ConvertTo-Json -depth 10
 
