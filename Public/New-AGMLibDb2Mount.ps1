@@ -396,6 +396,10 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
                     return
                 }
             }
+            else
+            {
+                $recoverypoint = $consistencydate
+            }
         }
     
         if ( (!($targethostname)) -and (!($targethostid)))
@@ -774,6 +778,11 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     {
         Get-AGMErrorMessage -messagetoprint "No image was found to mount"
         return
+    }
+
+    if (($endpit) -and ($consistencydate) -and (!($recoverypoint)))
+    {
+        $recoverypoint = $consistencydate
     }
 
     # recovery point handling
