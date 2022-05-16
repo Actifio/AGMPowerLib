@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.48'
+ModuleVersion = '0.0.0.49'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -166,6 +166,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.49] 2022-05-16
+        Handle lower vs upper case DB names for New-AGMLibDb2Mount
+
         ## [0.0.0.48] 2022-05-12
         Add New-AGMLibDb2Mount.  Corrected selection logic error with several reports on PS5 where AGM had only a single appliance.   Added GCE forget function to Remove-AGMLibMount
 

@@ -13,7 +13,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1.
 
     .EXAMPLE
-    New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -label "label" -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1;DB2DB,DB2DB1" -targetinstance "db2inst2" -targetnodenumber "0" -overwritedatabase "yes" -consistencygroupname "cg1" -recoverypoint "2022-05-12 00:01:48" -sltid 760948 -slpid 6297
+    New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -label "label" -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1;DB2DB,DB2DB1" -targetinstance "db2inst2"  -overwritedatabase "yes" -consistencygroupname "cg1" -recoverypoint "2022-05-12 00:01:48" -sltid 760948 -slpid 6297
     Mounts a new instance with two DBs.  The instance is reprotected with the specified SLT and SLP.
 
     .DESCRIPTION
@@ -41,7 +41,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
 
     * mounted instance
     -targetinstance  XXXX    The target DB2 instance. Select a target DB2 instance to manage the new database. Mounting back to the same host and same instance is not supported
-    -targetnodenumber  YYYY   DB2 target node number to be used for app aware mount. It will use 0 by default if no value is specified     
+    -targetnodenumber  YYYY   DB2 target node number to be used for app aware mount. It will use 0 by default if no value is specified (optional)
     -overwritedatabase    no, stale or yes     Specifies when, if ever, to overwrite a database on the target server that has the same name as the new database(s) being mounted.   Default is no
 
     * Other options
@@ -49,7 +49,6 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
     -mountpointperimage
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
  
-
     * Reprotection:
 
     -sltid xxxx (short for Service Level Template ID) - if specified along with an slpid, will reprotect the mounted child app with the specified template and profile
@@ -584,10 +583,6 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
             }
         }
         $targetnodenumber = read-host "Db2 Target node Number (hit enter for default of 0)"
-        if ($targetnodenumber -eq "")
-        {
-            $targetnodenumber = 0
-        } 
         #take over in-use port
         Write-host ""
         Write-Host "Overwrite existing database"
@@ -689,7 +684,11 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
        
-        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -targetnodenumber `"$targetnodenumber`" -overwritedatabase `"$overwritedatabase`""
+        Write-Host -nonewline "New-AGMLibDb2Mount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -dbnamelist `"$dbnamelist`" -targetinstance `"$targetinstance`" -overwritedatabase `"$overwritedatabase`""
+        if ($targetnodenumber)
+        {
+            Write-Host -nonewline " -targetnodenumber `"$targetnodenumber`""
+        }
         if ($label)
         {
             Write-Host -nonewline " -label `"$label`""
@@ -873,10 +872,12 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
         name = 'TARGET_INSTANCE'
         value = $targetinstance
     }
-    if (!($targetnodenumber)) { $targetnodenumber = 0}
-    $provisioningoptions = $provisioningoptions +[ordered]@{
-        name = 'TARGET_NODE_NUM'
-        value = $targetnodenumber
+    if ($targetnodenumber)
+    {
+        $provisioningoptions = $provisioningoptions +[ordered]@{
+            name = 'TARGET_NODE_NUM'
+            value = $targetnodenumber
+        }
     }
     if ($overwritedatabase)
     {
