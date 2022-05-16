@@ -10,7 +10,7 @@ Function New-AGMLibDb2Mount ([string]$appid,[string]$targethostid,[string]$mount
 
     .EXAMPLE
      New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1" -targetinstance "db2inst2"
-    Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1.
+    Mounts a new instance with one DB, renaming the DB from SAMPLE to SAMPLE1, using the latest image for that appid
 
     .EXAMPLE
     New-AGMLibDb2Mount -appid 97825 -mountapplianceid 141751487742 -label "label" -targethostid 92881 -dbnamelist "SAMPLE,SAMPLE1;DB2DB,DB2DB1" -targetinstance "db2inst2"  -overwritedatabase "yes" -consistencygroupname "cg1" -recoverypoint "2022-05-12 00:01:48" -sltid 760948 -slpid 6297
