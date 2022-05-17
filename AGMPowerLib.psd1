@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.49'
+ModuleVersion = '0.0.0.50'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -166,6 +166,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.50] 2022-05-
+        
+
         ## [0.0.0.49] 2022-05-16
         Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount
 
