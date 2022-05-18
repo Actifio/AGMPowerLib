@@ -10,7 +10,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     .EXAMPLE
     New-AGMLibMSSQLMount -appid 50318 -mountapplianceid 143112195179 -targethostid 51090 -dbnamelist "AdventureWorks2019" -dbname "avtest" -discovery
-    Mounts the latest snapshot from AppID 50318 to targethostID 51090 on applianceID 143112195179.  Requests discovery be run to discovery and find a SQL Instance.  The first one found will be used.
+    Mounts the latest snapshot from AppID 50318 to targethostID 51090 on applianceID 143112195179.  Because no sqlinstance was specified but -discovery was, the first instance discovered on the target host will be used.
 
     .EXAMPLE
     New-AGMLibMSSQLMount -appname "WINDOWS\SQLEXPRESS" -mountapplianceid 143112195179 -targethostname "win-target" -dbnamelist "AdventureWorks2019" -dbname "avtest" -discovery
@@ -19,10 +19,6 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     .EXAMPLE
     New-AGMLibMSSQLMount -appname "WINDOWS\SQLEXPRESS" -mountapplianceid 143112195179 -targethostname "win-target" -dbnamelist "AdventureWorks2019" -dbname "avtest"
     Same as the previous example but because discovery was not requested, the first instance found on the target host will be used. 
-
-    .EXAMPLE
-    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -m -mountapplianceid 143112195179
-    Mounts the latest snapshot from AppID 5552336 to host named demo-sql-4, and monitors the job to completion.  This will not be an appaware mount.
 
     .EXAMPLE
     New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -label "TDM Mount" -sqlinstance DEMO-SQL-4 -dbname avtest -w -mountapplianceid 143112195179
