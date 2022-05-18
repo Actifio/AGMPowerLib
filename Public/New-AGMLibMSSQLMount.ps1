@@ -886,198 +886,72 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
        Clear-Host  
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
-        if ( ($dbname) -and (!($dbnamelist)) )
-        {   
-            if ($recoverypoint)
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }
-                if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
-            else 
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }
-                if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
-        }
-        elseif ( ($dbname) -and ($dbnamelist) )
-        {   
-            if ($recoverypoint)
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
-            else 
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }
-                if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
-        }
-        else 
+      
+        Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`""
+        if ($dbname)
         {
-            if ($recoverypoint)
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename  -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }
-                if ($dbnameprefix)
-                {
-                    Write-Host -nonewline " -dbnameprefix `"$dbnameprefix`""
-                }
-                if ($dbnamesuffix)
-                {
-                    Write-Host -nonewline " -dbnamesuffix `"$dbnamesuffix`""
-                }
-                if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
-            else 
-            {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
-                if ($label)
-                {
-                    Write-Host -nonewline " -label `"$label`""
-                }
-                if ($username)
-                {
-                    Write-Host -nonewline " -username $username -base64password `"$base64password`""
-                }
-                if ($dbnameprefix)
-                {
-                    Write-Host -nonewline "-dbnameprefix `"$dbnameprefix`""
-                }
-                if ($dbnamesuffix)
-                {
-                    Write-Host -nonewline "-dbnamesuffix `"$dbnamesuffix`""
-                }
-                if ($mountmode)
-                {
-                    Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-                }
-                if ($mountpointperimage)
-                {
-                    Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-                }
-                if ($mountpointspervol)
-                {
-                    Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-                }
-                if ($sltid)
-                {
-                    Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-                }
-            }
+            Write-Host -nonewline " -dbname `"$dbname`""
         }
+        if ($dbnamelist)
+        {
+            Write-Host -nonewline " -dbnamelist `"$dbnamelist`""
+        } 
+        if ($consistencygroupname)
+        {
+            Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
+        } 
+        if ($recoverymodel)
+        {
+            Write-Host -nonewline " -recoverymodel `"$recoverymodel`""
+        }
+        if ($overwrite)
+        {
+            Write-Host -nonewline " -overwrite `"$overwrite`""
+        }
+        if ($recoverypoint)
+        {
+            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
+        }    
+        if ($recoverdb)
+        {
+            Write-Host -nonewline " -recoverdb `"$recoverdb`""
+        }
+        if ($userlogins)
+        {
+            Write-Host -nonewline " -userlogins `"$userlogins`""
+        }
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
+        }
+        if ($username)
+        {
+            Write-Host -nonewline " -username $username -base64password `"$base64password`""
+        }
+        if ($mountmode)
+        {
+            Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
+        }
+        if ($mountpointperimage)
+        {
+            Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
+        }
+        if ($mountpointspervol)
+        {
+            Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
+        }
+        if ($sltid)
+        {
+            Write-Host -nonewline " -sltid $sltid -slpid $slpid"
+        }
+        if ($dbnameprefix)
+        {
+            Write-Host -nonewline " -dbnameprefix `"$dbnameprefix`""
+        }
+        if ($dbnamesuffix)
+        {
+            Write-Host -nonewline " -dbnamesuffix `"$dbnamesuffix`""
+        }     
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -1093,7 +967,6 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
 
     }
-
         
     if ($targethostid -eq "")
     {
@@ -1345,10 +1218,9 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
         }
 
-
-
-        $body = [ordered]@{
-            label = $label;
+        $body = [ordered]@{}
+        if ($label) { $body = $body + [ordered]@{ label = $label; }}
+        $body = $body + [ordered]@{
             image = $imagename;
             host = @{id=$targethostid}
             provisioningoptions = $provisioningoptions
@@ -1357,20 +1229,20 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         if ($restoreoptions)
         {
-            $body = $body + @{ restoreoptions = $restoreoptions }
+            $body = $body + [ordered]@{ restoreoptions = $restoreoptions }
         }
         if ($selectedobjects)
         {
-            $body = $body + @{ selectedobjects = $selectedobjects }
+            $body = $body + [ordered]@{ selectedobjects = $selectedobjects }
         }
         if ($recoverytime)
         {
-            $body = $body + @{ recoverytime = [string]$recoverytime }
+            $body = $body + [ordered]@{ recoverytime = [string]$recoverytime }
         }
         if ($mountmode)
         {
-            $body = $body + @{ physicalrdm = $physicalrdm }
-            $body = $body + @{ rdmmode = $rdmmode }
+            $body = $body + [ordered]@{ physicalrdm = $physicalrdm }
+            $body = $body + [ordered]@{ rdmmode = $rdmmode }
         }
         if ($restoreobjectmappings)
         {
@@ -1439,8 +1311,14 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 value = $slpid
             }
         }
-        $body = [ordered]@{
-            label = $label;
+        $body = [ordered]@{}
+        if ($label) { $body = $body + [ordered]@{ label = $label; }}
+        if ($mountmode)
+        {
+            $body = $body + [ordered]@{ physicalrdm = $physicalrdm }
+            $body = $body + [ordered]@{ rdmmode = $rdmmode }
+        }
+        $body = $body + [ordered]@{
             image = $imagename;
             host = @{id=$targethostid};
             selectedobjects = $selectedobjects
@@ -1450,15 +1328,15 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
         if ($restoreoptions)
         {
-            $body = $body + @{ restoreoptions = $restoreoptions }
+            $body = $body + [ordered]@{ restoreoptions = $restoreoptions }
         }
         if ($recoverytime)
         {
-            $body = $body + @{ recoverytime = [string]$recoverytime }
+            $body = $body + [ordered]@{ recoverytime = [string]$recoverytime }
         }
         if ($restoreobjectmappings)
         {
-            $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
+            $body = $body + [ordered]@{ restoreobjectmappings = $restoreobjectmappings }
         }
     }
     else 
