@@ -166,8 +166,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.50] 2022-05-
-        
+        ## [0.0.0.50] 2022-05-18
+        Improved New-AGMLibMSSQLMount guided section and added discovery option
 
         ## [0.0.0.49] 2022-05-16
         Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount

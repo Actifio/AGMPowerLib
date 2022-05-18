@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -6,22 +6,26 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
 
     .EXAMPLE
     New-AGMLibMSSQLMount 
-    You will be prompted for Appname and target Hostname
+    You will be offered guided mode
 
     .EXAMPLE
-    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -w
-    Mounts the latest snapshot from AppID 5552336 to host named demo-sql-4, and waits for jobname to be printed.This will not be an appaware mount.
+    New-AGMLibMSSQLMount -appid 50318 -mountapplianceid 143112195179 -targethostid 51090 -dbnamelist "AdventureWorks2019" -dbname "avtest" -discovery
+    Mounts the latest snapshot from AppID 50318 to targethostID 51090 on applianceID 143112195179.  Requests discovery be run to discovery and find a SQL Instance.  The first one found will be used.
 
     .EXAMPLE
-    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -m
+    New-AGMLibMSSQLMount -appname "WINDOWS\SQLEXPRESS" -mountapplianceid 143112195179 -targethostname "win-target" -dbnamelist "AdventureWorks2019" -dbname "avtest"
+    Same as prebvious example but using appname and hostname.   Because no sqlinstance was specified, the first instance found on the target host will be used. 
+
+    .EXAMPLE
+    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -m -mountapplianceid 143112195179
     Mounts the latest snapshot from AppID 5552336 to host named demo-sql-4, and monitors the job to completion.  This will not be an appaware mount.
 
     .EXAMPLE
-    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -label "TDM Mount" -sqlinstance DEMO-SQL-4 -dbname avtest -w
+    New-AGMLibMSSQLMount  -appid 5552336 -targethostname demo-sql-4 -label "TDM Mount" -sqlinstance DEMO-SQL-4 -dbname avtest -w -mountapplianceid 143112195179
     Mounts the latest snapshot from AppID 5552336 to host named demo-sql-4, creating a new DB called avtest on SQL Instance DEMO-SQL-4
 
     .EXAMPLE
-    New-AGMLibMSSQLMount  -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "nonprod_" -dbnamesuffix "_av"
+    New-AGMLibMSSQLMount  -appid 5534398 -targethostname demo-sql-5 -label "AV instance mount" -sqlinstance DEMO-SQL-5 -consistencygroupname avcg -dbnamelist "smalldb1,smalldb2" -dbnameprefix "nonprod_" -dbnamesuffix "_av" -mountapplianceid 143112195179
     Mounts the latest snapshot from AppID 5534398 to host named demo-sql-5, creating two new DBs called nonprod_smalldb1_av and nonprod_smalldb2_av on SQL Instance DEMO-SQL-5
 
     .EXAMPLE
@@ -64,6 +68,8 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     -overwrite    use either:   "no" (default)  "stale" or "yes"
     -recoverdb    true=Recover database after restore (default) false=Don't recovery database after restore
     -userlogins   false=Don't recover user logins(default)    true=Recover User Logins
+    -discovery     This is a switch, so if specified will run application discovery on the selected targethostid
+    -mountapplianceid XXXX    Runs the mount on the specified appliance
 
     * Reprotection:
 
@@ -195,6 +201,46 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if (( (!($appname)) -and (!($imagename)) -and (!($appid)) ) -or ($guided))
     {
         $guided = $true
+         # first we need to work out which appliance we are mounting from 
+         $appliancegrab = Get-AGMAppliance | select-object name,clusterid | sort-object name
+         if ($appliancegrab.count -eq 0)
+         {
+             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list."
+             return
+         }
+         if ($appliancegrab.name.count -eq 1)
+         {
+             $mountapplianceid = $appliancegrab.clusterid
+             $mountappliancename =  $appliancegrab.name
+         }
+         else
+         {
+             Clear-Host
+             write-host "Appliance selection menu - which Appliance will run this mount"
+             Write-host ""
+             $i = 1
+             foreach ($appliance in $appliancegrab)
+             { 
+                 Write-Host -Object "$i`: $($appliance.name) ($($appliance.clusterid))"
+                 $i++
+             }
+             While ($true) 
+             {
+                 Write-host ""
+                 $listmax = $appliancegrab.name.count
+                 [int]$appselection = Read-Host "Please select an Appliance to mount from (1-$listmax)"
+                 if ($appselection -lt 1 -or $appselection -gt $listmax)
+                 {
+                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                 } 
+                 else
+                 {
+                     break
+                 }
+             }
+             $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
+             $mountappliancename =  $appliancegrab.name[($appselection - 1)]
+         }
         Clear-Host
         Write-Host "What App Type do you want to work with:"
         Write-Host "1`: SQL Server (default)"
@@ -208,14 +254,26 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         if ($userselection -eq 2) {  $apptype = "SqlInstance"  }
         if ($userselection -eq 3) {  $apptype = "SQLServerAvailabilityGroup"  }
         if ($userselection -eq 4) {  $apptype = "ConsistGrp"  }
-        Clear-Host
-        $applist = Get-AGMApplication -filtervalue "apptype=$apptype&managed=True" | sort-object appname
+        write-host ""
+        write-host "Select application status for $apptype apps"
+        Write-host ""
+        Write-Host "1`: Managed local apps (default)"
+        Write-Host "2`: Unmanaged or imported apps"
+        Write-Host "3`: Imported/mirrored apps (from other Appliances). If you cannot see imported apps, you may need to first run: Import-AGMLibOnVault"
+        Write-Host ""
+        [int]$userselectionapps = Read-Host "Please select from this list (1-3)"
+        if ($userselectionapps -eq "" -or $userselectionapps -eq 1)  { $applist = Get-AGMApplication -filtervalue "managed=true&apptype=$apptype&sourcecluster=$mountapplianceid" | sort-object appname }
+        if ($userselectionapps -eq 2) { $applist = Get-AGMApplication -filtervalue "managed=false&apptype=$apptype&sourcecluster=$mountapplianceid" | sort-object appname  }
+        if ($userselectionapps -eq 3) { $applist = Get-AGMApplication -filtervalue "apptype=$apptype&sourcecluster!$mountapplianceid&clusterid=$mountapplianceid" | sort-object appname }
         if ($applist.id.count -eq 0)
         { 
             Get-AGMErrorMessage -messagetoprint "Failed to find any $apptype apps"
             return
         }
         $i = 1
+        Clear-Host
+        Write-host "Application selection menu"
+        Write-host ""
         foreach ($app in $applist)
         { 
             $applistname = $app.appname
@@ -235,7 +293,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             Write-host ""
             $listmax = $applist.appname.count
-            [int]$appselection = Read-Host "Please select a protected App (1-$listmax)"
+            [int]$appselection = Read-Host "Please select an App (1-$listmax)"
             if ($appselection -lt 1 -or $appselection -gt $listmax)
             {
                 Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -404,15 +462,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         if ( (!($targethostname)) -and (!($targethostid)))
         {
             $hostgrab1 = Get-AGMApplication -filtervalue "apptype=SqlInstance&sourcecluster=$mountapplianceid"
-            $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name | sort-object name 
-            if ($hostgrab -eq "" )
-            {
-                Get-AGMErrorMessage -messagetoprint "Cannot find any hosts with SQLInstances"
-                return
-            }
+            $hostgrab = ($hostgrab1).host | sort-object -unique id | select-object id,name 
             Clear-Host
-            Write-Host "Target host selection menu"
+            Write-Host "Target host selection menu (use option 0 to run discovery)"
             $i = 1
+            Write-Host -Object "0`: I need to run app discovery on a host"
             foreach ($name in $hostgrab.name)
             { 
                 Write-Host -Object "$i`: $name"
@@ -421,8 +475,8 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             While ($true) 
             {
                 $listmax = $hostgrab.name.count
-                [int]$hostselection = Read-Host "Please select a host (1-$listmax)"
-                if ($hostselection -lt 1 -or $hostselection -gt $listmax)
+                [int]$hostselection = Read-Host "Please select a host (0-$listmax)"
+                if ($hostselection -lt 0 -or $hostselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
                 } 
@@ -431,8 +485,69 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                     break
                 }
             }
-            $targethostname =  $hostgrab.name[($hostselection - 1)]
-            $targethostid = $hostgrab.id[($hostselection - 1)]
+            if ($hostselection -eq 0)
+            {
+                
+                write-host ""
+                write-host "Host discovery menu"
+                $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid" | sort-object name 
+                if ($hostgrab -eq "" )
+                {
+                    Get-AGMErrorMessage -messagetoprint "Cannot find any hosts"
+                    return
+                }
+                Clear-Host
+                Write-Host "Discovery host selection menu"
+                $i = 1
+                foreach ($potentialhost in $hostgrab)
+                { 
+                    Write-Host -Object "$i`:  $($potentialhost.name) ($($potentialhost.ipaddress))"
+                    $i++
+                }
+                While ($true) 
+                {
+                    $listmax = $hostgrab.name.count
+                    [int]$dischostselection = Read-Host "Please select a host (1-$listmax)"
+                    if ($dischostselection -lt 1 -or $dischostselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                    
+                }
+                if ($hostgrab.name.count -eq 1)
+                {
+                    $targethostname = $hostgrab.name
+                    $targethostid = $hostgrab.id
+                }
+                else
+                {
+                    $targethostname = $hostgrab.name[($dischostselection - 1)]
+                    $targethostid = $hostgrab.id[($dischostselection - 1)]
+                }
+                write-host ""
+                write-host "Running discovery on selected host ID $targethostid on Appliance ID $mountapplianceid"
+                New-AGMAppDiscovery -hostid $targethostid -applianceid $mountapplianceid
+                write-host "Sleeping for 30 seconds"
+                Start-Sleep -s 30
+            }
+            else
+            {
+                if ($hostgrab.name.count -eq 1)
+                {
+                    $targethostname =  $hostgrab.name
+                    $targethostid = $hostgrab.id
+                }
+                else
+                {
+                    $targethostname =  $hostgrab.name[($hostselection - 1)]
+                    $targethostid = $hostgrab.id[($hostselection - 1)]
+                }
+            }
+
         }
 
         # now we determine the instance to mount to
@@ -445,6 +560,9 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         if ($instancelist.Length -eq 1)
         {
             $sqlinstance = ($instancelist).appname
+            write-host ""
+            Write-Host "SQL instance $sqlinstance will be used"
+            write-host ""
         } 
         else
         {
@@ -471,9 +589,9 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 }
             }
             $sqlinstance =  $instancelist[($instanceselection - 1)].appname
+            Clear-Host
         }
         # reprotection
-        Clear-Host
         Write-Host "Reprotection"
         Write-Host "1`: Don't manage new application (default)"
         Write-Host "2`: Manage new application"
@@ -772,7 +890,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -796,7 +918,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -823,7 +949,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {   
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -846,7 +976,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -dbnamelist `"$dbnamelist`" -dbname `"$dbname`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -873,7 +1007,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             if ($recoverypoint)
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename  -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`" -recoverypoint `"$recoverypoint`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -905,7 +1043,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             }
             else 
             {
-                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -label `"$label`" -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`" -consistencygroupname `"$consistencygroupname`" -dbnamelist `"$dbnamelist`" -recoverdb $recoverdb -userlogins $userlogins -recoverymodel `"$recoverymodel`" -overwrite `"$overwrite`""
+                if ($label)
+                {
+                    Write-Host -nonewline " -label `"$label`""
+                }
                 if ($username)
                 {
                     Write-Host -nonewline " -username $username -base64password `"$base64password`""
@@ -983,6 +1125,25 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if ( (!($sltid)) -and ($slpid) )
     {
         Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx.    Please specify both"
+        return
+    }
+
+    if (($discovery -eq $true) -and ($targethostid) -and ($mountapplianceid))
+    {
+        New-AGMAppDiscovery -hostid $targethostid -applianceid $mountapplianceid
+        Start-Sleep -s 30
+    }
+    if ((!($sqlinstance)) -and ($mountapplianceid))
+        {
+            $sqlinstancegrab = Get-AGMApplication -filtervalue "apptype=SqlInstance&hostid=$targethostid&sourcecluster=$mountapplianceid" -limit 1 
+            if ($sqlinstancegrab.appname)
+            {
+                $sqlinstance = $sqlinstancegrab.appname
+            }
+        }
+    if (!($sqlinstance))
+    {
+        Get-AGMErrorMessage -messagetoprint "No SQL Instance name was found to mount to.  Add -discovery to have discovery run against your targethostid"
         return
     }
     

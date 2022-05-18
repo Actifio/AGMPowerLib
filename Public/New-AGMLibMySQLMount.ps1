@@ -197,6 +197,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         else
         {
             Clear-Host
+            write-host "Running guided mode"
+            write-host ""
             write-host "Appliance selection menu - which Appliance will run this mount"
             Write-host ""
             $i = 1
@@ -222,8 +224,6 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
             $mountappliancename =  $appliancegrab.name[($appselection - 1)]
         }
-        write-host ""
-        write-host "Running guided mode"
         write-host ""
         write-host "Select application status for MySQL apps"
         Write-host ""
