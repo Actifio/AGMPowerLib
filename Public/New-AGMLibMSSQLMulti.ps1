@@ -23,7 +23,9 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
     "50318","51090","143112195179","Image_0089933","59823","win-target","WINDOWS\SQLEXPRESS","WIN-TARGET\SQLEXPRESS","","","Simple","stale","label","cg1","","","model,model1;CRM,CRM1","","false","true","userbname","","cGFzc3dvcmQ=","","","d:\","6717","6667","true"
 
     If you specify both appanme and appid then appid will be used.  The appname is mandatory so you know the name of the source DB.
-    For discovery to be specified, add t or true to that column
+    In general you do not want to use the imagename or imageid column (so blank them out of even remove them) because normally we just want the latest image, rather than a specific one.
+    For discovery to be requested, add t or true (or any text) to that column.  If any text appears at all, then discovery will be requested.
+    
 
     #>
 
