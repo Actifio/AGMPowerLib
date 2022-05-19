@@ -20,9 +20,10 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
     Here is an example of such a file:
 
     appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery
-    "50318","51090","143112195179","Image_0089933","59823","win-target","WINDOWS\SQLEXPRESS","WIN-TARGET\SQLEXPRESS","","","Simple","stale","label","cg1","","","model,model1;CRM,CRM1","","false","true","userbname","","cGFzc3dvcmQ=","","","d:\","6717","6667",
+    "50318","51090","143112195179","Image_0089933","59823","win-target","WINDOWS\SQLEXPRESS","WIN-TARGET\SQLEXPRESS","","","Simple","stale","label","cg1","","","model,model1;CRM,CRM1","","false","true","userbname","","cGFzc3dvcmQ=","","","d:\","6717","6667","true"
 
     If you specify both appanme and appid then appid will be used.  The appname is mandatory so you know the name of the source DB.
+    For discovery to be specified, add t or true to that column
 
     #>
 
@@ -44,7 +45,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
         return;
     }
 
-    if ( Test-Path $-worklist )
+    if ( Test-Path $worklist )
     {
         $recoverylist = Import-Csv -Path $-worklist
     }
