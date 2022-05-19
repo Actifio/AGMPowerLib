@@ -295,7 +295,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 break
             }
         }
-        if ($applist.count -eq 1)
+        if ($applist.id.count -eq 1)
         {
             $appname = $applist.appname
             $appid = $applist.id
@@ -549,7 +549,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             Get-AGMErrorMessage -messagetoprint "Failed to fetch any SQL Instances on $targethostname.  Specify a target host with discovered SQL Instances"
             return
         }
-        if ($instancelist.Length -eq 1)
+        if ($instancelist.id.count -eq 1)
         {
             $sqlinstance = ($instancelist).appname
             write-host ""
@@ -569,7 +569,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             While ($true) 
             {
                 Write-host ""
-                $listmax = $instancelist.Length
+                $listmax = $instancelist.id.count
                 [int]$instanceselection = Read-Host "Please select an instance (1-$listmax)"
                 if ($instanceselection -lt 1 -or $instanceselection -gt $instancelist.Length)
                 {
@@ -951,7 +951,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     {
         # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
         $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
-        if ($imagegrab.count -eq 1)
+        if ($imagegrab.id.count -eq 1)
         {   
             $imageid = $imagegrab.id
             $imagename = $imagegrab.backupname
