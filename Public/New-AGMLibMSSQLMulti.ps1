@@ -82,10 +82,13 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
     }
     
 
+
+    
+    $printarray = @()
+    
     foreach ($app in $recoverylist)
     {
-
-        $mountcommand = 'New-AGMLibMSSQLMount mountapplianceid ' +$app.mountapplianceid 
+        $mountcommand = 'New-AGMLibMSSQLMount -mountapplianceid ' +$app.mountapplianceid 
         if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' } 
         if ($app.targethostid) { $mountcommand = $mountcommand + ' -targethostid "' +$app.targethostid +'"' } 
         if ($app.imagename) { $mountcommand = $mountcommand + ' -imagename "' +$app.imagename +'"' } 
@@ -113,9 +116,6 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
         if ($app.slpid) { $mountcommand = $mountcommand + ' -slpid "' +$app.slpid +'"' } 
         if ($app.discovery) { $mountcommand = $mountcommand + ' -discovery ' } 
 
-
-
-
         $runcommand = Invoke-Expression $mountcommand 
         
         if ($runcommand.errormessage)
@@ -130,7 +130,6 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
-                    instancename = $app.instancename
                     result = "failed"
                     message = $runcommand.errormessage.Trim()
                     command =  $mountcommand }
@@ -148,18 +147,17 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
-                    instancename = $app.instancename
                     result = "failed"
                     message = $runcommand.err_message.Trim()
                     errorcode = $runcommand.err_code 
                     command =  $mountcommand }
             }
         }
-        elseif ($runcommand.jobstatus)
+        else
         {
             if ($textoutput)
             {
-                write-host "The following command started this job: " $runcommand.jobstatus
+                write-host "The following command started a job"
                 $mountcommand 
                 write-host ""
             }
@@ -168,26 +166,8 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
                 $printarray += [pscustomobject]@{
                     appname = $app.appname
                     appid = $app.appid
-                    instancename = $app.instancename
                     result = "started"
                     message = $runcommand.jobstatus 
-                    command =  $mountcommand }
-            }
-        }
-        else
-        {
-            if ($textoutput)
-            {
-                write-host "The following command may not have started: " $runcommand
-                $mountcommand 
-                write-host ""
-            }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    instancename = $app.instancename
-                    result = "unknown"
                     command =  $mountcommand }
             }
         }
