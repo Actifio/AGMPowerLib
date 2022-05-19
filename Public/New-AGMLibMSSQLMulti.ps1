@@ -39,7 +39,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
         return
     }
     
-    if (!($-worklist))
+    if (!($worklist))
     {
         Get-AGMErrorMessage -messagetoprint "Please supply a csv file correctly formatted as per the help for this function using: -worklist xxxx.csv"
         return;
@@ -47,7 +47,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput)
 
     if ( Test-Path $worklist )
     {
-        $recoverylist = Import-Csv -Path $-worklist
+        $recoverylist = Import-Csv -Path $worklist
     }
     else
     {
