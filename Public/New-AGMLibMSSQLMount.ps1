@@ -927,12 +927,16 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }     
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Show the JSON used to run this command, but don't run it"
+        Write-Host "2`: Print CSV output"
         Write-Host "3`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            $jsonprint = "yes"
+            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery"
+            write-host -nonewline "`"$appid`",`"$targethostid`",`"$mountapplianceid`",`"$imagename`",`"$imageid`",`"$targethostname`",`"$appname`",`"$sqlinstance`",`"$dbname`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbnameprefix`",`"$dbrenamelist`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
+            if ($discovery) {  write-host -nonewline  `"$discovery`" }
+            write-host ""
+            return   
         }
         if ($userchoice -eq 3)
         {
