@@ -2,7 +2,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
 {
     <#
     .SYNOPSIS
-    Uses a pre-prepared CSV list of GCP Instance data to create many new Microsoft SQLServer Databases
+    Uses a pre-prepared CSV list of SQL DBs or Instances to create many new Microsoft SQLServer Databases
 
     .EXAMPLE
     New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmount
@@ -23,12 +23,12 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
     .EXAMPLE
     New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmigration
 
-    This will load the contents of the file recoverylist.csv and use it to run each migration job
+    This will load the contents of the file recoverylist.csv and use it to run a migration job for each DB that has a started migration
     
     .EXAMPLE
     New-AGMLibMSSQLMulti -worklist recoverylist.csv -finalizemigration
 
-    This will load the contents of the file recoverylist.csv and use it to finalize the migrations
+    This will load the contents of the file recoverylist.csv and use it to finalize the migration for each DB that has a started migration
 
 
 
