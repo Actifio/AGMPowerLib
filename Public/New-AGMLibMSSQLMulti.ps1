@@ -1,19 +1,36 @@
-Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$validatemigration,[switch]$finalizemigration) 
+Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration) 
 {
     <#
     .SYNOPSIS
     Uses a pre-prepared CSV list of GCP Instance data to create many new Microsoft SQLServer Databases
 
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv 
+    New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmount
 
     This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibMSSQLMount jobs
 
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -textoutput
+    New-AGMLibMSSQLMulti -worklist recoverylist.csv -textoutput -runmount
 
     This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibMSSQLMount jobs
     Rather than wait for all jobs to be attemped before reporting status, a report will be displayed after each job is attempted.
+
+    .EXAMPLE
+    New-AGMLibMSSQLMulti -worklist recoverylist.csv -startmigration
+
+    This will load the contents of the file recoverylist.csv and use it to start multiple migrate jobs for any SQL Db where migrate=true
+    
+    .EXAMPLE
+    New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmigration
+
+    This will load the contents of the file recoverylist.csv and use it to run each migration job
+    
+    .EXAMPLE
+    New-AGMLibMSSQLMulti -worklist recoverylist.csv -finalizemigration
+
+    This will load the contents of the file recoverylist.csv and use it to finalize the migrations
+
+
 
     .DESCRIPTION
     This routine needs a well formatted CSV file. The column order is not important.    
