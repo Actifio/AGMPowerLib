@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$migration) 
+Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$validatemigration,[switch]$finalizemigration) 
 {
     <#
     .SYNOPSIS
@@ -98,7 +98,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$mi
 
     
     $printarray = @()
-    if (!($migration))
+    if ($runmount)
     {
         foreach ($app in $recoverylist)
         {
@@ -192,7 +192,8 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$mi
             $printarray
         }
     }
-    else 
+    # start the migration!
+    if ($startmigration) 
     {
     
         # migration time   [string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist
@@ -250,11 +251,12 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$mi
                 $imagegrab = Get-AGMImage -filtervalue "$fv" 
                 if ($imagegrab.backupname.count -eq 1)
                 {
-                    $imagename = $imagegrab.backupname
+                    $imageid = $imagegrab.id
                 }
-                if ($imagename)
+                if ($imageid)
                 {
-                    $mountcommand = 'New-AGMLibMSSQLMigrate -imagename ' +$imagename 
+                    $app.mountedimageid = $imageid
+                    $mountcommand = 'New-AGMLibMSSQLMigrate -imageid ' +$imageid 
                     if ($app.copythreadcount) { $mountcommand = $mountcommand + ' -copythreadcount "' +$app.copythreadcount +'"' } 
                     if ($app.frequency) { $mountcommand = $mountcommand + ' -frequency "' +$app.frequency +'"' } 
                     if ($app.dontrenamedatabasefiles) { $mountcommand = $mountcommand + ' -dontrenamedatabasefiles' } 
@@ -317,7 +319,145 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$mi
                                 command =  $mountcommand }
                         }
                     }
+
+
                 }
+            }
+        }
+        $recoverylist | Export-csv -path $worklist
+    }
+    # run the migration!
+    if ($runmigration) 
+    {
+    
+       
+        foreach ($app in $recoverylist)
+        {
+            if ($app.mountedimageid)
+            { 
+                $migrateruncommand = 'Start-AGMMigrate -imageid ' +$app.mountedimageid
+                $runcommand = Invoke-Expression $migrateruncommand 
+                
+                if ($runcommand.errormessage)
+                { 
+                    if ($textoutput)
+                    {
+                        write-host "The following command encountered this error: " $runcommand.errormessage 
+                        $mountcommand
+                        write-host ""
+                    }
+                    else {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "failed"
+                            message = $runcommand.errormessage.Trim()
+                            command =  $mountcommand }
+                    }
+                }
+                elseif ($runcommand.err_message)
+                { 
+                    if ($textoutput)
+                    {
+                        write-host "The following command encountered this error: " $runcommand.err_message 
+                        $mountcommand
+                        write-host ""
+                    }
+                    else {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "failed"
+                            message = $runcommand.err_message.Trim()
+                            errorcode = $runcommand.err_code 
+                            command =  $mountcommand }
+                    }
+                }
+                else
+                {
+                    if ($textoutput)
+                    {
+                        write-host "The following command started a job"
+                        $mountcommand 
+                        write-host ""
+                    }
+                    else 
+                    {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "started"
+                            message = $runcommand.jobstatus 
+                            command =  $mountcommand }
+                    }
+                } 
+            }
+        }
+    }
+    if ($finalizemigration) 
+    {
+    
+       
+        foreach ($app in $recoverylist)
+        {
+            if ($app.mountedimageid)
+            { 
+                $migrateruncommand = 'Start-AGMMigrate -imageid ' +$app.mountedimageid +' -finalize'
+                $runcommand = Invoke-Expression $migrateruncommand 
+                
+                if ($runcommand.errormessage)
+                { 
+                    if ($textoutput)
+                    {
+                        write-host "The following command encountered this error: " $runcommand.errormessage 
+                        $mountcommand
+                        write-host ""
+                    }
+                    else {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "failed"
+                            message = $runcommand.errormessage.Trim()
+                            command =  $mountcommand }
+                    }
+                }
+                elseif ($runcommand.err_message)
+                { 
+                    if ($textoutput)
+                    {
+                        write-host "The following command encountered this error: " $runcommand.err_message 
+                        $mountcommand
+                        write-host ""
+                    }
+                    else {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "failed"
+                            message = $runcommand.err_message.Trim()
+                            errorcode = $runcommand.err_code 
+                            command =  $mountcommand }
+                    }
+                }
+                else
+                {
+                    if ($textoutput)
+                    {
+                        write-host "The following command started a job"
+                        $mountcommand 
+                        write-host ""
+                    }
+                    else 
+                    {
+                        $printarray += [pscustomobject]@{
+                            appname = $app.appname
+                            appid = $app.appid
+                            result = "started"
+                            message = $runcommand.jobstatus 
+                            command =  $mountcommand }
+                    }
+                } 
             }
         }
     }

@@ -932,9 +932,10 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist"
+            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,mountedimageid"
             write-host -nonewline "`"$appid`",`"$targethostid`",`"$mountapplianceid`",`"$imagename`",`"$imageid`",`"$targethostname`",`"$appname`",`"$sqlinstance`",`"$dbname`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbnameprefix`",`"$dbrenamelist`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
-            if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  `",`" }
+            if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
+            write-host -nonewline ",,,,,,,"
             write-host ""
             return   
         }
