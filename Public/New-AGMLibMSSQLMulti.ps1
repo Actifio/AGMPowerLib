@@ -148,6 +148,9 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
             if ($app.discovery) { $mountcommand = $mountcommand + ' -discovery ' } 
             if ($app.perfoption) { $mountcommand = $mountcommand + ' -perfoption "' +$app.perfoption +'"' } 
 
+            # if there is a mountedimageid set, it is now invalid, clear it:
+            $app.mountedimageid = ""
+
             $runcommand = Invoke-Expression $mountcommand 
             
             if ($runcommand.errormessage)
@@ -209,72 +212,104 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
         {
             $printarray
         }
+        $recoverylist | Export-csv -path $worklist
     }
     # start the migration!
     if ($startmigration) 
     {
-    
+        # we need the mount array in case we dont know the mountimageID
+        $activeimagegrab = Get-AGMImage -filtervalue "jobclass=5&jobclass=15&jobclass=19&jobclass=32&jobclass=48&jobclass=59&jobclass=56&jobclass=52&characteristic=1&characteristic=2"
+        $mountarray = @()
+        # not look throught the mounts for ones that can migrate or are migrating and make an array
+        Foreach ($id in $activeimagegrab)
+        { 
+            $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
+            $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
+            $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+            $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname 
+            $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
+            $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+            if ($imagestate)
+            {
+                $mountarray += [pscustomobject]@{
+                    id = $id.id
+                    apptype = $id.apptype
+                    appliancename = $id.appliancename
+                    hostname = $id.hostname
+                    appname = $id.appname
+                    targethostname = $id.targethostname
+                    targethostid = $id.targethostid
+                    childappname = $id.childappname
+                    label = $id.label
+                }
+            }
+        }
         # migration time   [string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist
         foreach ($app in $recoverylist)
         {
             if ($app.migrate)
             {
-            
-                $imagename = ""
-                # find the imagename of the image created by the mount
-
-                #  stuff we can search on appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname
-
-                $fv = "characteristic=1&characteristic=2&apptype!nas"
-                if ($app.appid) 
+                if ($app.mountedimageid -eq "")
                 {
-                    $fv = $fv + "&appid=" +$app.appid
-                }
-                if ($app.appname) 
-                {
-                    $fv = $fv + "&appname=" +$app.appname
-                }
-                if ($app.label)
-                {
-                    $fv = $fv + "&label=" +$app.label
-                }
-                if ($app.mountapplianceid)
-                {
-                    $fv = $fv + "&targetuds=" +$app.mountapplianceid
-                }
-                if ($app.targethostid)
-                {
-                    # try and find source ID
-
-                    $hostfilter = "clusterid=" +$app.mountapplianceid +"&id=" +$app.targethostid
-                    $hostgrab = Get-AGMHost -filtervalue "$hostfilter"
-                    if ($hostgrab.count.id -eq 1)
+                    # if we have a CG name, then look here
+                    if (($app.consistencygroupname) -and ($app.targethostname)) 
                     {
-                        $sourceid = $hostgrab.sources.srcid
-                        $fv = $fv + "&mountedhost=" +$sourceid
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
                     }
-                } elseif ($app.targethostname)
-                {
-                     # try and find source ID
-
-                     $hostfilter = "clusterid=" +$app.mountapplianceid +"&name=" +$app.targethostname
-                     $hostgrab = Get-AGMHost -filtervalue "$hostfilter"
-                     if ($hostgrab.count.id -eq 1)
-                     {
-                         $sourceid = $hostgrab.sources.srcid
-                         $fv = $fv + "&mountedhost=" +$sourceid
-                     }
+                    if (($app.consistencygroupname) -and ($app.targethostid)) 
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostid -eq $app.targethostid) -and ($_.label -eq $app.label)}
+                    }
+                    # if we have a rename list, but only one DB, then look her
+                    if ($app.dbrenamelist)
+                    {
+                        if ($dbrenamelist.Split(";").count -eq 1)
+                        {
+                            $singledbname = $app.dbrenamelist.Split(",") | Select-object -skip 1
+                            if ($app.targethostname)
+                            {
+                                $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                            }
+                            if ($app.$targethostid)
+                            {
+                                $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                            }
+                        }
+                    }
+                    # if we have a name list with a single name
+                    if ($app.dbnamelist)
+                    {
+                        if (($app.dbnamelist.Split(",").count -eq 1) -and (!($app.dbname)))
+                        {
+                            $singledbname = $app.dbnamelist
+                            if ($app.targethostname)
+                            {
+                                $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                            }
+                            if ($app.$targethostid)
+                            {
+                                $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                            }
+                        }
+                    }
+                    # if we have a single DB mount 
+                    if (($app.dbname) -and ($app.targethostname))
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                    }
+                    if (($app.dbname) -and ($app.$targethostid))
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                    }
+                    if ($mountpeek.id)
+                    {
+                        $app.mountedimageid = $mountpeek.id
+                    }
                 }
-               
-                $imagegrab = Get-AGMImage -filtervalue "$fv" 
-                if ($imagegrab.backupname.count -eq 1)
+ 
+                if ($app.mountedimageid)
                 {
-                    $imageid = $imagegrab.id
-                }
-                if ($imageid)
-                {
-                    $app.mountedimageid = $imageid
-                    $mountcommand = 'New-AGMLibMSSQLMigrate -imageid ' +$imageid 
+                    $mountcommand = 'New-AGMLibMSSQLMigrate -imageid ' +$app.mountedimageid 
                     if ($app.copythreadcount) { $mountcommand = $mountcommand + ' -copythreadcount "' +$app.copythreadcount +'"' } 
                     if ($app.frequency) { $mountcommand = $mountcommand + ' -frequency "' +$app.frequency +'"' } 
                     if ($app.dontrenamedatabasefiles) { $mountcommand = $mountcommand + ' -dontrenamedatabasefiles' } 
@@ -426,8 +461,10 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                 $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
                 $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
                 $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
-                $id | Add-Member -NotePropertyName mountedhostname -NotePropertyValue $id.mountedhost.hostname
+                $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname
+                $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
                 $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+                
                 if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
                 {
                     $imagestate = "FinalizeEligible"
@@ -456,7 +493,8 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                         appliancename = $id.appliancename
                         hostname = $id.hostname
                         appname = $id.appname
-                        mountedhost = $id.mountedhostname
+                        targethostname = $id.targethostname
+                        targethostid = $id.targethostid
                         childappname = $id.childappname
                         label = $id.label
                         imagestate = $imagestate
@@ -468,31 +506,92 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
         $printarray = @()
         foreach ($app in $recoverylist)
         {
-            $mountdetails = $mountarray | where-object {$_.id -eq $app.mountedimageid}
-            if ($mountdetails)
+            if ($app.mountedimageid -eq "")
             {
-            $printarray += [pscustomobject]@{
-                id = $mountdetails.id
-                apptype = $mountdetails.apptype
-                appname = $mountdetails.appname
-                mountedhost = $mountdetails.mountedhost
-                childappname = $mountdetails.childappname
-                label = $mountdetails.label
-                imagestate = $mountdetails.imagestate}
+                # if we have a CG name, then look here
+                if (($app.consistencygroupname) -and ($app.targethostname)) 
+                {
+                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                }
+                if (($app.consistencygroupname) -and ($app.targethostid)) 
+                {
+                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostid -eq $app.targethostid) -and ($_.label -eq $app.label)}
+                }
+                # if we have a rename list, but only one DB, then look her
+                if ($app.dbrenamelist)
+                {
+                    if ($dbrenamelist.Split(";").count -eq 1)
+                    {
+                        $singledbname = $app.dbrenamelist.Split(",") | Select-object -skip 1
+                        if ($app.targethostname)
+                        {
+                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                        }
+                        if ($app.$targethostid)
+                        {
+                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                        }
+                    }
+                }
+                # if we have a name list with a single name
+                if ($app.dbnamelist)
+                {
+                    if (($app.dbnamelist.Split(",").count -eq 1) -and (!($app.dbname)))
+                    {
+                        $singledbname = $app.dbnamelist
+                        if ($app.targethostname)
+                        {
+                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                        }
+                        if ($app.$targethostid)
+                        {
+                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                        }
+                    }
+                }
+                # if we have a single DB mount 
+                if (($app.dbname) -and ($app.targethostname))
+                {
+                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                }
+                if (($app.dbname) -and ($app.$targethostid))
+                {
+                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                }
+                if ($mountpeek.id)
+                {
+                    $app.mountedimageid = $mountpeek.id
+                }
             }
-            else 
+            if ($app.mountedimageid)
             {
+                $mountdetails = $mountarray | where-object {$_.id -eq $app.mountedimageid}
+                if ($mountdetails)
+                {
                 $printarray += [pscustomobject]@{
-                    id = $app.mountedimageid
-                    apptype = ""
-                    appname = $app.appname
-                    mountedhost = $app.targethostname
-                    childappname = ""
-                    label = $app.label
-                    imagestate = "NotMounted"}
+                    id = $mountdetails.id
+                    apptype = $mountdetails.apptype
+                    appname = $mountdetails.appname
+                    targethostname = $mountdetails.targethostname
+                    childappname = $mountdetails.childappname
+                    label = $mountdetails.label
+                    imagestate = $mountdetails.imagestate}
+                }
+                else 
+                {
+                    $printarray += [pscustomobject]@{
+                        id = $app.mountedimageid
+                        apptype = ""
+                        appname = $app.appname
+                        targethostname = $app.targethostname
+                        childappname = ""
+                        label = $app.label
+                        imagestate = "NotMounted"}
+                }
             }
         }
        $printarray
+       $recoverylist | Export-csv -path $worklist
     }
 
 
