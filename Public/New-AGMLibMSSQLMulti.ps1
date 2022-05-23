@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration) 
+Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration,[switch]$checkmigration) 
 {
     <#
     .SYNOPSIS
@@ -36,10 +36,10 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
     This routine needs a well formatted CSV file. The column order is not important.    
     Here is an example of such a file:
 
-    appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
+    appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
     "50318","51090","143112195179","Image_0089933","59823","win-target","WINDOWS\SQLEXPRESS","WIN-TARGET\SQLEXPRESS","","","Simple","stale","label","cg1","","","model,model1;CRM,CRM1","","false","true","userbname","","cGFzc3dvcmQ=","","","d:\","6717","6667","true"
 
-    If you specify both appanme and appid then appid will be used.  The appname is mandatory so you know the name of the source DB.
+    If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source DB.
     In general you do not want to use the imagename or imageid column (so blank them out of even remove them) because normally we just want the latest image, rather than a specific one.
     For discovery to be requested, add t or true (or any text) to that column.  If any text appears at all, then discovery will be requested.
 
@@ -146,6 +146,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
             if ($app.sltid) { $mountcommand = $mountcommand + ' -sltid "' +$app.sltid +'"' } 
             if ($app.slpid) { $mountcommand = $mountcommand + ' -slpid "' +$app.slpid +'"' } 
             if ($app.discovery) { $mountcommand = $mountcommand + ' -discovery ' } 
+            if ($app.perfoption) { $mountcommand = $mountcommand + ' -perfoption "' +$app.perfoption +'"' } 
 
             $runcommand = Invoke-Expression $mountcommand 
             
@@ -411,6 +412,90 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
             }
         }
     }
+
+    if ($checkmigration)
+    {
+        # first grab all the mounts
+        $activeimagegrab = Get-AGMImage -filtervalue "jobclass=5&jobclass=15&jobclass=19&jobclass=32&jobclass=48&jobclass=59&jobclass=56&jobclass=52&characteristic=1&characteristic=2"
+        if ($activeimagegrab.id)
+        {
+            $mountarray = @()
+            # not look throught the mounts for ones that can migrate or are migrating and make an array
+            Foreach ($id in $activeimagegrab)
+            { 
+                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
+                $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
+                $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+                $id | Add-Member -NotePropertyName mountedhostname -NotePropertyValue $id.mountedhost.hostname
+                $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+                if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
+                {
+                    $imagestate = "FinalizeEligible"
+                }
+                elseif ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+                {
+                    $imagestate = "MigrateStarted"
+                }
+                elseif ( $id.flags_text -contains "MIGRATE_ELIGIBLE")
+                {
+                    $imagestate = "MigrateElibible"
+                }
+                elseif ($id.characteristic -eq "Mount")
+                {
+                    $imagestate = "Mounted"
+                }
+                else 
+                {
+                    $imagestate = "Unmounted"
+                }
+                if ($imagestate)
+                {
+                    $mountarray += [pscustomobject]@{
+                        id = $id.id
+                        apptype = $id.apptype
+                        appliancename = $id.appliancename
+                        hostname = $id.hostname
+                        appname = $id.appname
+                        mountedhost = $id.mountedhostname
+                        childappname = $id.childappname
+                        label = $id.label
+                        imagestate = $imagestate
+                    }
+                }
+            }
+        }
+        # now lok through the images we want to mount and report on them
+        $printarray = @()
+        foreach ($app in $recoverylist)
+        {
+            $mountdetails = $mountarray | where-object {$_.id -eq $app.mountedimageid}
+            if ($mountdetails)
+            {
+            $printarray += [pscustomobject]@{
+                id = $mountdetails.id
+                apptype = $mountdetails.apptype
+                appname = $mountdetails.appname
+                mountedhost = $mountdetails.mountedhost
+                childappname = $mountdetails.childappname
+                label = $mountdetails.label
+                imagestate = $mountdetails.imagestate}
+            }
+            else 
+            {
+                $printarray += [pscustomobject]@{
+                    id = $app.mountedimageid
+                    apptype = ""
+                    appname = $app.appname
+                    mountedhost = $app.targethostname
+                    childappname = ""
+                    label = $app.label
+                    imagestate = "NotMounted"}
+            }
+        }
+       $printarray
+    }
+
+
     if ($finalizemigration) 
     {
     

@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbrenamelist,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbnameprefix,[string]$dbrenamelist,[string]$dbnamesuffix,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[string]$perfoption,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
 {
     <#
     .SYNOPSIS
@@ -62,6 +62,8 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     -userlogins   false=Don't recover user logins(default)    true=Recover User Logins
     -discovery     This is a switch, so if specified will run application discovery on the selected targethostid
     -mountapplianceid XXXX    Runs the mount on the specified appliance
+    -perfoption    You can specify either:  StorageOptimized, Balanced, PerformanceOptimized or MaximumPerformance
+                   Note if you run this option when mounting a snapshot image, the mount will fail
 
     * Reprotection:
 
@@ -429,6 +431,21 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $imagejobclass = $imagegrab.jobclass   
             }
             
+        }
+        if ($imagejobclass -eq "OnVault")
+        {
+            write-host ""
+            Write-Host "Performance and Consumption Options"
+            Write-Host "1`: Storage Optimized (performance depends on network, least storage consumption)"
+            Write-Host "2`: Balanced (more performance, more storage consumption)(default)"
+            Write-Host "3`: Performance Optimized (higher performance, highest storage consumption)"
+            Write-Host "4`: Maximum Performance (delay before mount, highest performance, highest storage consumption)"
+            Write-Host ""
+            [int]$perfselection = Read-Host "Please select from this list (1-4)"
+            if ($perfselection -eq "1") { $perfoption = "StorageOptimized" }
+            if (($perfselection -eq "2") -or ($perfselection -eq "")) { $perfoption = "Balanced" }
+            if ($perfselection -eq "3") { $perfoption = "PerformanceOptimized" }
+            if ($perfselection -eq "4") { $perfoption = "MaximumPerformance" }
         }
         
         # now we check the log date
@@ -925,6 +942,10 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             Write-Host -nonewline " -dbnamesuffix `"$dbnamesuffix`""
         }     
+        if ($perfoption)
+        {
+            Write-Host -nonewline " -perfoption `"$perfoption`""
+        }  
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Print CSV output"
@@ -932,10 +953,10 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,mountedimageid"
+            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,mountedimageid"
             write-host -nonewline "`"$appid`",`"$targethostid`",`"$mountapplianceid`",`"$imagename`",`"$imageid`",`"$targethostname`",`"$appname`",`"$sqlinstance`",`"$dbname`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbnameprefix`",`"$dbrenamelist`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
             if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
-            write-host -nonewline ",,,,,,,"
+            write-host -nonewline "`"$perfoption`",,,,,,,,"
             write-host ""
             return   
         }
@@ -1245,6 +1266,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
         }
+        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
     }
     else
     {
@@ -1362,6 +1384,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             $body = $body + [ordered]@{ restoreobjectmappings = $restoreobjectmappings }
         }
+        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
     }
 
     
