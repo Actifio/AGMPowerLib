@@ -32,7 +32,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     1)  Run this command in guided mode to learn the available images and select one
     2)  Learn the imagename and specify that as part of the command with -imagename
     3)  Learn the Appid and Cluster ID for the appliance that will mount the image and then use -appid and -mountapplianceid 
-    This will use the latest snapshot, dedupasync, StreamSnap or OnVault image on that appliance
+    This will use the latest snapshot, StreamSnap or OnVault image on that appliance
 
     Note default values don't need to specified.  So for instance these are both unnecessary:   -recoverdb true -userlogins false
 
@@ -62,8 +62,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     -userlogins   false=Don't recover user logins(default)    true=Recover User Logins
     -discovery     This is a switch, so if specified will run application discovery on the selected targethostid
     -mountapplianceid XXXX    Runs the mount on the specified appliance
-    -perfoption    You can specify either:  StorageOptimized, Balanced, PerformanceOptimized or MaximumPerformance
-                   Note if you run this option when mounting a snapshot image, the mount will fail
+    -perfoption    Used only with OnVault images, you can specify either:  StorageOptimized, Balanced, PerformanceOptimized or MaximumPerformance
 
     * Reprotection:
 
@@ -366,7 +365,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         
         if (!($imagename))
         {  
-            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&jobclass=dedupasync"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
             if ($imagelist1.id.count -eq 0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
@@ -383,10 +382,10 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                 $appid = $imagegrab.application.id
                 $apptype = $imagegrab.apptype      
                 $restorableobjects = $imagegrab.restorableobjects
-                $jobclass = $imagegrab.jobclass
+                $imagejobclass = $imagegrab.jobclass
                 $mountapplianceid = $imagegrab.cluster.clusterid
                 $mountappliancename = $imagegrab.cluster.name
-                write-host "Found one $jobclass image $imagename, consistency date $consistencydate on $mountappliancename"
+                write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $mountappliancename"
             } 
             else
             {
@@ -976,15 +975,16 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     if (($appid) -and ($mountapplianceid) -and (!($imageid)))
     {
         # if we are not running guided mode but we have an appid without imageid, then lets get the latest image on the mountappliance ID
-        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=dedupasync&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
+        $imagegrab = Get-AGMImage -filtervalue "appid=$appid&targetuds=$mountapplianceid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault" -sort "consistencydate:desc,jobclasscode:asc" -limit 1
         if ($imagegrab.id.count -eq 1)
         {   
             $imageid = $imagegrab.id
             $imagename = $imagegrab.backupname
+            $imagejobclass = $imagegrab.jobclass
         }
         else 
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, dedupasync, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch a snapshot, StreamSnap or OnVault Image for appid $appid on appliance with clusterID $mountapplianceid"
             return
         }
     }
@@ -1266,7 +1266,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
         }
-        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
+        if (($perfoption) -and ($imagejobclass -eq "OnVault")) { $body = $body +@{ rehydrationmode = $perfoption } }
     }
     else
     {
@@ -1384,7 +1384,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             $body = $body + [ordered]@{ restoreobjectmappings = $restoreobjectmappings }
         }
-        if ($perfoption) { $body = $body +@{ rehydrationmode = $perfoption } }
+        if (($perfoption) -and ($imagejobclass -eq "OnVault")) { $body = $body +@{ rehydrationmode = $perfoption } }
     }
 
     
