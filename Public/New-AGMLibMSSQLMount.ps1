@@ -952,10 +952,86 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,mountedimageid"
+            write-host ""
+            Write-Host "Are you planning to migrate the database after mount"
+            Write-Host "1`: No (default)"
+            Write-Host "2`: Yes"
+            Write-Host ""
+            $userselection = ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq "") { $migrate = "" }
+            if ($userselection -eq 1) {  $migrate = ""  }
+            if ($userselection -eq 2) {  $migrate = "yes"  }
+            if ($migrate -eq "yes")
+            {
+                Write-Host ""
+                While ($true) 
+                {
+                    [int]$frequency = Read-Host "Frequency between 1-24 hours (hit enter for default of 24)"
+                    if ($frequency -eq "") { $frequency = 24 }
+                    if ($frequency -lt 1 -or $frequency -gt 24)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-24] or press enter for default of 24"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                Write-Host ""
+                Write-Host "Rename files to match new database name"
+                Write-Host "1`: Yes (default)"
+                Write-Host "2`: No"
+                Write-Host ""
+                $userselection = ""
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq "") { $dontrenamedatabasefiles = "" }
+                if ($userselection -eq 1) {  $dontrenamedatabasefiles = ""  }
+                if ($userselection -eq 2) {  $dontrenamedatabasefiles = "yes"  }
+                Write-Host ""
+                While ($true) 
+                {
+                    [int]$copythreadcount = Read-Host "Copy thread count between 1-20 (hit enter for default of 4)"
+                    if ($copythreadcount -eq "") { $copythreadcount = 4 }
+                    if ($copythreadcount -lt 1 -or $copythreadcount -gt 20)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-20] or press enter for default of 4"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                Write-Host ""
+                Write-Host "Select File Destination For Migrated Files"
+                Write-Host "1`: Copy files to the same drive/path as they were on the source server (default)"
+                Write-Host "2`: Choose new file locations at the volume level"
+                Write-Host "3`: Choose new locations at the file level."
+                Write-Host ""
+                $userselection = ""
+                [int]$userselection = Read-Host "Please select from this list (1-3)"
+                if ($userselection -eq 2) 
+                {  
+                    $volumes = "yes"  
+                    write-host "Format for volume restore list is to comma separate each source,target drive and semicolon separate each drive pair, example:  D:\,K:\;E:\,M:\"
+                    write-host "This migrates D: to K:   and also migrates E: to M:"
+                    write-host ""
+                    $restorelist = Read-Host "Please enter a list of source/target drives"
+                }
+                if ($userselection -eq 3) 
+                {  
+                    $files = "yes"  
+                    write-host "Format for File restore list is to comma separate each file,sourcedir,targetdir  and semicolon separate each trio, example: filename1,source1,target1;filename2,source2,target2"
+                    write-host "This migrates filename1 currently in source1 folder to target1 folder and also migrate filename2 currently in source2 folder to target2 folder"
+                    write-host ""
+                    $restorelist = Read-Host "Please enter a list of file,sourcedir,targetdirs"
+                }
+            }
+
+            write-host "appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist"
             write-host -nonewline "`"$appid`",`"$targethostid`",`"$mountapplianceid`",`"$imagename`",`"$imageid`",`"$targethostname`",`"$appname`",`"$sqlinstance`",`"$dbname`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbnameprefix`",`"$dbrenamelist`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
             if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
-            write-host -nonewline "`"$perfoption`",,,,,,,,"
+            write-host -nonewline "`"$perfoption`",`"$migrate`",$copythreadcount,$frequency,`"$dontrenamedatabasefiles`",`"$volumes`",`"$files`",`"$restorelist`""
             write-host ""
             return   
         }

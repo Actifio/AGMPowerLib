@@ -1,4 +1,4 @@
-Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration,[switch]$checkmigration) 
+Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration,[switch]$checkimagestate) 
 {
     <#
     .SYNOPSIS
@@ -71,19 +71,32 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
     
     if (!($worklist))
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply a csv file correctly formatted as per the help for this function using: -worklist xxxx.csv"
+        Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -worklist xxxx.csv"
+        return;
+    }
+    if (!($rundata))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please supply a file name (the file should not exist) to store run data created by this function using: -rundata xxxx.csv"
+        return;
+    }
+    if (-not (Test-Path $worklist ))
+    {
+        Get-AGMErrorMessage -messagetoprint "The worklist specified $worklist could not be found"
         return;
     }
 
-    if ( Test-Path $worklist )
+    if (-not (Test-Path $rundata ))
     {
-        $recoverylist = Import-Csv -Path $worklist
+        Copy-Item $worklist -Destination $rundata
+        $recoverylist = Import-Csv -Path $rundata
+        $recoverylist | Add-Member -MemberType NoteProperty -Name previousimagestate -value ""
+        $recoverylist | Add-Member -MemberType NoteProperty -Name mountedimageid -value ""
     }
     else
     {
-        Get-AGMErrorMessage -messagetoprint "SQL DB list: $worklist could not be opened."
-        return;
+        $recoverylist = Import-Csv -Path $rundata
     }
+
 
     # first we quality check the CSV
     if ($recoverylist.mountapplianceid -eq $null) { Get-AGMErrorMessage -messagetoprint "The following mandatory column is missing: mountapplianceid" ;return }
@@ -110,8 +123,190 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
         if ($app.appname -eq "")  { write-host "The following mandatory value is missing: appname row $row" ; return}
         $row += 1
     }
-    
 
+
+    if ($checkimagestate)
+    {
+        # first grab all the mounts
+        $activeimagegrab = Get-AGMImage -filtervalue "jobclass=5&jobclass=15&jobclass=19&jobclass=32&jobclass=48&jobclass=59&jobclass=56&jobclass=52&characteristic=1&characteristic=2"
+        if ($activeimagegrab.id)
+        {
+            $mountarray = @()
+            # not look throught the mounts for ones that can migrate or are migrating and make an array
+            Foreach ($id in $activeimagegrab)
+            { 
+                $imagestate = ""
+                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
+                $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
+                $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+                $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname
+                $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
+                $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+                
+                if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
+                {
+                    $imagestate = "FinalizeEligible"
+                }
+                elseif ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+                {
+                    $imagestate = "MigrateStarted"
+                }
+                elseif ( $id.flags_text -contains "MIGRATE_ELIGIBLE")
+                {
+                    $imagestate = "MigrateElibible"
+                }
+                elseif ($id.characteristic -eq "Mount")
+                {
+                    $imagestate = "Mounted"
+                }
+                else 
+                {
+                    $imagestate = "Unmounted"
+                }
+                if ($imagestate)
+                {
+                    $mountarray += [pscustomobject]@{
+                        id = $id.id
+                        apptype = $id.apptype
+                        appliancename = $id.appliancename
+                        hostname = $id.hostname
+                        appname = $id.appname
+                        targethostname = $id.targethostname
+                        targethostid = $id.targethostid
+                        childappname = $id.childappname
+                        label = $id.label
+                        imagestate = $imagestate
+                    }
+                }
+            }
+        }
+        # now lok through the images we want to mount and report on them
+        $printarray = @()
+        foreach ($app in $recoverylist)
+        {
+            $childappname = ""
+            $childapptype = ""
+
+            # if we have a CG name, then look here
+            if (($app.consistencygroupname) -and ($app.targethostname)) 
+            {
+                $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                $childappname = $app.consistencygroupname
+                $childapptype = "ConsistencyGroup"
+            }
+            if (($app.consistencygroupname) -and ($app.targethostid)) 
+            {
+                $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostid -eq $app.targethostid) -and ($_.label -eq $app.label)}
+                $childappname = $app.consistencygroupname
+                $childapptype = "ConsistencyGroup"
+            }
+            # if we have a rename list, but only one DB, then look her
+            if ($app.dbrenamelist)
+            {
+                if ($app.dbrenamelist.Split(";").count -eq 1)
+                {
+                    $childappname = $app.dbrenamelist.Split(",") | Select-object -skip 1
+                    $childapptype = "SqlServerWriter"
+                    if ($app.targethostname)
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $childappname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                    }
+                    if ($app.$targethostid)
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $childappname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                    }
+                    
+                }
+                else {
+                    $childappname = $app.consistencygroupname
+                    $childapptype = "ConsistencyGroup"
+                }
+            }
+            # if we have a name list with a single name
+            if ($app.dbnamelist)
+            {
+                if (($app.dbnamelist.Split(",").count -eq 1) -and (!($app.dbname)))
+                {
+                    $childappname = $app.dbnamelist
+                    $childapptype = "SqlServerWriter"
+                    if ($app.targethostname)
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $childappname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                    }
+                    if ($app.$targethostid)
+                    {
+                        $mountpeek = $mountarray | where-object {($_.childappname -eq $childappname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                    }
+                }
+                else
+                {
+                    $childappname = $app.consistencygroupname
+                    $childapptype = "ConsistencyGroup"
+                }
+            }
+            # if we have a single DB mount 
+            if (($app.dbname) -and ($app.targethostname))
+            {
+                $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
+                $childappname = $app.dbname
+                $childapptype = "SqlServerWriter"
+            }
+            if (($app.dbname) -and ($app.$targethostid))
+            {
+                $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
+                $childappname = $app.dbname
+                $childapptype = "SqlServerWriter"
+            }
+            if ($mountpeek.id)
+            {
+                $app.mountedimageid = $mountpeek.id
+            }
+            
+            if ($app.mountedimageid)
+            {
+                $mountdetails = $mountarray | where-object {$_.id -eq $app.mountedimageid}
+                if ($mountdetails)
+                {
+                $printarray += [pscustomobject]@{
+                    id = $mountdetails.id
+                    appname = $mountdetails.appname
+                    targethostname = $mountdetails.targethostname
+                    childapptype = $childapptype
+                    childappname = $mountdetails.childappname
+                    label = $mountdetails.label
+                    previousimagestate = $app.previousimagestate
+                    currentimagestate = $mountdetails.imagestate}
+                }
+                else 
+                {
+                    $printarray += [pscustomobject]@{
+                        id = $app.mountedimageid
+                        appname = $app.appname
+                        targethostname = $app.targethostname
+                        childapptype = $childapptype
+                        childappname = $childappname
+                        label = $app.label
+                        previousimagestate = $app.previousimagestate
+                        currentimagestate = "ImageNotFound"}
+                }
+            }
+            else
+            {
+                $printarray += [pscustomobject]@{
+                    id = ""
+                    appname = $app.appname
+                    targethostname = $app.targethostname
+                    childapptype = $childapptype
+                    childappname = $childappname
+                    label = $app.label
+                    previousimagestate = $app.previousimagestate
+                    currentimagestate = "NoMountedImage"
+                }
+            }
+        }
+       $printarray
+       $recoverylist | Export-csv -path $rundata
+    }
 
     
     $printarray = @()
@@ -152,7 +347,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
             $app.mountedimageid = ""
 
             $runcommand = Invoke-Expression $mountcommand 
-            
+            $app.previousimagestate = "MountStarted" 
             if ($runcommand.errormessage)
             { 
                 if ($textoutput)
@@ -186,6 +381,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                         message = $runcommand.err_message.Trim()
                         errorcode = $runcommand.err_code 
                         command =  $mountcommand }
+                        $app.previousimagestate = "MountFailed" 
                 }
             }
             else
@@ -212,8 +408,10 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
         {
             $printarray
         }
-        $recoverylist | Export-csv -path $worklist
+        $recoverylist | Export-csv -path $rundata
     }
+
+
     # start the migration!
     if ($startmigration) 
     {
@@ -223,12 +421,33 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
         # not look throught the mounts for ones that can migrate or are migrating and make an array
         Foreach ($id in $activeimagegrab)
         { 
+            $imagestate = ""
             $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
             $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
             $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
             $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname 
             $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
             $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+            if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
+            {
+                $imagestate = "FinalizeEligible"
+            }
+            elseif ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+            {
+                $imagestate = "MigrateStarted"
+            }
+            elseif ( $id.flags_text -contains "MIGRATE_ELIGIBLE")
+            {
+                $imagestate = "MigrateElibible"
+            }
+            elseif ($id.characteristic -eq "Mount")
+            {
+                $imagestate = "Mounted"
+            }
+            else 
+            {
+                $imagestate = "Unmounted"
+            }
             if ($imagestate)
             {
                 $mountarray += [pscustomobject]@{
@@ -241,6 +460,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                     targethostid = $id.targethostid
                     childappname = $id.childappname
                     label = $id.label
+                    imagestate = $imagestate
                 }
             }
         }
@@ -306,84 +526,85 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                         $app.mountedimageid = $mountpeek.id
                     }
                 }
- 
+                
                 if ($app.mountedimageid)
                 {
-                    $mountcommand = 'New-AGMLibMSSQLMigrate -imageid ' +$app.mountedimageid 
-                    if ($app.copythreadcount) { $mountcommand = $mountcommand + ' -copythreadcount "' +$app.copythreadcount +'"' } 
-                    if ($app.frequency) { $mountcommand = $mountcommand + ' -frequency "' +$app.frequency +'"' } 
-                    if ($app.dontrenamedatabasefiles) { $mountcommand = $mountcommand + ' -dontrenamedatabasefiles' } 
-                    if ($app.volumes) { $mountcommand = $mountcommand + ' -volumes "' +$app.volumes +'"' } 
-                    if ($app.files) { $mountcommand = $mountcommand + ' -files' } 
-                    if ($app.restorelist) { $mountcommand = $mountcommand + ' -restorelist "' +$app.restorelist +'"' } 
-                
-                    $runcommand = Invoke-Expression $mountcommand 
-                    
-                    if ($runcommand.errormessage)
-                    { 
-                        if ($textoutput)
-                        {
-                            write-host "The following command encountered this error: " $runcommand.errormessage 
-                            $mountcommand
-                            write-host ""
-                        }
-                        else {
-                            $printarray += [pscustomobject]@{
-                                appname = $app.appname
-                                appid = $app.appid
-                                result = "failed"
-                                message = $runcommand.errormessage.Trim()
-                                command =  $mountcommand }
-                        }
-                    }
-                    elseif ($runcommand.err_message)
-                    { 
-                        if ($textoutput)
-                        {
-                            write-host "The following command encountered this error: " $runcommand.err_message 
-                            $mountcommand
-                            write-host ""
-                        }
-                        else {
-                            $printarray += [pscustomobject]@{
-                                appname = $app.appname
-                                appid = $app.appid
-                                result = "failed"
-                                message = $runcommand.err_message.Trim()
-                                errorcode = $runcommand.err_code 
-                                command =  $mountcommand }
-                        }
-                    }
-                    else
+                    $currentstate = $mountarray | where-object {($_.id -eq $app.mountedimageid)}
+                    if ($currentstate.imagestate -eq "Mounted")
                     {
-                        if ($textoutput)
-                        {
-                            write-host "The following command started a job"
-                            $mountcommand 
-                            write-host ""
+                        $mountcommand = 'New-AGMLibMSSQLMigrate -imageid ' +$app.mountedimageid 
+                        if ($app.copythreadcount) { $mountcommand = $mountcommand + ' -copythreadcount "' +$app.copythreadcount +'"' } 
+                        if ($app.frequency) { $mountcommand = $mountcommand + ' -frequency "' +$app.frequency +'"' } 
+                        if ($app.dontrenamedatabasefiles) { $mountcommand = $mountcommand + ' -dontrenamedatabasefiles' } 
+                        if ($app.volumes) { $mountcommand = $mountcommand + ' -volumes "' +$app.volumes +'"' } 
+                        if ($app.files) { $mountcommand = $mountcommand + ' -files' } 
+                        if ($app.restorelist) { $mountcommand = $mountcommand + ' -restorelist "' +$app.restorelist +'"' } 
+                    
+                        $runcommand = Invoke-Expression $mountcommand
+                        $app.previousimagestate = "MigrateStarted" 
+                        
+                        if ($runcommand.errormessage)
+                        { 
+                            if ($textoutput)
+                            {
+                                write-host "The following command encountered this error: " $runcommand.errormessage 
+                                $mountcommand
+                                write-host ""
+                            }
+                            else {
+                                $printarray += [pscustomobject]@{
+                                    appname = $app.appname
+                                    appid = $app.appid
+                                    result = "failed"
+                                    message = $runcommand.errormessage.Trim()
+                                    command =  $mountcommand }
+                            }
                         }
-                        else 
+                        elseif ($runcommand.err_message)
+                        { 
+                            if ($textoutput)
+                            {
+                                write-host "The following command encountered this error: " $runcommand.err_message 
+                                $mountcommand
+                                write-host ""
+                            }
+                            else {
+                                $printarray += [pscustomobject]@{
+                                    appname = $app.appname
+                                    appid = $app.appid
+                                    result = "failed"
+                                    message = $runcommand.err_message.Trim()
+                                    errorcode = $runcommand.err_code 
+                                    command =  $mountcommand }
+                            }
+                        }
+                        else
                         {
-                            $printarray += [pscustomobject]@{
-                                appname = $app.appname
-                                appid = $app.appid
-                                result = "started"
-                                message = $runcommand.jobstatus 
-                                command =  $mountcommand }
+                            if ($textoutput)
+                            {
+                                write-host "The following command started a job"
+                                $mountcommand 
+                                write-host ""
+                            }
+                            else 
+                            {
+                                $printarray += [pscustomobject]@{
+                                    appname = $app.appname
+                                    appid = $app.appid
+                                    result = "started"
+                                    message = $runcommand.jobstatus 
+                                    command =  $mountcommand }
+                            }
                         }
                     }
-
-
                 }
             }
         }
-        $recoverylist | Export-csv -path $worklist
+        $recoverylist | Export-csv -path $rundata
     }
     # run the migration!
     if ($runmigration) 
-    {
-    
-       
+    {   
         foreach ($app in $recoverylist)
         {
             if ($app.mountedimageid)
@@ -446,220 +667,130 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[switch]$textoutput,[switch]$ru
                 } 
             }
         }
+        $recoverylist | Export-csv -path $rundata
     }
 
-    if ($checkmigration)
-    {
-        # first grab all the mounts
-        $activeimagegrab = Get-AGMImage -filtervalue "jobclass=5&jobclass=15&jobclass=19&jobclass=32&jobclass=48&jobclass=59&jobclass=56&jobclass=52&characteristic=1&characteristic=2"
-        if ($activeimagegrab.id)
-        {
-            $mountarray = @()
-            # not look throught the mounts for ones that can migrate or are migrating and make an array
-            Foreach ($id in $activeimagegrab)
-            { 
-                $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
-                $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
-                $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
-                $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname
-                $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
-                $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
-                
-                if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
-                {
-                    $imagestate = "FinalizeEligible"
-                }
-                elseif ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
-                {
-                    $imagestate = "MigrateStarted"
-                }
-                elseif ( $id.flags_text -contains "MIGRATE_ELIGIBLE")
-                {
-                    $imagestate = "MigrateElibible"
-                }
-                elseif ($id.characteristic -eq "Mount")
-                {
-                    $imagestate = "Mounted"
-                }
-                else 
-                {
-                    $imagestate = "Unmounted"
-                }
-                if ($imagestate)
-                {
-                    $mountarray += [pscustomobject]@{
-                        id = $id.id
-                        apptype = $id.apptype
-                        appliancename = $id.appliancename
-                        hostname = $id.hostname
-                        appname = $id.appname
-                        targethostname = $id.targethostname
-                        targethostid = $id.targethostid
-                        childappname = $id.childappname
-                        label = $id.label
-                        imagestate = $imagestate
-                    }
-                }
-            }
-        }
-        # now lok through the images we want to mount and report on them
-        $printarray = @()
-        foreach ($app in $recoverylist)
-        {
-            if ($app.mountedimageid -eq "")
-            {
-                # if we have a CG name, then look here
-                if (($app.consistencygroupname) -and ($app.targethostname)) 
-                {
-                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
-                }
-                if (($app.consistencygroupname) -and ($app.targethostid)) 
-                {
-                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.consistencygroupname) -and ($_.targethostid -eq $app.targethostid) -and ($_.label -eq $app.label)}
-                }
-                # if we have a rename list, but only one DB, then look her
-                if ($app.dbrenamelist)
-                {
-                    if ($dbrenamelist.Split(";").count -eq 1)
-                    {
-                        $singledbname = $app.dbrenamelist.Split(",") | Select-object -skip 1
-                        if ($app.targethostname)
-                        {
-                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
-                        }
-                        if ($app.$targethostid)
-                        {
-                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
-                        }
-                    }
-                }
-                # if we have a name list with a single name
-                if ($app.dbnamelist)
-                {
-                    if (($app.dbnamelist.Split(",").count -eq 1) -and (!($app.dbname)))
-                    {
-                        $singledbname = $app.dbnamelist
-                        if ($app.targethostname)
-                        {
-                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
-                        }
-                        if ($app.$targethostid)
-                        {
-                            $mountpeek = $mountarray | where-object {($_.childappname -eq $singledbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
-                        }
-                    }
-                }
-                # if we have a single DB mount 
-                if (($app.dbname) -and ($app.targethostname))
-                {
-                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostname -eq $app.targethostname) -and ($_.label -eq $app.label)}
-                }
-                if (($app.dbname) -and ($app.$targethostid))
-                {
-                    $mountpeek = $mountarray | where-object {($_.childappname -eq $app.dbname) -and ($_.targethostid -eq $app.targethostid ) -and ($_.label -eq $app.label)}
-                }
-                if ($mountpeek.id)
-                {
-                    $app.mountedimageid = $mountpeek.id
-                }
-            }
-            if ($app.mountedimageid)
-            {
-                $mountdetails = $mountarray | where-object {$_.id -eq $app.mountedimageid}
-                if ($mountdetails)
-                {
-                $printarray += [pscustomobject]@{
-                    id = $mountdetails.id
-                    apptype = $mountdetails.apptype
-                    appname = $mountdetails.appname
-                    targethostname = $mountdetails.targethostname
-                    childappname = $mountdetails.childappname
-                    label = $mountdetails.label
-                    imagestate = $mountdetails.imagestate}
-                }
-                else 
-                {
-                    $printarray += [pscustomobject]@{
-                        id = $app.mountedimageid
-                        apptype = ""
-                        appname = $app.appname
-                        targethostname = $app.targethostname
-                        childappname = ""
-                        label = $app.label
-                        imagestate = "NotMounted"}
-                }
-            }
-        }
-       $printarray
-       $recoverylist | Export-csv -path $worklist
-    }
+   
 
 
     if ($finalizemigration) 
     {
-    
+         # we need the mount array in case we dont know the mountimageID
+         $activeimagegrab = Get-AGMImage -filtervalue "jobclass=5&jobclass=15&jobclass=19&jobclass=32&jobclass=48&jobclass=59&jobclass=56&jobclass=52&characteristic=1&characteristic=2"
+         $mountarray = @()
+         # not look throught the mounts for ones that can migrate or are migrating and make an array
+         Foreach ($id in $activeimagegrab)
+         { 
+             $imagestate = ""
+             $id | Add-Member -NotePropertyName appliancename -NotePropertyValue $id.cluster.name
+             $id | Add-Member -NotePropertyName hostname -NotePropertyValue $id.host.hostname
+             $id | Add-Member -NotePropertyName appid -NotePropertyValue $id.application.id
+             $id | Add-Member -NotePropertyName targethostname -NotePropertyValue $id.mountedhost.hostname 
+             $id | Add-Member -NotePropertyName targethostid -NotePropertyValue $id.mountedhost.id
+             $id | Add-Member -NotePropertyName childappname -NotePropertyValue $id.childapp.appname
+             if ( $id.flags_text -contains "JOBFLAGS_FINALIZE_ELIGIBLE")
+             {
+                 $imagestate = "FinalizeEligible"
+             }
+             elseif ( $id.flags_text -contains "JOBFLAGS_MIGRATING")
+             {
+                 $imagestate = "MigrateStarted"
+             }
+             elseif ( $id.flags_text -contains "MIGRATE_ELIGIBLE")
+             {
+                 $imagestate = "MigrateElibible"
+             }
+             elseif ($id.characteristic -eq "Mount")
+             {
+                 $imagestate = "Mounted"
+             }
+             else 
+             {
+                 $imagestate = "Unmounted"
+             }
+             if ($imagestate)
+             {
+                 $mountarray += [pscustomobject]@{
+                     id = $id.id
+                     apptype = $id.apptype
+                     appliancename = $id.appliancename
+                     hostname = $id.hostname
+                     appname = $id.appname
+                     targethostname = $id.targethostname
+                     targethostid = $id.targethostid
+                     childappname = $id.childappname
+                     label = $id.label
+                     imagestate = $imagestate
+                 }
+             }
+         }
        
         foreach ($app in $recoverylist)
         {
             if ($app.mountedimageid)
             { 
-                $migrateruncommand = 'Start-AGMMigrate -imageid ' +$app.mountedimageid +' -finalize'
-                $runcommand = Invoke-Expression $migrateruncommand 
-                
-                if ($runcommand.errormessage)
-                { 
-                    if ($textoutput)
+                $currentstate = $mountarray | where-object {($_.id -eq $app.mountedimageid)}
+                if ($currentstate.imagestate -eq "FinalizeEligible")
                     {
-                        write-host "The following command encountered this error: " $runcommand.errormessage 
-                        $mountcommand
-                        write-host ""
+                    $migrateruncommand = 'Start-AGMMigrate -imageid ' +$app.mountedimageid +' -finalize'
+                    $runcommand = Invoke-Expression $migrateruncommand 
+                    $app.previousimagestate = "FinalizeStarted" 
+                    if ($runcommand.errormessage)
+                    { 
+                        if ($textoutput)
+                        {
+                            write-host "The following command encountered this error: " $runcommand.errormessage 
+                            $mountcommand
+                            write-host ""
+                        }
+                        else {
+                            $printarray += [pscustomobject]@{
+                                appname = $app.appname
+                                appid = $app.appid
+                                result = "failed"
+                                message = $runcommand.errormessage.Trim()
+                                command =  $mountcommand }
+                        }
                     }
-                    else {
-                        $printarray += [pscustomobject]@{
-                            appname = $app.appname
-                            appid = $app.appid
-                            result = "failed"
-                            message = $runcommand.errormessage.Trim()
-                            command =  $mountcommand }
+                    elseif ($runcommand.err_message)
+                    { 
+                        if ($textoutput)
+                        {
+                            write-host "The following command encountered this error: " $runcommand.err_message 
+                            $mountcommand
+                            write-host ""
+                        }
+                        else {
+                            $printarray += [pscustomobject]@{
+                                appname = $app.appname
+                                appid = $app.appid
+                                result = "failed"
+                                message = $runcommand.err_message.Trim()
+                                errorcode = $runcommand.err_code 
+                                command =  $mountcommand }
+                        }
                     }
-                }
-                elseif ($runcommand.err_message)
-                { 
-                    if ($textoutput)
+                    else
                     {
-                        write-host "The following command encountered this error: " $runcommand.err_message 
-                        $mountcommand
-                        write-host ""
-                    }
-                    else {
-                        $printarray += [pscustomobject]@{
-                            appname = $app.appname
-                            appid = $app.appid
-                            result = "failed"
-                            message = $runcommand.err_message.Trim()
-                            errorcode = $runcommand.err_code 
-                            command =  $mountcommand }
-                    }
-                }
-                else
-                {
-                    if ($textoutput)
-                    {
-                        write-host "The following command started a job"
-                        $mountcommand 
-                        write-host ""
-                    }
-                    else 
-                    {
-                        $printarray += [pscustomobject]@{
-                            appname = $app.appname
-                            appid = $app.appid
-                            result = "started"
-                            message = $runcommand.jobstatus 
-                            command =  $mountcommand }
+                        if ($textoutput)
+                        {
+                            write-host "The following command started a job"
+                            $mountcommand 
+                            write-host ""
+                        }
+                        else 
+                        {
+                            $printarray += [pscustomobject]@{
+                                appname = $app.appname
+                                appid = $app.appid
+                                result = "started"
+                                message = $runcommand.jobstatus 
+                                command =  $mountcommand }
+                        }
                     }
                 } 
             }
         }
+        $recoverylist | Export-csv -path $rundata
     }
 }
