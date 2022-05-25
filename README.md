@@ -1057,6 +1057,8 @@ succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 
 In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk but we are going to run multiple mounts and migrates in a single pass using a CSV file
 
+This video also documents the process:   https://youtu.be/QX5Sn3XHbCM
+
 ### Create the CSV sourcefile
 
 The easiest way to create the CSV file is to run **New-AGMLibMSSQLMount** and take the option to output a CSV file at the end.
