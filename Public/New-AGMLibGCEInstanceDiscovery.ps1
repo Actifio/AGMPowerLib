@@ -25,7 +25,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$addall)
     6654,143112195179,avwarglab1,australia-southeast2-b
 
     To learn credential ID and appliance ID, use Get-AGMLibCredentialSrcID
-    Then use the desired projects (where the service account for the credential exists) and the desired zones.
+    Then use the desired projects (where the service account for the credential exists) and the desired zones you want to check for new Instances.
 
     #>
 
