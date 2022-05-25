@@ -102,6 +102,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibFSMount',
 'New-AGMLibGCEConversion',
 'New-AGMLibGCEConversionMulti',
+'New-AGMLibGCEInstanceDiscovery',
 'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
@@ -167,8 +168,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.50] 2022-05-18
-        Improved New-AGMLibMSSQLMount guided section and added discovery option and added New-AGMLibMSSQLMulti
+        ## [0.0.0.50] 2022-05-25
+        Improved New-AGMLibMSSQLMount guided section and added discovery option and added New-AGMLibMSSQLMulti.   Added  New-AGMLibGCEInstanceDiscovery
 
         ## [0.0.0.49] 2022-05-16
         Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount
