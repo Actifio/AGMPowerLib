@@ -1,53 +1,55 @@
-Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration,[switch]$checkimagestate) 
+Function New-AGMLibMSSQLMulti ([string]$sourcefile,[string]$runfile,[switch]$textoutput,[switch]$runmount,[switch]$runmigration,[switch]$startmigration,[switch]$finalizemigration,[switch]$checkimagestate) 
 {
     <#
     .SYNOPSIS
     Uses a pre-prepared CSV list of SQL DBs or Instances to create many new Microsoft SQLServer Databases
 
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmount
+    New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -checkimagestate
 
-    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibMSSQLMount jobs
-
-    .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -textoutput -runmount
-
-    This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibMSSQLMount jobs
-    Rather than wait for all jobs to be attemped before reporting status, a report will be displayed after each job is attempted.
+    DBs to be recovered will be source from recoverylist.csv and mounts tracked in rundate22052022.  We use -checkimagestate to check the current progress of each image.
+    The id field is used to track the mounted image, previousimagestate shows what state the last command was attenmpting to achieve, while currentimagestate shows the current state of that image.
 
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -startmigration
+    New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -runmount
 
-    This will load the contents of the file recoverylist.csv and use it to start multiple migrate jobs for any SQL Db where migrate=true
+    This will run multiple New-AGMLibMSSQLMount jobs.  If run twice, any collisions with existing mounts will not run. 
+    This means if a mount fails, if you resolve the cause of the issue you can just run the same command again with interfering with existing mounts.
+
+    .EXAMPLE
+    New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -startmigration
+
+    This will start migrate jobs for any SQL Db where the migrate field is set to true.
     
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -runmigration
+    New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -runmigration
 
-    This will load the contents of the file recoverylist.csv and use it to run a migration job for each DB that has a started migration
+    This will run a migration job for each DB that has a started migration
     
     .EXAMPLE
-    New-AGMLibMSSQLMulti -worklist recoverylist.csv -finalizemigration
+    New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -finalizemigration
 
-    This will load the contents of the file recoverylist.csv and use it to finalize the migration for each DB that has a started migration
+    This will finalize the migration for each DB that has a started migration
 
 
 
     .DESCRIPTION
-    This routine needs a well formatted CSV file. The column order is not important.    
+    This routine needs a well formatted CSV file. This file can be created by running New-AGMLibMSSQLMount in guided mode (by starting it without specifying any options.
+    Note the column order is not important.    
     Here is an example of such a file:
 
-    appid,targethostid,mountapplianceid,imagename,imageid,targethostname,appname,sqlinstance,dbname,recoverypoint,recoverymodel,overwrite,label,consistencygroupname,dbnamelist,dbnameprefix,dbrenamelist,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
-    "50318","51090","143112195179","Image_0089933","59823","win-target","WINDOWS\SQLEXPRESS","WIN-TARGET\SQLEXPRESS","","","Simple","stale","label","cg1","","","model,model1;CRM,CRM1","","false","true","userbname","","cGFzc3dvcmQ=","","","d:\","6717","6667","true"
+    appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,label,dbname,consistencygroupname,dbnamelist,dbrenamelist,dbnameprefix,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
+    ,WINDOWS\SQLEXPRESS,,,143112195179,,win-target,WIN-TARGET\SQLEXPRESS,,Same as source,no,sqlinst1,,avcg1,,"model,model1;CRM,crm1",,,TRUE,FALSE,,,,,,,,,,,yes,4,1,,,,
 
     If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source DB.
     In general you do not want to use the imagename or imageid column (so blank them out of even remove them) because normally we just want the latest image, rather than a specific one.
-    For discovery to be requested, add t or true (or any text) to that column.  If any text appears at all, then discovery will be requested.
+    For discovery to be requested, add t or true (or any text) to the discovery column.  If any text appears at all (including the word false), then discovery will be requested.
 
     The following columns are used for migration:
     migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
      
     migrate (switch) - Left blank:  no migration.  Set (any character):  image will be migrated
-    copythreadcount (integer) -  Left blank:  4 threads else set a number of threads   
+    copythreadcount (integer) -  Left blank:  4 threads else set as number of threads   
     frequency (integer) - Left blank: 24 hours  else set a number of hours
     dontrenamedatabasefiles (switch): Left blank: files will be renamed to match the new database name else enter any value and files will NOT be renamed
     volumes (switch) - Left blank, migration expects same drive letters.  Else enter true and usethe restorelist must contain the source drive letter and the target drive letter.
@@ -69,32 +71,32 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
         return
     }
     
-    if (!($worklist))
+    if (!($sourcefile))
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -worklist xxxx.csv"
+        Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -sourcefile xxxx.csv"
         return;
     }
-    if (!($rundata))
+    if (!($runfile))
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply a file name (the file should not exist) to store run data created by this function using: -rundata xxxx.csv"
+        Get-AGMErrorMessage -messagetoprint "Please supply a file name (the file should not exist) to store run data created by this function using: -runfile xxxx.csv"
         return;
     }
-    if (-not (Test-Path $worklist ))
+    if (-not (Test-Path $sourcefile ))
     {
-        Get-AGMErrorMessage -messagetoprint "The worklist specified $worklist could not be found"
+        Get-AGMErrorMessage -messagetoprint "The sourcefile specified $sourcefile could not be found"
         return;
     }
 
-    if (-not (Test-Path $rundata ))
+    if (-not (Test-Path $runfile ))
     {
-        Copy-Item $worklist -Destination $rundata
-        $recoverylist = Import-Csv -Path $rundata
+        Copy-Item $sourcefile -Destination $runfile
+        $recoverylist = Import-Csv -Path $runfile
         $recoverylist | Add-Member -MemberType NoteProperty -Name previousimagestate -value ""
         $recoverylist | Add-Member -MemberType NoteProperty -Name mountedimageid -value ""
     }
     else
     {
-        $recoverylist = Import-Csv -Path $rundata
+        $recoverylist = Import-Csv -Path $runfile
     }
 
 
@@ -305,7 +307,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
             }
         }
        $printarray
-       $recoverylist | Export-csv -path $rundata
+       $recoverylist | Export-csv -path $runfile
     }
 
     
@@ -363,6 +365,8 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
                         result = "failed"
                         message = $runcommand.errormessage.Trim()
                         command =  $mountcommand }
+                        
+                        $app.previousimagestate = "MountFailed: $($runcommand.err_message.Trim())"
                 }
             }
             elseif ($runcommand.err_message)
@@ -381,7 +385,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
                         message = $runcommand.err_message.Trim()
                         errorcode = $runcommand.err_code 
                         command =  $mountcommand }
-                        $app.previousimagestate = "MountFailed" 
+                        $app.previousimagestate = "MountFailed: $($runcommand.err_message.Trim())" 
                 }
             }
             else
@@ -408,7 +412,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
         {
             $printarray
         }
-        $recoverylist | Export-csv -path $rundata
+        $recoverylist | Export-csv -path $runfile
     }
 
 
@@ -600,7 +604,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
                 }
             }
         }
-        $recoverylist | Export-csv -path $rundata
+        $recoverylist | Export-csv -path $runfile
     }
     # run the migration!
     if ($runmigration) 
@@ -667,7 +671,7 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
                 } 
             }
         }
-        $recoverylist | Export-csv -path $rundata
+        $recoverylist | Export-csv -path $runfile
     }
 
    
@@ -791,6 +795,6 @@ Function New-AGMLibMSSQLMulti ([string]$worklist,[string]$rundata,[switch]$texto
                 } 
             }
         }
-        $recoverylist | Export-csv -path $rundata
+        $recoverylist | Export-csv -path $runfile
     }
 }

@@ -14,6 +14,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
 **[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
@@ -1051,6 +1052,148 @@ status    startdate           enddate
 ------    ---------           -------
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
+
+## User Story: Microsoft SQL Multi Mount and Migrate
+
+In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk but we are going to run multiple mounts and migrates in a single pass usign a CSV file
+
+### Create the CSV sourcefile
+
+The easiest way to create the CSV file is to run **New-AGMLibMSSQLMount** and take the option to output a CSV file at the end.
+
+Once you have the file then edit it to add additional databases.  
+* If you don't know the App ID, then specify the AppName (provided it is unique)
+* If you don't know the target host ID, then specify the expected TaregtHostName (provided it is unique)
+* If the target host doesn't exist, but you know what the target instance name will be, then make sure to specify **true** in the discovery column
+
+Here is an example of a file:
+```
+appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,label,dbname,consistencygroupname,dbnamelist,dbrenamelist,dbnameprefix,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
+,WINDOWS\SQLEXPRESS,,,143112195179,,win-target,WIN-TARGET\SQLEXPRESS,,Same as source,no,sqlinst1,,avcg1,,"model,model1;CRM,crm1",,,TRUE,FALSE,,,,,,,,,,,yes,4,1,,,,
+```
+
+### Create the CSV runfile
+
+Where the source file needs to exist before you start,  the runrile will be created the first time you run **New-AGMLibMSSQLMulti** by specifying the name of a new file that doesnt yet exist.
+The idea is that you will use this file throughout one DR or test event.   Once all databases are finalized then you can delete the runfile and start your next test using a a new file
+
+#### Checking image state
+At any point in the process, we use **-checkimagestate** to validate whether our mounts exist.  
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -checkimagestate
+```
+The first time you run this command, the output will look like this:
+```
+id                 :
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate :
+currentimagestate  : NoMountedImage
+```
+* id is blank because there is no image yet created by a mount
+* previousimagestate is blank because there is no image
+* currentimagestate says NoMountedImage beause there is image.
+
+#### Running the multi mount.
+We start all the mounts at once with this command:
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -runmount
+```
+This will run multiple New-AGMLibMSSQLMount jobs.  If run twice, any collisions with existing mounts will not run. 
+This means if a mount fails, if you resolve the cause of the issue you can just run the same command again with interfering with existing mounts.
+After you run **New-AGMLibMSSQLMulti**  with **-runmount** then check the state with **-checkimagestate**
+We expect it to initially show this, where id is still blank, but previousimagestate is telling you a mount was started.
+```
+id                 :
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MountStarted
+currentimagestate  : NoMountedImage
+```
+Once the mount job completes we will see this, where the ID is now known and currentimagestate is mounted.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MountStarted
+currentimagestate  : Mounted
+```
+If you run the **--runmount** again, the existing mounts will be unaffected, but previousimagestate will change to: *MountFailed: mount is unsuccessful due to duplicate application on the same host/instance not allowed:*
+
+#### Starting the migration
+Once all our images are mounted, we can start migrating.   If you run this command with some mounts still running, then migration will only start on those mounts that are ready and you will need to run startmigration again.
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -startmigration
+```
+This will start migrate jobs for any SQL Db where the migrate field is set to true.
+When you check after migrate has been requested you will see this, where previousimagestate and currentimagestate both say MigrateStarted:
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MigrateStarted
+currentimagestate  : MigrateStarted
+```
+Once the first migrate job has finished we will see this where currentimagestate is FinalizeEligible
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MigrateStarted
+currentimagestate  : FinalizeEligible
+```
+We can run additional migrate jobs (in addition to the scheduled ones), with this command:
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -runmigration
+```
+If you use -runmigration without having first run -startmigration then nothing will happen.
+
+#### Starting the migration
+This last option may not be desirable in all cases.  A finalize is disruptive while the switch is made.   You may wish to run this last step one by one using the GUI.  Note if you need multiple finalize jobs per host, you need to run them one at a time.   This might mean running **-finalizemigration** multiple times.
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -finalizemigration
+```
+After running the command you will initially see this, where previousimagestate is FinalizeStarted.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : FinalizeStarted
+currentimagestate  : FinalizeEligible
+```
+Once finalize is finished you will see this, where currentimagestate is ImageNotFound.  This is normal because at the end of the finalize the mount gets deleted.    Once you see this, validate the DB on the target host and you are complete.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : FinalizeStarted
+currentimagestate  : ImageNotFound
+```
+
+
+
+
 
 ## User Story: SAP HANA Database Mount
 
