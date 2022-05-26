@@ -1268,19 +1268,27 @@ newgceinstancebackup : 0
 Some FAQ:
 
 
-1. How do I tag the VM?    You need to a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+1. How do I tag the VM?    
+
+You need to a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
 ```
 googlebackupplan : snap
 ```
-2. What if I want to use my own own label?   You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *corporatepolicy* and the value is a valid template name, then when you run the command, add **-usertag "corporatepolicy"**
+2. What if I want to use my own own label?   
+
+You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *corporatepolicy* and the value is a valid template name, then when you run the command, add **-usertag "corporatepolicy"**
 
 The whole command would look like:
 ```
 New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup -usertag "corporatepolicy"
 ```
-3. How do I learn the names of the templates to use as values for the tags?    You can either look at Templates in the SLA Architect in AGM or run: **get-agmslt**
+3. How do I learn the names of the templates to use as values for the tags?    
 
-4. What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
+You can either look at Templates in the SLA Architect in AGM or run: **Get-AGMSLT**
+
+4. What if I don't want all instances to be added to AGM   
+
+This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
