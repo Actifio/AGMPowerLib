@@ -1215,7 +1215,7 @@ So now we know the id of the Database inside our HANA instance, we just need to 
 PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
 
-## User Story:  Auto adding GCE Instance and protecting them with tags
+## User Story: Auto adding GCE Instance and protecting them with tags
 
 If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
 
