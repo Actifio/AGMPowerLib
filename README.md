@@ -1221,7 +1221,7 @@ This function needs a CSV file as input to supply the following data:
 * project:  this is the project where we are going to look for new GCE Instances
 * zone: this is the zone where we are going to look for new GCE Instances
 
-So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
+So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
 An example CSV file is as follows:
 ```
 credentialid,applianceid,project,zone
@@ -1229,11 +1229,11 @@ credentialid,applianceid,project,zone
 6654,143112195179,avwarglab1,australia-southeast2-a
 6654,143112195179,avwarglab1,australia-southeast2-b
 ```
-When you run  **New-AGMLibGCEInstanceDiscovery** you have two choices.
-* -nobackup  This will add all new GCE Instances it finds without protecting them
-* -backup  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan**.  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
+When you run  **New-AGMLibGCEInstanceDiscovery** you have to specify one of these two choices:
+* **-nobackup**  This will add all new GCE Instances it finds without protecting them
+* **-backup**  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan** (or a label you specify with **-usertag**)  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
 
-An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on that zone if more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
+An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on each zone if more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
 ```
 > New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup
 
