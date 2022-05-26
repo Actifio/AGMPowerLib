@@ -1216,12 +1216,12 @@ If we are onboarding large numbers of GCE Instances or we want to auto protect n
 
 This function needs a CSV file as input to supply the following data:
 
-* credentialid:  learn this by running Get-AGMLibCredentialSrcID
-* applianceid: learn this by running Get-AGMLibCredentialSrcID
-* project:  this is the project where we are going to look for new GCE Instances
-* zone: this is the zone where we are going to look for new GCE Instances
+* **credentialid**  learn this by running Get-AGMLibCredentialSrcID
+* **applianceid** learn this by running Get-AGMLibCredentialSrcID
+* **project**  this is the project where we are going to look for new GCE Instances
+* **zone** this is the zone where we are going to look for new GCE Instances
 
-So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
+So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as a service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
 An example CSV file is as follows:
 ```
 credentialid,applianceid,project,zone
@@ -1233,7 +1233,7 @@ When you run  **New-AGMLibGCEInstanceDiscovery** you have to specify one of thes
 * **-nobackup**  This will add all new GCE Instances it finds without protecting them
 * **-backup**  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan** (or a label you specify with **-usertag**)  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
 
-An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on each zone if more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
+An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on each zone where more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
 ```
 > New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup
 
@@ -1268,7 +1268,7 @@ newgceinstancebackup : 0
 Some FAQ:
 
 
-1. How do I tag the VM?    You need a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+1. How do I tag the VM?    You need to a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
 ```
 googlebackupplan : snap
 ```
@@ -1278,9 +1278,9 @@ The whole command would look like:
 ```
 New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup -usertag "corporatepolicy"
 ```
-3. How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: **get-agmslt**
+3. How do I learn the names of the templates to use as values for the tags?    You can either look at Templates in the SLA Architect in AGM or run: **get-agmslt**
 
-4. What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
+4. What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
