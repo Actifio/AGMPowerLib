@@ -16,6 +16,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
 **[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: Auto adding GCE Instance and protecting them with tags](#auto-adding-gce-instance-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
@@ -1213,6 +1214,32 @@ So now we know the id of the Database inside our HANA instance, we just need to 
 ```
 PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
+
+## User Story:  Auto adding GCE Instance and protecting them with tags
+
+If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
+
+This function needs a CSV file as input to supply the following data:
+
+* credentialid:  learn this by running Get-AGMLibCredentialSrcID
+* applianceid: learn this by running Get-AGMLibCredentialSrcID
+* project:  this is the project where we are going to look for new GCE Instances
+* zone: this is the zone where we are going to look for new GCE Instances
+
+So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
+An example CSV file is as follows:
+```
+credentialid,applianceid,project,zone
+6654,143112195179,avwarglab1,australia-southeast1-c
+6654,143112195179,avwarglab1,australia-southeast2-a
+6654,143112195179,avwarglab1,australia-southeast2-b
+```
+When you run  **New-AGMLibGCEInstanceDiscovery** you have two choices.
+* -nobackup  This will add all new GCE Instances it finds without protecting them
+* -backup  This will add  all new GCE Instances it finds and for each Instance it will look for a label called googlebackupplan.  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
+
+What if I don't want all instances to be added to AGM?    This function has to add them all to ensure each instance is examined.
+
 
 
 ## User Story: Creating GCE Instance from PD Snapshots

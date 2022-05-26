@@ -1,18 +1,18 @@
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$addall) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup) 
 {
      <#
     .SYNOPSIS
     Uses a pre-prepared CSV list of cloud credential IDs, appliance IDs, projects and zones to discover new GCE Instances
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -addall
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -nobackup
 
     Adds all new GCE Instances discovered in the nominated projects and zones as unmanaged applications
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -tagged
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
 
-    Adds all new GCE Instances discovered in the nominated projects and zones that are tagged with googlebackupplan
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that are tagged with googlebackupplan and a valid template name
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
@@ -48,7 +48,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$addall)
     }
     $searchlist = Import-Csv -Path $discoveryfile
 
-    if ($addall)
+    if ($nobackup)
     {
         foreach ($cred in $searchlist)
         {
@@ -77,35 +77,89 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$addall)
             }  until ($done -eq 1)
         }
     }
-    if ($tagged)
+    if ($backup)
     {
+        # learn all the SLTs
+        $sltgrab = Get-AGMSLT
         foreach ($cred in $searchlist)
         {
-            $done = 0
-            do 
+            # we need to learn the srcid
+            $credgrab = (Get-AGMLibCredentialSrcID | where-object {$_.credentialid -eq $cred.credentialid})
+            if ($credgrab.srcid)
             {
-                $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone
-                $runcommand = Invoke-Expression $searchcommand
-                if ($runcommand.totalcount -gt 0)
+                $srcid = $credgrab.srcid
+                $diskpoolgrab = Get-AGMDiskpool -filtervalue cloudcredentialid=$srcid
+                if ($diskpoolgrab)
                 {
-                    foreach ($instance in $runcommand.items.vm)
+                    $poolname = $diskpoolgrab.name
+                    $slpgrab = Get-AGMSLP -filtervalue performancepool=$poolname
+                    if ($slpgrab)
                     {
-                        # command to find tag needs to go here
-                        $addcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid ' +$instance.instanceid
-                        $runcommand = Invoke-Expression $addcommand
-                        # command to protect added VM here
+                        $slpid = $slpgrab.id
                     }
                 }
-                else 
+            }
+            if ($slpid)
+            {
+                $done = 0
+                do 
                 {
-                    $done = 1
-                }
-                $runcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
-                $runcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
-                $runcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
-                $runcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
-                $runcommand 
-            }  until ($done -eq 1)
+                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone
+                    $runcommand = Invoke-Expression $searchcommand
+                    $runcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
+                    $runcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
+                    $runcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
+                    $runcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
+                    $runcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue 0
+                    $runcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue 0
+                    if ($runcommand.totalcount -gt 0)
+                    {
+                        foreach ($instance in $runcommand.items.vm)
+                        {
+                            # we always add the VM
+                            $addappcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid ' +$instance.instanceid
+                            $newappcommand = Invoke-Expression $addappcommand
+                            if ($newappcommand.count -eq 1)
+                            {
+                                $appid = $newappcommand.items.id
+                                $runcommand.newgceinstances += 1 
+                            }
+                            $backupplancheck = $instance.tag | select-string "googlebackupplan"
+                            if ($backupplancheck)
+                            {
+                                # remove the leadering  and trailing { and }
+                                $taglist = $instance.tag.Substring(1,$instance.tag.Length-2).Split(",")
+                                # now for the backup tag
+                                foreach ($tag in $taglist)
+                                {
+                                    $name = $tag.trim().split("=") | Select-object -First 1
+                                    $value = $tag.trim().split("=") | Select-object -skip 1
+                                    $sltid = ""
+                                    # if the tag name is googlebackupplan we can protect it
+                                    if ($name | select-string "googlebackupplan")
+                                    {
+                                        if ($sltgrab | where-object {$_.name -eq $value})
+                                        {
+                                            $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
+                                        }
+                                        if (($sltid) -and ($slpid) -and ($appid))
+                                        {
+                                                $newsla = 'New-AGMSLA -appid ' +$appid +' -sltid ' +$sltid +' -slpid ' +$slpid
+                                                $newsla = Invoke-Expression $newsla
+                                                $runcommand.newgceinstancebackup += 1 
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else 
+                    {
+                        $done = 1
+                    }
+                    $runcommand 
+                }  until ($done -eq 1)
+            }
         }
     }
 }
