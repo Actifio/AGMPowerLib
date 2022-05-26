@@ -1231,7 +1231,7 @@ credentialid,applianceid,project,zone
 ```
 When you run  **New-AGMLibGCEInstanceDiscovery** you have two choices.
 * -nobackup  This will add all new GCE Instances it finds without protecting them
-* -backup  This will add  all new GCE Instances it finds and for each Instance it will look for a label called googlebackupplan.  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
+* -backup  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan**.  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
 
 An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on that zone if more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
 ```
@@ -1265,11 +1265,11 @@ zone                 : australia-southeast2-b
 newgceinstances      : 0
 newgceinstancebackup : 0
 ```
-How do I tag the VM?    You need a label that looks like, where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+How do I tag the VM?    You need a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
 ```
 googlebackupplan : snap
 ```
-How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: ** get-agmslt**
+How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: **get-agmslt**
 
 What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
 
