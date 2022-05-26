@@ -16,7 +16,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
 **[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
-**[User Story: Auto adding GCE Instance and protecting them with tags](#auto-adding-gce-instance-and-protecting-them-with-tags)**<br>
+**[User Story: Auto adding GCE Instances and protecting them with tags](#user-story-auto-adding-gce-instances-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
@@ -1194,11 +1194,6 @@ label              : sqlinst1
 previousimagestate : FinalizeStarted
 currentimagestate  : ImageNotFound
 ```
-
-
-
-
-
 ## User Story: SAP HANA Database Mount
 
 In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where 'act' is the name of the HANA database.
@@ -1215,7 +1210,7 @@ So now we know the id of the Database inside our HANA instance, we just need to 
 PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
 
-## User Story: Auto adding GCE Instance and protecting them with tags
+## User Story: Auto adding GCE Instances and protecting them with tags
 
 If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
 
