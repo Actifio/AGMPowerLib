@@ -15,9 +15,9 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named googlebackupplan and a valid template name
 
         .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "backup"
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
 
-    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named backup and a valid template name
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named corporatepolicy and a valid template name
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
