@@ -1233,7 +1233,7 @@ When you run  **New-AGMLibGCEInstanceDiscovery** you have two choices.
 * -nobackup  This will add all new GCE Instances it finds without protecting them
 * -backup  This will add  all new GCE Instances it finds and for each Instance it will look for a label called googlebackupplan.  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
 
-An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were fould and two protected.   A second run is made on that zone in case more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
+An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on that zone if more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
 ```
 > New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup
 
@@ -1255,15 +1255,6 @@ project              : avwarglab1
 zone                 : australia-southeast2-a
 newgceinstances      : 3
 newgceinstancebackup : 2
-
-count                : 0
-totalcount           : 0
-credentialid         : 6654
-applianceid          : 143112195179
-project              : avwarglab1
-zone                 : australia-southeast2-a
-newgceinstances      : 0
-newgceinstancebackup : 0
 
 count                : 0
 totalcount           : 0

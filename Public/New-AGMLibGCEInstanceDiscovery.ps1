@@ -152,6 +152,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                 }
                             }
                         }
+                        if ($runcommand.totalcount -lt 51)
+                        {
+                            $done = 1
+                        }
                     }
                     else 
                     {
