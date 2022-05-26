@@ -1272,15 +1272,15 @@ Some FAQ:
 ```
 googlebackupplan : snap
 ```
-1. What if I want to use my own own label?   You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *corporatepolicy* and the value is a valid template name, then when you run the command, add **-usertag "corporatepolicy"**
+2. What if I want to use my own own label?   You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *corporatepolicy* and the value is a valid template name, then when you run the command, add **-usertag "corporatepolicy"**
 
 The whole command would look like:
 ```
 New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup -usertag "corporatepolicy"
 ```
-1. How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: **get-agmslt**
+3. How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: **get-agmslt**
 
-1. What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
+4. What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
