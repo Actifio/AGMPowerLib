@@ -1265,6 +1265,12 @@ zone                 : australia-southeast2-b
 newgceinstances      : 0
 newgceinstancebackup : 0
 ```
+How do I tag the VM?    You need a label that looks like, where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+```
+googlebackupplan : snap
+```
+How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: ** get-agmslt**
+
 What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
 
 ## User Story: Creating GCE Instance from PD Snapshots
