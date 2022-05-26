@@ -1270,7 +1270,7 @@ Some FAQ:
 
 1. How do I tag the VM?    
 
-You need to a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+You need to add a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
 ```
 googlebackupplan : snap
 ```
