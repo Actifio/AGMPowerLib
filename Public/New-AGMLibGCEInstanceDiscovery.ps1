@@ -1,4 +1,4 @@
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag) 
 {
      <#
     .SYNOPSIS
@@ -12,7 +12,12 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
 
-    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that are tagged with googlebackupplan and a valid template name
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named googlebackupplan and a valid template name
+
+        .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "backup"
+
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named backup and a valid template name
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
@@ -79,6 +84,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     if ($backup)
     {
+        if (!($usertag))
+        {
+            $usertag = "googlebackupplan"
+        }
         # learn all the SLTs
         $sltgrab = Get-AGMSLT
         foreach ($cred in $searchlist)
@@ -124,7 +133,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                 $appid = $newappcommand.items.id
                                 $runcommand.newgceinstances += 1 
                             }
-                            $backupplancheck = $instance.tag | select-string "googlebackupplan"
+                            $backupplancheck = $instance.tag | select-string $usertag
                             if ($backupplancheck)
                             {
                                 # remove the leadering  and trailing { and }
@@ -136,7 +145,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     $value = $tag.trim().split("=") | Select-object -skip 1
                                     $sltid = ""
                                     # if the tag name is googlebackupplan we can protect it
-                                    if ($name | select-string "googlebackupplan")
+                                    if ($name | select-string $usertag)
                                     {
                                         if ($sltgrab | where-object {$_.name -eq $value})
                                         {

@@ -1269,6 +1269,12 @@ How do I tag the VM?    You need a label where the name is *googlebackupplan* an
 ```
 googlebackupplan : snap
 ```
+What if I want to use my own own label?   You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *backup* and the value is a valid template name, then when you run the command, add **-usertag "backup"**
+
+The whole command would look like:
+```
+New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup -usertag "backup"
+```
 How do I learn the names of the templates?    You can either look at the SLA Architect in AGM or run: **get-agmslt**
 
 What if I don't want all instances to be added to AGM:   This function has to add them all to ensure each instance is examined.
