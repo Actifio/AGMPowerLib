@@ -1167,7 +1167,7 @@ New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -
 ```
 If you use -runmigration without having first run -startmigration then nothing will happen.
 
-### Starting the migration
+### Starting the finalize
 This last option may not be desirable in all cases.  A finalize is disruptive while the switch is made.   You may wish to run this last step one by one using the GUI.  Note if you need multiple finalize jobs per host, you need to run them one at a time.   This might mean running **-finalizemigration** multiple times.
 ```
 New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -finalizemigration
