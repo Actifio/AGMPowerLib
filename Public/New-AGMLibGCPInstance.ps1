@@ -811,7 +811,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             {
                 Write-host ""
                 $listmax = $subnetlist.name.count
-                [int]$subselection = Read-Host "Please select a network (1-$listmax)"
+                [int]$subselection = Read-Host "Please select a subnet (1-$listmax)"
                 if ($subselection -lt 1 -or $subselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
