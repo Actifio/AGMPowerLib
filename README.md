@@ -22,7 +22,8 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
-
+**[Contributing](#contributing)**<br>
+**[License](#license)**<br>
 
 ## Prerequisites
 
@@ -1877,3 +1878,20 @@ id    name
 PS /Users/avw>
 ```
 Our import is now complete.
+
+## Contributing
+
+Have a patch that will benefit this project? Awesome! Follow these steps to have
+it accepted.
+
+1.  Please sign our [Contributor License Agreement](CONTRIB.md).
+1.  Fork this Git repository and make your changes.
+1.  Create a Pull Request.
+1.  Incorporate review feedback to your changes.
+1.  Accepted!
+
+## License
+
+All files in this repository are under the
+[Apache License, Version 2.0](LICENSE) unless noted otherwise.
+

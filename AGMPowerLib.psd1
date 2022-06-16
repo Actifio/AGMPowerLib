@@ -24,10 +24,10 @@ GUID = '6155fdbc-7393-48a8-a7ac-9f5f69f8887b'
 Author = 'Anthony Vandewerdt'
 
 # Company or vendor of this module
-CompanyName = 'Actifio'
+CompanyName = 'Google'
 
 # Copyright statement for this module
-Copyright = '(c) 2022 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2022 Google, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
