@@ -4,6 +4,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 
 ### Table of Contents
 **[Prerequisites](#prerequisites)**<br>
+**[Install or Upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
 **[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
@@ -32,7 +33,7 @@ Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
 Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib to get the composite functions.
 
 
-### Install or Upgrade AGMPowerLib
+## Install or Upgrade AGMPowerLib
 
 Install from PowerShell Gallery:
 
@@ -40,7 +41,7 @@ Install from PowerShell Gallery:
 Install-Module -Name AGMPowerLib
 ```
 
-#### Upgrades using PowerShell Gallery
+### Upgrades using PowerShell Gallery
 
 Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
 ```
@@ -56,7 +57,7 @@ To uninstall all older versions run this command:
 $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllVersions | ? {$_.Version -ne $Latest.Version} | Uninstall-Module
 ```
 
-#### Manual install
+### Manual install
 
 Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
 
@@ -91,7 +92,7 @@ Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
 Then re-run the installer.  The installer will unblock the remaining files.
 
-##### Silent Install
+#### Silent Install
 
 You can run a silent install by adding **-silentinstall** or **-silentinstall0**
 
@@ -131,7 +132,7 @@ Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPower
 PS C:\Windows\system32>
 ```
 
-##### Silent Uninstall
+#### Silent Uninstall
 
 You can uninstall the module silently by adding **-silentuninstall** or **-u**  to the Install command.  
 
