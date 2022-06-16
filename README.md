@@ -20,7 +20,8 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
-
+**[Contributing](#contributing)**<br>
+**[License](#license)**<br>
 
 ## Prerequisites
 
