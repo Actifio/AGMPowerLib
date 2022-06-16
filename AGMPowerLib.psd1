@@ -168,8 +168,10 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.50] 2022-05-25
-        Improved New-AGMLibMSSQLMount guided section and added discovery option and added New-AGMLibMSSQLMulti.   Added  New-AGMLibGCEInstanceDiscovery
+        ## [0.0.0.50] 2022-6-17
+        Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
+        Switched license to Apache 2.0
+        Taught New-AGMLibGCVEfailover to handle multiple vCenters
 
         ## [0.0.0.49] 2022-05-16
         Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount
