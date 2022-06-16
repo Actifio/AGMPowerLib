@@ -4,7 +4,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 
 ### Table of Contents
 **[Prerequisites](#prerequisites)**<br>
-**[Install or Upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
+**[Install or upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
 **[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
@@ -33,7 +33,7 @@ Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
 Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib to get the composite functions.
 
 
-## Install or Upgrade AGMPowerLib
+## Install or upgrade AGMPowerLib
 
 Install from PowerShell Gallery:
 
