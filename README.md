@@ -1290,7 +1290,7 @@ You can either look at Templates in the SLA Architect in AGM or run: **Get-AGMSL
 
 4. What if I don't want all instances to be added to AGM   
 
-This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
+This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because an Actifio label with a value of **unmanaged** will be added to them.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
