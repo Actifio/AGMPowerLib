@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.50'
+ModuleVersion = '0.0.0.51'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -168,6 +168,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.51] 2022-6-17
+
         ## [0.0.0.50] 2022-6-17
         Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
         Switched license to Apache 2.0
