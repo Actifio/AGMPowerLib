@@ -179,7 +179,14 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
         if ($app.phase -eq $phase)
         {
             # so this is the our esxhostid. Starting with index 0  
-            $esxhostid = $esxgrab.id[$esxroundrobin]
+            if ($esxhostcount -eq 1) 
+            {
+                $esxhostid = $esxgrab.id
+            }
+            else 
+            {
+                $esxhostid = $esxgrab.id[$esxroundrobin]
+            }
             if ($app.targetvmname.length -gt 0)
             {
                 $mountvmname = $app.targetvmname
