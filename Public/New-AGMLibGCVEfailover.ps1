@@ -133,7 +133,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
         }
     }
     $esxgrab = Get-AGMHost -filtervalue "vcenterhostid=$srcid&isesxhost=true&originalhostid=0" 
-    if ($esxgrab.count -lt 1)
+    if ($esxgrab.id.count -lt 1)
     {
         Get-AGMErrorMessage -messagetoprint "Could not find ESX hosts for vCenter with ID $vcenterid"
         return;
@@ -147,7 +147,14 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     $esxtable = $esxgrab | Select-Object id,name | Format-Table
     $esxtable
     # Our assumption is that GCVE has one datastore and that all ESX hosts have access to that datastore
-    $datastoregrab = (((Get-AGMHost $esxgrab.id[0]).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    if ($esxhostcount -eq 1) 
+    {
+        $datastoregrab = (((Get-AGMHost $esxgrab.id).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    }
+    else
+    {
+        $datastoregrab = (((Get-AGMHost $esxgrab.id[0]).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    }
     if ($datastoregrab.count -lt 1)
     {
         Get-AGMErrorMessage -messagetoprint "Could not find any datastores"

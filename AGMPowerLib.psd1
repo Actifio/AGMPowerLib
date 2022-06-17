@@ -168,8 +168,11 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.52] 2022-6-17
+        Teach New-AGMLibGCVEfailover to handle single node ESX clusters
+
         ## [0.0.0.51] 2022-6-17
-       Taught New-AGMLibGCPInstance how to handle empty image data responses and give more helpful guidance to the user.  Also warn user when zone doesnt have a network and dont show double network where we have two subnets in a region
+        Taught New-AGMLibGCPInstance how to handle empty image data responses and give more helpful guidance to the user.  Also warn user when zone doesnt have a network and dont show double network where we have two subnets in a region
 
         ## [0.0.0.50] 2022-6-17
         Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
