@@ -1,4 +1,18 @@
-Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase) 
+# Copyright 2022 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenterid) 
 {
     <#
     .SYNOPSIS
@@ -55,20 +69,47 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase)
     #  The user can give us a vcenter ID,  but given this is GCVE, we expect we will have only one vCenter.  If we find more than one then we need to know which one
     if (!($vcenterid))
     {
-        $vcentergrab =   Get-AGMHost -filtervalue isvcenterhost=true 
-        if ($vcentergrab.count -lt 1)
+        $vcentergrab =  Get-AGMHost -filtervalue isvcenterhost=true 
+        if ($vcentergrab.id.count -lt 1)
         {
             Get-AGMErrorMessage -messagetoprint "Could not find any vCenters"
             return;
         }
-        if ($vcentergrab.counts -gt 1)
+        if ($vcentergrab.id.count -eq 1)
         {
-            Get-AGMErrorMessage -messagetoprint "Found too many vCenters, please learn the correct ID and specify it with -vcenterid"
-            return;
+            $vcenterid = $vcentergrab.id
+            $srcid = $vcentergrab.srcid
+            $vcentername = $vcentergrab.name
         }
-        $vcenterid = $vcentergrab.id
-        $srcid = $vcentergrab.srcid
-        $vcentername = $vcentergrab.name
+        if ($vcentergrab.id.count -gt 1)
+        {    
+            Write-host ""
+            write-host "vCenter selection menu - which vCenter will be used for this mount"
+            Write-host ""
+            $i = 1
+            foreach ($vc in $vcentergrab)
+            { 
+                Write-Host -Object "$i`: $($vc.name) ($($vc.id))"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $vcentergrab.name.count
+                [int]$vcselection = Read-Host "Please select the vCenter to work with from (1-$listmax)"
+                if ($vcselection -lt 1 -or $vcselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            $vcenterid = $vcentergrab.id[($vcselection - 1)]
+            $srcid = $vcentergrab.srcid[($vcselection - 1)]
+            $vcentername = $vcentergrab.name[($vcselection - 1)]
+        }
         write-host ""
         write-host "Using the following vCenter:"
         write-host "Name: $vcentername   vCenterID: $vcenterid"

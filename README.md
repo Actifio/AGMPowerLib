@@ -4,6 +4,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 
 ### Table of Contents
 **[Prerequisites](#prerequisites)**<br>
+**[Install or upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
 **[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
@@ -14,7 +15,9 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
 **[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
 **[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: Auto adding GCE Instances and protecting them with tags](#user-story-auto-adding-gce-instances-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
@@ -30,7 +33,7 @@ Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
 Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib to get the composite functions.
 
 
-### Install or Upgrade AGMPowerLib
+## Install or upgrade AGMPowerLib
 
 Install from PowerShell Gallery:
 
@@ -38,7 +41,7 @@ Install from PowerShell Gallery:
 Install-Module -Name AGMPowerLib
 ```
 
-#### Upgrades using PowerShell Gallery
+### Upgrades using PowerShell Gallery
 
 Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
 ```
@@ -54,11 +57,11 @@ To uninstall all older versions run this command:
 $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllVersions | ? {$_.Version -ne $Latest.Version} | Uninstall-Module
 ```
 
-#### Manual install
+### Manual install
 
 Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is also a **dev** branch for development builds prior to promotion to Main.  
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is normally a development branch for the next planned version prior to promotion to Main, so if the version of Main is 0.0.0.49 look for a branch called 0.0.0.50  
 1.  Copy the Zip file to the server where you want to install it
 1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
 1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder. 
@@ -89,7 +92,7 @@ Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
 Then re-run the installer.  The installer will unblock the remaining files.
 
-##### Silent Install
+#### Silent Install
 
 You can run a silent install by adding **-silentinstall** or **-silentinstall0**
 
@@ -129,7 +132,7 @@ Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPower
 PS C:\Windows\system32>
 ```
 
-##### Silent Uninstall
+#### Silent Uninstall
 
 You can uninstall the module silently by adding **-silentuninstall** or **-u**  to the Install command.  
 
@@ -1053,6 +1056,146 @@ status    startdate           enddate
 succeeded 2020-10-09 15:02:15 2020-10-09 15:04:06
 ```
 
+## User Story: Microsoft SQL Multi Mount and Migrate
+
+In this user story we are going to use SQL Mount and Migrate to move an Actifio Mount back to server disk but we are going to run multiple mounts and migrates in a single pass using a CSV file
+
+This video also documents the process:   https://youtu.be/QX5Sn3XHbCM
+
+### Create the CSV sourcefile
+
+The easiest way to create the CSV file is to run **New-AGMLibMSSQLMount** and take the option to output a CSV file at the end.
+
+Once you have the file then edit it to add additional databases.  
+* If you don't know the App ID, then specify the AppName (provided it is unique)
+* If you don't know the target host ID, then specify the expected TaregtHostName (provided it is unique)
+* If the target host doesn't exist, but you know what the target instance name will be, then make sure to specify **true** in the discovery column
+
+Here is an example of a file:
+```
+appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,label,dbname,consistencygroupname,dbnamelist,dbrenamelist,dbnameprefix,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist
+,WINDOWS\SQLEXPRESS,,,143112195179,,win-target,WIN-TARGET\SQLEXPRESS,,Same as source,no,sqlinst1,,avcg1,,"model,model1;CRM,crm1",,,TRUE,FALSE,,,,,,,,,,,yes,4,1,,,,
+```
+
+### Create the CSV runfile
+
+Where the source file needs to exist before you start,  the runrile will be created the first time you run **New-AGMLibMSSQLMulti** by specifying the name of a new file that doesnt yet exist.
+The idea is that you will use this file throughout one DR or test event.   Once all databases are finalized then you can delete the runfile and start your next test using a a new file
+
+### Checking image state
+At any point in the process, we use **-checkimagestate** to validate whether our mounts exist.  
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -checkimagestate
+```
+The first time you run this command, the output will look like this:
+```
+id                 :
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate :
+currentimagestate  : NoMountedImage
+```
+* id is blank because there is no image yet created by a mount
+* previousimagestate is blank because there is no image
+* currentimagestate says NoMountedImage because there is no image
+
+### Running the multi mount.
+We start all the mounts at once with this command:
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv  -runfile rundate22052022.csv -runmount
+```
+This will run multiple New-AGMLibMSSQLMount jobs.  If run twice, any collisions with existing mounts will not run. 
+This means if a mount fails, after you resolve the cause of the issue you can just run the same command again without interfering with existing mounts.
+After you run **New-AGMLibMSSQLMulti**  with **-runmount** then check the state with **-checkimagestate**
+
+We expect it to initially show this, where id is still blank, but previousimagestate is telling you a mount was started.
+```
+id                 :
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MountStarted
+currentimagestate  : NoMountedImage
+```
+Once the mount job completes we will see this, where the ID is now known and currentimagestate is mounted.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MountStarted
+currentimagestate  : Mounted
+```
+If you run the **-runmount** again, the existing mounts will be unaffected, but previousimagestate will change to: *MountFailed: mount is unsuccessful due to duplicate application on the same host/instance not allowed:*
+
+### Starting the migration
+Once all our images are mounted, we can start migrating.   If you run this command with some mounts still running, then migration will only start on those mounts that are ready and you will need to run startmigration again.
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -startmigration
+```
+This will start migrate jobs for any SQL Db where the migrate field is set to true.
+When you check after migrate has been requested you will see this, where previousimagestate and currentimagestate both say MigrateStarted:
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MigrateStarted
+currentimagestate  : MigrateStarted
+```
+Once the first migrate job has finished we will see this where currentimagestate is FinalizeEligible
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : MigrateStarted
+currentimagestate  : FinalizeEligible
+```
+We can run additional migrate jobs (in addition to the scheduled ones), with this command:
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -runmigration
+```
+If you use -runmigration without having first run -startmigration then nothing will happen.
+
+### Starting the finalize
+This last option may not be desirable in all cases.  A finalize is disruptive while the switch is made.   You may wish to run this last step one by one using the GUI.  Note if you need multiple finalize jobs per host, you need to run them one at a time.   This might mean running **-finalizemigration** multiple times.
+```
+New-AGMLibMSSQLMulti -sourcefile recoverylist.csv -runfile rundate22052022.csv -finalizemigration
+```
+After running the command you will initially see this, where previousimagestate is FinalizeStarted.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : FinalizeStarted
+currentimagestate  : FinalizeEligible
+```
+Once finalize is finished you will see this, where currentimagestate is ImageNotFound.  This is normal because at the end of the finalize the mount gets deleted.    Once you see this, validate the DB on the target host and you are complete.
+```
+id                 : 82789
+appname            : WINDOWS\SQLEXPRESS
+targethostname     : win-target
+childapptype       : ConsistencyGroup
+childappname       : avcg1
+label              : sqlinst1
+previousimagestate : FinalizeStarted
+currentimagestate  : ImageNotFound
+```
 ## User Story: SAP HANA Database Mount
 
 In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where 'act' is the name of the HANA database.
@@ -1069,6 +1212,85 @@ So now we know the id of the Database inside our HANA instance, we just need to 
 PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
 
+## User Story: Auto adding GCE Instances and protecting them with tags
+
+If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
+
+This function needs a CSV file as input to supply the following data:
+
+* **credentialid**  learn this by running Get-AGMLibCredentialSrcID
+* **applianceid** learn this by running Get-AGMLibCredentialSrcID
+* **project**  this is the project where we are going to look for new GCE Instances
+* **zone** this is the zone where we are going to look for new GCE Instances
+
+So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as a service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
+An example CSV file is as follows:
+```
+credentialid,applianceid,project,zone
+6654,143112195179,avwarglab1,australia-southeast1-c
+6654,143112195179,avwarglab1,australia-southeast2-a
+6654,143112195179,avwarglab1,australia-southeast2-b
+```
+When you run  **New-AGMLibGCEInstanceDiscovery** you have to specify one of these two choices:
+* **-nobackup**  This will add all new GCE Instances it finds without protecting them
+* **-backup**  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan** (or a label you specify with **-usertag**)  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
+
+An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on each zone where more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
+```
+> New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup
+
+count                : 0
+totalcount           : 0
+credentialid         : 6654
+applianceid          : 143112195179
+project              : avwarglab1
+zone                 : australia-southeast1-c
+newgceinstances      : 0
+newgceinstancebackup : 0
+
+count                : 3
+items                : {@{vm=}, @{vm=}, @{vm=}}
+totalcount           : 3
+credentialid         : 6654
+applianceid          : 143112195179
+project              : avwarglab1
+zone                 : australia-southeast2-a
+newgceinstances      : 3
+newgceinstancebackup : 2
+
+count                : 0
+totalcount           : 0
+credentialid         : 6654
+applianceid          : 143112195179
+project              : avwarglab1
+zone                 : australia-southeast2-b
+newgceinstances      : 0
+newgceinstancebackup : 0
+```
+Some FAQ:
+
+
+1. How do I tag the VM?    
+
+You need to add a label where the name is *googlebackupplan* and the value is the name of a valid template, in this example it is *snap*
+```
+googlebackupplan : snap
+```
+2. What if I want to use my own own label?   
+
+You can do that and then specify it with **-usertag**.   So lets say you add a label to each relevant VM where the label name is *corporatepolicy* and the value is a valid template name, then when you run the command, add **-usertag "corporatepolicy"**
+
+The whole command would look like:
+```
+New-AGMLibGCEInstanceDiscovery -discoveryfile ./disco.csv -backup -usertag "corporatepolicy"
+```
+3. How do I learn the names of the templates to use as values for the tags?    
+
+You can either look at Templates in the SLA Architect in AGM or run: **Get-AGMSLT**
+
+4. What if I don't want all instances to be added to AGM   
+
+This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 

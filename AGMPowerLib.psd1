@@ -12,7 +12,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.49'
+ModuleVersion = '0.0.0.50'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -24,10 +24,10 @@ GUID = '6155fdbc-7393-48a8-a7ac-9f5f69f8887b'
 Author = 'Anthony Vandewerdt'
 
 # Company or vendor of this module
-CompanyName = 'Actifio'
+CompanyName = 'Google'
 
 # Copyright statement for this module
-Copyright = '(c) 2022 Actifio, Inc. All rights reserved'
+Copyright = '(c) 2022 Google, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
@@ -102,6 +102,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibFSMount',
 'New-AGMLibGCEConversion',
 'New-AGMLibGCEConversionMulti',
+'New-AGMLibGCEInstanceDiscovery',
 'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
@@ -109,6 +110,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibImage',
 'New-AGMLibMultiMount',
 'New-AGMLibMSSQLMount',
+'New-AGMLibMSSQLMulti',
 'New-AGMLibMySQLMount',
 'New-AGMLibPostgreSQLMount',
 'New-AGMLibSAPHANAMount',
@@ -166,6 +168,11 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.50] 2022-6-17
+        Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
+        Switched license to Apache 2.0
+        Taught New-AGMLibGCVEfailover to handle multiple vCenters
+
         ## [0.0.0.49] 2022-05-16
         Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount
 

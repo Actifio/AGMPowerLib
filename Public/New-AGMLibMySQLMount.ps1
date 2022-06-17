@@ -1,3 +1,18 @@
+# Copyright 2022 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
 Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbuser,[string]$password,[string]$base64password,[string]$messagesdir,[string]$port,[string]$osuser,[string]$basedir,[string]$mountmode,[string]$mapdiskstoallesxhosts,[string]$mountpointperimage,[string]$sltid,[string]$slpid,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch]$snatchport,[switch][alias("w")]$wait) 
 {
     <#
@@ -197,6 +212,8 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         else
         {
             Clear-Host
+            write-host "Running guided mode"
+            write-host ""
             write-host "Appliance selection menu - which Appliance will run this mount"
             Write-host ""
             $i = 1
@@ -222,8 +239,6 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $mountapplianceid =  $appliancegrab.clusterid[($appselection - 1)]
             $mountappliancename =  $appliancegrab.name[($appselection - 1)]
         }
-        write-host ""
-        write-host "Running guided mode"
         write-host ""
         write-host "Select application status for MySQL apps"
         Write-host ""
