@@ -146,7 +146,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     write-host "Using the following ESXi hosts"
     $esxtable = $esxgrab | Select-Object id,name | Format-Table
     $esxtable
-    # Our assumption is that GCVE has one datastore and that all ESX hosts have access to that datastore
+    # Our assumption is that GCVE has one datastore and that all ESX hosts have access to that datastore   If there is only one ESX host then there is no index 
     if ($esxhostcount -eq 1) 
     {
         $datastoregrab = (((Get-AGMHost $esxgrab.id).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
@@ -172,13 +172,12 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     write-host ""
     write-host "Starting Mounts now for phase $phase"
 
-
     # we are now ready to go through our list
     foreach ($app in $recoverylist)
     {
         if ($app.phase -eq $phase)
         {
-            # so this is the our esxhostid. Starting with index 0  
+            # so this is the our esxhostid. Starting with index 0.  If there is only one ESX host then there is no index
             if ($esxhostcount -eq 1) 
             {
                 $esxhostid = $esxgrab.id
