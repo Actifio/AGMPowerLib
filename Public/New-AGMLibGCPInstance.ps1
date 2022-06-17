@@ -352,7 +352,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
         }
         # system recovery data grab
-        write-host "Getting image data"
+        write-host "Getting instance recovery data"
         # we get this blindly without specifying cloud credential
         $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=newmount"
         if ($recoverygrab.fields)
@@ -371,6 +371,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
                 if ($diagmode) { $newjson }
                 $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                if (!($recoverygrab.fields))
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+                    return
+                }
             }
             #now read the data
             $projectlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children | where-object  { $_.name -eq "project" }).choices | sort-object name
@@ -379,13 +384,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
             $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
             $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
-            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName | Get-Unique
+            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
             if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
             {
                 $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
                 $selectedregion =  ($regionlist.choices | where-object {$_.selected -eq $true}).name
             }
+        }
+        else
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+            return
         }
 
         # project name
@@ -441,13 +451,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                    if (!($recoverygrab.fields))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+                        return
+                    }
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
                     $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
                     $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
                     $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
                     $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
-                    $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                    $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName | Get-Unique
+                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
                     if (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" })
                     {
                         $regionlist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices | sort-object name
@@ -544,14 +559,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                             $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
                             $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
                             $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
-                            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                            $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName  | Get-Unique
+                            $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
                             $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
                             $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
                         } 
                         else 
                         {
-                            Get-AGMErrorMessage -messagetoprint "Failed to learn zone names for selected region."
+                            Get-AGMErrorMessage -messagetoprint "Failed to learn zone names for selected region. Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
                             return
                         }
                     }
@@ -606,9 +621,21 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
-                    $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName
-                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                    if (!($recoverygrab.fields))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+                        return
+                    }
+                    $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName  | Get-Unique
+                    $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
+                    $networkgrab = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).displayName
+                    # we get a network message but with no choices
+                    if (($networkgrab) -and (!($networklist)))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to find any networks for selected region/zone. Please confirm that zone $zone has a network in project $projectname"
+                        return
+                    }
                 }
             }
             else 
@@ -791,9 +818,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
                 if ($diagmode) { $newjson }
                 $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                if (!($recoverygrab.fields))
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+                    return
+                }
                 write-host ""
                 $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
-                $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name
+                $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
             }
         }
         if ($subnetlist.name)
@@ -908,6 +940,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                    if (!($recoverygrab.fields))
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+                        return
+                    }
                     write-host ""
                     $subnetlist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "subnet" }).choices | sort-object displayName
                 }

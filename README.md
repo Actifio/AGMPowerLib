@@ -1216,14 +1216,14 @@ PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-
 
 If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
 
-This function needs a CSV file as input to supply the following data:
+This function needs a CSV file as input to supply the following data to the function:
 
-* **credentialid**  learn this by running Get-AGMLibCredentialSrcID
-* **applianceid** learn this by running Get-AGMLibCredentialSrcID
+* **credentialid**  This is used to determine which stored credential is used to connect to Google Cloud. Learn this by running Get-AGMLibCredentialSrcID
+* **applianceid**  This is used to determine which backup appliance will manage the new GCE Instance. Learn this by running Get-AGMLibCredentialSrcID
 * **project**  this is the project where we are going to look for new GCE Instances
 * **zone** this is the zone where we are going to look for new GCE Instances
 
-So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as a service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you have add new zones to your project you will need to update the CSV.
+So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as a service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you add new zones to your project you will need to update the CSV to search in those zones.
 An example CSV file is as follows:
 ```
 credentialid,applianceid,project,zone
@@ -1290,7 +1290,7 @@ You can either look at Templates in the SLA Architect in AGM or run: **Get-AGMSL
 
 4. What if I don't want all instances to be added to AGM   
 
-This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because a label of **unmanaged** will be added to them.
+This function has to add them all to ensure each instance is examined.   If you add them to AGM and then delete them from AGM, they won't be added back in a second run because an Actifio label with a value of **unmanaged** will be added to them.
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
