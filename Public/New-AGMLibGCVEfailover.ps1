@@ -83,6 +83,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
         }
         if ($vcentergrab.id.count -gt 1)
         {    
+            Write-host ""
             write-host "vCenter selection menu - which vCenter will be used for this mount"
             Write-host ""
             $i = 1
