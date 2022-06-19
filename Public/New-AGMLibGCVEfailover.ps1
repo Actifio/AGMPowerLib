@@ -133,7 +133,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
         }
     }
     $esxgrab = Get-AGMHost -filtervalue "vcenterhostid=$srcid&isesxhost=true&originalhostid=0" 
-    if ($esxgrab.count -lt 1)
+    if ($esxgrab.id.count -lt 1)
     {
         Get-AGMErrorMessage -messagetoprint "Could not find ESX hosts for vCenter with ID $vcenterid"
         return;
@@ -146,8 +146,15 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     write-host "Using the following ESXi hosts"
     $esxtable = $esxgrab | Select-Object id,name | Format-Table
     $esxtable
-    # Our assumption is that GCVE has one datastore and that all ESX hosts have access to that datastore
-    $datastoregrab = (((Get-AGMHost $esxgrab.id[0]).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    # Our assumption is that GCVE has one datastore and that all ESX hosts have access to that datastore   If there is only one ESX host then there is no index 
+    if ($esxhostcount -eq 1) 
+    {
+        $datastoregrab = (((Get-AGMHost $esxgrab.id).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    }
+    else
+    {
+        $datastoregrab = (((Get-AGMHost $esxgrab.id[0]).sources.datastorelist) | select-object name| sort-object name | Get-Unique -asstring).name
+    }
     if ($datastoregrab.count -lt 1)
     {
         Get-AGMErrorMessage -messagetoprint "Could not find any datastores"
@@ -165,14 +172,20 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     write-host ""
     write-host "Starting Mounts now for phase $phase"
 
-
     # we are now ready to go through our list
     foreach ($app in $recoverylist)
     {
         if ($app.phase -eq $phase)
         {
-            # so this is the our esxhostid. Starting with index 0  
-            $esxhostid = $esxgrab.id[$esxroundrobin]
+            # so this is the our esxhostid. Starting with index 0.  If there is only one ESX host then there is no index
+            if ($esxhostcount -eq 1) 
+            {
+                $esxhostid = $esxgrab.id
+            }
+            else 
+            {
+                $esxhostid = $esxgrab.id[$esxroundrobin]
+            }
             if ($app.targetvmname.length -gt 0)
             {
                 $mountvmname = $app.targetvmname
