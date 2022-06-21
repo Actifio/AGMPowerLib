@@ -76,7 +76,7 @@ git clone https://github.com/Actifio/AGMPowerLIB.git AGMPowerLIB
 ```
 ##### Manual ZIP Download
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is normally a development branch for the next planned version prior to promotion to Main, so if the version of Main is 0.0.0.49 look for a branch called 0.0.0.50  
+1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this unless requested otherwise.  
 1.  Copy the Zip file to the server where you want to install it
 1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
 1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder. 
