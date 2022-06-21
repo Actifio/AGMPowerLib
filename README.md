@@ -60,7 +60,7 @@ To uninstall all older versions run this command:
 $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllVersions | ? {$_.Version -ne $Latest.Version} | Uninstall-Module
 ```
 
-Many corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these use the Git download methods below.
+Many corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these use one of the Git download methods below.
 
 #### Clone the Github repo
 
