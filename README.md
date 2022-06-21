@@ -40,7 +40,10 @@ Install from PowerShell Gallery:
 ```
 Install-Module -Name AGMPowerLib
 ```
-
+If installing on Windows PowerShell Version 5 you may need to run this before running your install:
+```
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+```
 ### Upgrades using PowerShell Gallery
 
 Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
@@ -57,9 +60,21 @@ To uninstall all older versions run this command:
 $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllVersions | ? {$_.Version -ne $Latest.Version} | Uninstall-Module
 ```
 
-### Manual install
+Many corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these use the Git download methods below.
 
-Many corporations do not allow access to or downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these we offer the following process:
+#### Clone the Github repo
+
+1.  Using a GIT client on your Windows or Linux or Mac OS host, clone the AGMPowerLIB GIT repo (see example clone command below)
+1.  Now start PWSH and change directory to the AGMPowerLib directory that should contain our module files.
+1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
+
+If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
+
+The GIT repo could be cloned with this command:
+```
+git clone https://github.com/Actifio/AGMPowerLIB.git AGMPowerLIB
+```
+##### Manual ZIP Download
 
 1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this, but there is normally a development branch for the next planned version prior to promotion to Main, so if the version of Main is 0.0.0.49 look for a branch called 0.0.0.50  
 1.  Copy the Zip file to the server where you want to install it
