@@ -35,18 +35,27 @@ Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib
 
 ## Install or upgrade AGMPowerLib
 
-Install from PowerShell Gallery:
+Install from PowerShell Gallery is the simplest approach.
+
+If running PowerShell 5 on Windows first run this (some older Windows versions are set to use downlevel TLS which will result in confusing error messages):
+```
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+```
+Now run this command. It is normal to get prompted to upgrade or install the NuGet Provider.  You may see other warnings as well.
 
 ```
 Install-Module -Name AGMPowerLib
 ```
-If installing on Windows PowerShell Version 5 you may need to run this before running your install:
+
+### Upgrades using PowerShell Gallery
+
+Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run 'Update-module' instead.
+
+If running PowerShell 5 on Windows first run this (some older Windows versions are set to use downlevel TLS which will result in confusing error messages):
 ```
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 ```
-### Upgrades using PowerShell Gallery
-
-Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run:
+Now run this command:
 ```
 Update-Module -name AGMPowerLib
 ```
