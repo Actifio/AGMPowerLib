@@ -1,3 +1,16 @@
+# Copyright 2022 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # Module manifest for module 'AGMPowerLib'
 #
@@ -12,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.52'
+ModuleVersion = '0.0.0.53'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -168,13 +181,15 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.53] 2022-06-
+
         ## [0.0.0.52] 2022-6-17
         Taught New-AGMLibGCVEfailover to handle single node ESX clusters
 
-        ## [0.0.0.51] 2022-6-17
+        ## [0.0.0.51] 2022-06-17
         Taught New-AGMLibGCPInstance how to handle empty image data responses and give more helpful guidance to the user.  Also warn user when zone doesnt have a network and dont show double network where we have two subnets in a region
 
-        ## [0.0.0.50] 2022-6-17
+        ## [0.0.0.50] 2022-06-17
         Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
         Switched license to Apache 2.0
         Taught New-AGMLibGCVEfailover to handle multiple vCenters
