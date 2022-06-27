@@ -149,7 +149,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     # if recovery point specified without imagename or ID
     if ( ($recoverypoint) -and (!($imagename)) -and (!($imageid)) -and ($appid) )
     {
-        if ($recoverypoint -eq "latest")
+        if ($recoverypoint -ne "latest")
         {
             $imagecheck = Get-AGMImage -filtervalue "appid=$appid&consistencydate<$recoverypoint&endpit>$recoverypoint" -sort id:desc -limit 1
             if (!($imagecheck))
@@ -1208,7 +1208,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     }
 
     # recovery point handling
-    if (($recoverypoint) -and ($recoverypoint -eq "latest"))
+    if (($recoverypoint) -and ($recoverypoint -ne "latest"))
     {
         $recoverytime = Convert-ToUnixDate $recoverypoint
     }
