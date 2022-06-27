@@ -250,29 +250,39 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid 
         if ($applicationgrab.host)
         {
-            $printarray = @()
-            $i = 1
-            $appselection = ""
-            $applicationgrab = $applicationgrab | sort-object host
+            $firstarray = @()
+            
             foreach ($app in $applicationgrab)
             {       
-                $printarray += [pscustomobject]@{
-                id = $i
+                $firstarray += [pscustomobject]@{
                 hostname = $app.host.hostname
                 appname = $app.application.appname
                 appid = $app.application.srcid
                 backupcount = $app.backupcount
                 }
+            }
+            $listmax = $firstarray.appid.count
+            $firstarray = $firstarray | Sort-Object hostname,appname
+            $printarray = @()
+            $i=1
+            foreach ($app in $firstarray)
+            {       
+                $printarray += [pscustomobject]@{
+                id = $i
+                hostname = $app.hostname
+                appname = $app.appname
+                appid = $app.appid
+                backupcount = $app.backupcount
+                }
                 $i++
             }
-            $listmax = $printarray.appid.count
             if ($listmax -gt 1)
             {
-
+                $appselection = ""
                 write-host ""
                 write-host "Source applications created by $appliancename"
                 write-host ""
-                $printarray | format-table
+                $printarray | Format-Table
                 write-host ""
                 [int]$appselection = Read-Host "Please select a source application or press enter to import all applications (1-$listmax)"
                 if ( $appselection -gt $listmax)
