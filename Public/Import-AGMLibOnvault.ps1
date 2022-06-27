@@ -13,12 +13,12 @@
 # limitations under the License.
 
 
-Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
+Function ([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
 {
     <#
     .SYNOPSIS
     Imports or forgets OnVault images
-    There is no Forget-AGMOnVault command.   You can do import and forget from this function. 
+    There is no Forget-AGMOnVault command.   You perform both import and forget from this function. 
 
     .EXAMPLE
     Import-AGMLibOnvault -diskpoolid 20060633 -applianceid 1415019931 

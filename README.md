@@ -635,7 +635,7 @@ Then run a command like this (using the id of the app as appid):
 ```
  Import-AGMOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
 ```
-Note you can also adds **-forget** to forget learned images, or **-owner** to take ownership of those images.
+Note you can also add **-forget** to forget learned images, or **-owner** to take ownership of those images.
 
 ### Authentication details
 
@@ -1632,7 +1632,7 @@ The goal is to offer a simplified way to manage failover from Production to DR w
 * The backup mechanism is to use VMware snapshots or System State backup
 * These images are created by an on-premises Backup Appliance and then replicated into cloud either in an OnVault pool or via StreamSnap.
 * DR occurs by issuing commands to the DR Appliance to create new GCE Instances (most likely after importing the OnVault images)
-* You may need to first run an OnVault import using this method: https://github.com/Actifio/AGMPowerLib/tree/0.0.0.43#importing-onvault-images
+* You may need to first run an OnVault import using this method: https://github.com/Actifio/AGMPowerLib#importing-onvault-images
 
 The best way to create the syntax for this command, at least for the first time you run it,  simply run the **New-AGMLibGCEConversion** command without any parameters.
 This starts what we called *guided mode* which will help you create the command.
