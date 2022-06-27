@@ -615,11 +615,13 @@ There are three ways to use these functions:
 
 ### Importing OnVault images
 
-Prior to running your scripts you may want to import the latest OnVault images into your appliance.  Doing this requires only one command with two parameters like this:
+Prior to running your scripts you may want to import the latest OnVault images into your appliance.  To learn the syntax, just run the command without any options.   It will run guided mode.  We can also learn everything we need, step by step as shown below.
+
+In general we just run the command with two parameters like this.
 ```
 Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 
 ```
-Learn Diskpool ID with this command.  The appliance named here is the appliance we are importing into (not the source, but the target):
+Learn Diskpool ID with this command.  The appliance named here is the appliance we are importing into.  So its not the source appliance, but the target appliance that is going to use the imported images:
 ```
 Import-AGMLibOnVault -listdiskpools
 ```
@@ -635,7 +637,7 @@ Then use the appid you learned to import:
 ```
  Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -appid 4788
 ```
-Or just import every imahe in that disk pool:
+Or just import every image in that disk pool:
 ```
  Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931
 ```
