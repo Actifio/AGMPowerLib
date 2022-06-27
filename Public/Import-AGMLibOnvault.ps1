@@ -253,6 +253,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             $printarray = @()
             $i = 1
             $appselection = ""
+            $applicationgrab = $applicationgrab | sort-object host
             foreach ($app in $applicationgrab)
             {       
                 $printarray += [pscustomobject]@{
