@@ -264,17 +264,23 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
                 }
                 $i++
             }
-            [int]$appselection = Read-Host "Please select a source application or press enter to import all applications (1-$i)"
-            write-host ""
-            $printarray
-            write-host ""
-            if ( $appselection -gt $i)
+            if ($printarray.appid.count -gt 1)
             {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($i)]"
-            } 
-            if ($appselection)
-            {
-                $appid = $printarray[($appselection - 1)]
+                [int]$appselection = Read-Host "Please select a source application or press enter to import all applications (1-$i)"
+                write-host ""
+                $printarray
+                write-host ""
+                if ( $appselection -gt $i)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($i)]"
+                } 
+                if ($appselection)
+                {
+                    $appid = $printarray.appid[($appselection - 1)]
+                }
+            }
+            else {
+                $printarray
             }
         }
         else {
