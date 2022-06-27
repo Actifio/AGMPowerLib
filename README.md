@@ -619,25 +619,31 @@ Prior to running your scripts you may want to import the latest OnVault images i
 ```
 Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 
 ```
-Learn Appliance ID with (use the cklusterid value):
+Learn Diskpool ID with this command.  The appliance named here is the appliance we are importing into (not the source, but the target):
 ```
-Get-AGMAppliance | select name,clusterid | sort-object name
+Import-AGMLibOnVault -listdiskpools
 ```
-Learn Diskpool ID with (use the ID field): 
+Now take the diskpool ID to learn the appliance ID.  This is the appliance ID of the appliance that made the images:
 ```
-Get-AGMDiskPool | where-object {$_.pooltype -eq "vault" } | select id,name | sort-Object name
+Import-AGMLibOnVault -diskpoolid 199085 -listapplianceids
 ```
-You can as an alternative import a specific appid by learning the appid with this command (using the appname, in the example here: *smalldb*):
+If you want to import a specific application, learn the application ID with this command.  Note the backupcount is the number of images in the pool, not how many will be imported (which could be less):
 ```
-Get-AGMLibApplicationID smalldb
+Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -listapps
 ```
-Then run a command like this (using the id of the app as appid): 
+Then use the appid you learned to import: 
 ```
- Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
+ Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -appid 4788
+```
+Or just import every imahe in that disk pool:
+```
+ Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931
+```
+If you want to monitor the import, add **-monitor** to the command:
+```
+ Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -monitor
 ```
 Note you can also add **-forget** to forget learned images, or **-owner** to take ownership of those images.
-
-If you want to monitor the import to completion you can add **-monitor** to the **Import-AGMLibOnVault** command.
 
 ### Authentication details
 

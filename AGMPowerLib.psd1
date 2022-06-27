@@ -181,7 +181,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
-        ## [0.0.0.53] 2022-06-
+        ## [0.0.0.53] 2022-06-27
+        Significantly improved useability of Import-AGMLibOnVault.   Added latest image section to New-AGMLibMSSQLMount
 
         ## [0.0.0.52] 2022-6-17
         Taught New-AGMLibGCVEfailover to handle single node ESX clusters
