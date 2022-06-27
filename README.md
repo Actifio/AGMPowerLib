@@ -617,7 +617,7 @@ There are three ways to use these functions:
 
 Prior to running your scripts you may want to import the latest OnVault images into your appliance.  Doing this requires only one command with two parameters like this:
 ```
-Import-AGMOnVault -diskpoolid 20060633 -applianceid 1415019931 
+Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 
 ```
 Learn Appliance ID with (use the cklusterid value):
 ```
@@ -633,9 +633,11 @@ Get-AGMLibApplicationID smalldb
 ```
 Then run a command like this (using the id of the app as appid): 
 ```
- Import-AGMOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
+ Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
 ```
 Note you can also add **-forget** to forget learned images, or **-owner** to take ownership of those images.
+
+If you want to monitor the import to completion you can add **-monitor** to the **Import-AGMLibOnVault** command.
 
 ### Authentication details
 
