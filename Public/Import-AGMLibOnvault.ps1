@@ -178,7 +178,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         else
         {
-            write-host "Pool selection menu - which Diskpool we will use (which also determines which Appliance we use)"
+            write-host "Pool selection menu - which Diskpool will we look into for images to import (which also determines which Appliance we import into)"
             Write-host ""
             $i = 1
             foreach ($pool in $diskpoolgrab)
@@ -220,7 +220,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         else
         {
-            write-host "Appliance selection menu - which Appliance will we import from (this is the Appliance that made the images)"
+            write-host "Source appliance selection menu - which Appliance will we import from (this is the Appliance that made the images)"
             Write-host ""
             $i = 1
             foreach ($appliance in $appliancegrab.cluster)
@@ -232,7 +232,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             {
                 Write-host ""
                 $listmax = $appliancegrab.cluster.name.count
-                [int]$appselection = Read-Host "Please select an Appliance to import into (1-$listmax)"
+                [int]$appselection = Read-Host "Please select the source appliance (1-$listmax)"
                 if ($appselection -lt 1 -or $appselection -gt $listmax)
                 {
                     Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
@@ -251,14 +251,27 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($applicationgrab.host)
         {
             $printarray = @()
+            $i = 1
+            $appselection = ""
             foreach ($app in $applicationgrab)
             {       
                 $printarray += [pscustomobject]@{
+                id = $i
                 hostname = $app.host.hostname
                 appname = $app.application.appname
                 appid = $app.application.srcid
                 backupcount = $app.backupcount
                 }
+                $i++
+            }
+            [int]$appselection = Read-Host "Please select a source application or press enter to import all applications (1-$i)"
+            if ( $appselection -gt $i)
+            {
+                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($i)]"
+            } 
+            if ($appselection)
+            {
+                $appid = $printarray[($appselection - 1)]
             }
         }
         else {
