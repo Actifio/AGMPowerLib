@@ -615,29 +615,37 @@ There are three ways to use these functions:
 
 ### Importing OnVault images
 
-Prior to running your scripts you may want to import the latest OnVault images into your appliance.  Doing this requires only one command with two parameters like this:
+Prior to running your scripts you may want to import the latest OnVault images into your appliance.  To learn the syntax, just run the command without any options.   It will run guided mode.  We can also learn everything we need, step by step as shown below.
+
+In general we just run the command with two parameters like this.
 ```
 Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 
 ```
-Learn Appliance ID with (use the cklusterid value):
+Learn Diskpool ID with this command.  The appliance named here is the appliance we are importing into.  So its not the source appliance, but the target appliance that is going to use the imported images:
 ```
-Get-AGMAppliance | select name,clusterid | sort-object name
+Import-AGMLibOnVault -listdiskpools
 ```
-Learn Diskpool ID with (use the ID field): 
+Now take the diskpool ID to learn the appliance ID.  This is the appliance ID of the appliance that made the images:
 ```
-Get-AGMDiskPool | where-object {$_.pooltype -eq "vault" } | select id,name | sort-Object name
+Import-AGMLibOnVault -diskpoolid 199085 -listapplianceids
 ```
-You can as an alternative import a specific appid by learning the appid with this command (using the appname, in the example here: *smalldb*):
+If you want to import a specific application, learn the application ID with this command.  Note the backupcount is the number of images in the pool, not how many will be imported (which could be less):
 ```
-Get-AGMLibApplicationID smalldb
+Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -listapps
 ```
-Then run a command like this (using the id of the app as appid): 
+Then use the appid you learned to import: 
 ```
- Import-AGMLibOnVault -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
+ Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -appid 4788
+```
+Or just import every image in that disk pool:
+```
+ Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931
+```
+If you want to monitor the import, add **-monitor** to the command:
+```
+Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -monitor
 ```
 Note you can also add **-forget** to forget learned images, or **-owner** to take ownership of those images.
-
-If you want to monitor the import to completion you can add **-monitor** to the **Import-AGMLibOnVault** command.
 
 ### Authentication details
 
@@ -1107,6 +1115,8 @@ appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sql
 
 Where the source file needs to exist before you start,  the runrile will be created the first time you run **New-AGMLibMSSQLMulti** by specifying the name of a new file that doesnt yet exist.
 The idea is that you will use this file throughout one DR or test event.   Once all databases are finalized then you can delete the runfile and start your next test using a a new file
+
+If you want to use the latest point in time image, leave imagename and imageid columns empty.   If you want the image rolled forward to the latest log point in time, just enter **latest** in the recoverypoint column.
 
 ### Checking image state
 At any point in the process, we use **-checkimagestate** to validate whether our mounts exist.  

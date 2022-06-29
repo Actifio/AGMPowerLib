@@ -70,7 +70,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     * Other options
 
     -mountpointperimage
-    -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
+    -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02.   Or the word 'latest' to apply all available logs
     -recoverymodel   use either:   "Same as source" (default) or "Simple" or "Full" or "Bulk logged"
     -overwrite    use either:   "no" (default)  "stale" or "yes"
     -recoverdb    true=Recover database after restore (default) false=Don't recovery database after restore
@@ -149,11 +149,14 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     # if recovery point specified without imagename or ID
     if ( ($recoverypoint) -and (!($imagename)) -and (!($imageid)) -and ($appid) )
     {
-        $imagecheck = Get-AGMImage -filtervalue "appid=$appid&consistencydate<$recoverypoint&endpit>$recoverypoint" -sort id:desc -limit 1
-        if (!($imagecheck))
+        if ($recoverypoint -ne "latest")
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to find an image for appid $appid with a recovery point suitable for required ENDPit $recoverypoint "
-            return
+            $imagecheck = Get-AGMImage -filtervalue "appid=$appid&consistencydate<$recoverypoint&endpit>$recoverypoint" -sort id:desc -limit 1
+            if (!($imagecheck))
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to find an image for appid $appid with a recovery point suitable for required ENDPit $recoverypoint "
+                return
+            }
         }
     }
 
@@ -201,6 +204,11 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
             $mountapplianceid = $imagegrab.cluster.clusterid
             $imagejobclass = $imagegrab.jobclass   
         }
+    }
+    # if user asked for latest recovery point, and there are logs,  we roll forward all the way
+    if (($endpit) -and ($recoverypoint -eq "latest"))
+    {
+        $recoverypoint = $endpit
     }
 
 
@@ -380,71 +388,115 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         
         if (!($imagename))
         {  
-            $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
-            if ($imagelist1.id.count -eq 0)
+            Write-Host "Image selection"
+            Write-Host "1`: Use the most recent backup for lowest RPO (default)"
+            Write-Host "2`: Select a backup"
+            Write-Host ""
+            While ($true) 
             {
-                Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
-                return
-            }
-            $imagelist = $imagelist1  | Sort-Object consistencydate
-            if ($imagelist1.id.count -eq 1)
-            {
-                $imagegrab = Get-AGMImage -id $($imagelist).id
-                $imagename = $imagegrab.backupname                
-                $consistencydate = $imagegrab.consistencydate
-                $endpit = $imagegrab.endpit
-                $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
-                $restorableobjects = $imagegrab.restorableobjects
-                $imagejobclass = $imagegrab.jobclass
-                $mountapplianceid = $imagegrab.cluster.clusterid
-                $mountappliancename = $imagegrab.cluster.name
-                write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $mountappliancename"
-            } 
-            else
-            {
-                Clear-Host
-                Write-Host "Image list.  Choose the best jobclass and consistency date on the best appliance"
-                write-host ""
-                $i = 1
-                foreach ($image in $imagelist)
-                { 
-                    $image | Add-Member -NotePropertyName select -NotePropertyValue $i
-                    $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
-                    $i++
-                }
-                #print the list
-                $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
-                # ask the user to choose
-                While ($true) 
+                [int]$rposelection = Read-Host "Please select from this list (1-2)"
+                if ($rposelection -eq "") { $rposelection = 1 }
+                if ($rposelection -lt 1 -or $rposelection -gt 2)
                 {
-                    Write-host ""
-                    $listmax = $imagelist.Length
-                    [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
-                    if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
-                    {
-                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
-                    } 
-                    else
-                    {
-                        break
-                    }
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
+                } 
+                else
+                {
+                    break
                 }
-                $imageid =  $imagelist[($imageselection - 1)].id
-                $imagegrab = Get-AGMImage -id $imageid
-                $imagename = $imagegrab.backupname                
-                $consistencydate = $imagegrab.consistencydate
-                $endpit = $imagegrab.endpit
-                $appname = $imagegrab.appname
-                $appid = $imagegrab.application.id
-                $apptype = $imagegrab.apptype      
-                $restorableobjects = $imagegrab.restorableobjects
-                $mountapplianceid = $imagegrab.cluster.clusterid
-                $mountappliancename = $imagegrab.cluster.name
-                $imagejobclass = $imagegrab.jobclass   
             }
+            if ($rposelection -eq 1)
+            {
+                $imagegrab = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid" -sort "consistencydate:desc,jobclasscode:desc" -limit 1
+                if ($imagegrab.id.count -eq 0)
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid on target appliance $mountapplianceid"
+                    return
+                }
+               else
+                {
+                    $imagegrab = Get-AGMImage -id $($imagegrab).id
+                    $imagename = $imagegrab.backupname                
+                    $consistencydate = $imagegrab.consistencydate
+                    $endpit = $imagegrab.endpit
+                    $appname = $imagegrab.appname
+                    $appid = $imagegrab.application.id
+                    $apptype = $imagegrab.apptype      
+                    $restorableobjects = $imagegrab.restorableobjects
+                    $imagejobclass = $imagegrab.jobclass
+                    $mountapplianceid = $imagegrab.cluster.clusterid
+                    $mountappliancename = $imagegrab.cluster.name
+                    #write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $mountappliancename"
+                } 
+            }   
             
+            if ($rposelection -eq 2)
+                {
+                $imagelist1 = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&jobclass=StreamSnap&jobclass=OnVault&targetuds=$mountapplianceid"  | select-object -Property backupname,consistencydate,endpit,id,jobclass,cluster | Sort-Object consistencydate,jobclass
+                if ($imagelist1.id.count -eq 0)
+                {
+                    Get-AGMErrorMessage -messagetoprint "Failed to fetch any Images for appid $appid"
+                    return
+                }
+                $imagelist = $imagelist1  | Sort-Object consistencydate
+                if ($imagelist1.id.count -eq 1)
+                {
+                    $imagegrab = Get-AGMImage -id $($imagelist).id
+                    $imagename = $imagegrab.backupname                
+                    $consistencydate = $imagegrab.consistencydate
+                    $endpit = $imagegrab.endpit
+                    $appname = $imagegrab.appname
+                    $appid = $imagegrab.application.id
+                    $apptype = $imagegrab.apptype      
+                    $restorableobjects = $imagegrab.restorableobjects
+                    $imagejobclass = $imagegrab.jobclass
+                    $mountapplianceid = $imagegrab.cluster.clusterid
+                    $mountappliancename = $imagegrab.cluster.name
+                    write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $mountappliancename"
+                } 
+                else
+                {
+                    Clear-Host
+                    Write-Host "Image list.  Choose the best jobclass and consistency date on the mount appliance"
+                    write-host ""
+                    $i = 1
+                    foreach ($image in $imagelist)
+                    { 
+                        $image | Add-Member -NotePropertyName select -NotePropertyValue $i
+                        $image | Add-Member -NotePropertyName appliancename -NotePropertyValue $image.cluster.name
+                        $i++
+                    }
+                    #print the list
+                    $imagelist | select-object select,consistencydate,jobclass,appliancename,backupname,id | Format-table *
+                    # ask the user to choose
+                    While ($true) 
+                    {
+                        Write-host ""
+                        $listmax = $imagelist.Length
+                        [int]$imageselection = Read-Host "Please select an image (1-$listmax)"
+                        if ($imageselection -lt 1 -or $imageselection -gt $imagelist.Length)
+                        {
+                            Write-Host -Object "Invalid selection. Please enter a number in range [1-$($imagelist.Length)]"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                    $imageid =  $imagelist[($imageselection - 1)].id
+                    $imagegrab = Get-AGMImage -id $imageid
+                    $imagename = $imagegrab.backupname                
+                    $consistencydate = $imagegrab.consistencydate
+                    $endpit = $imagegrab.endpit
+                    $appname = $imagegrab.appname
+                    $appid = $imagegrab.application.id
+                    $apptype = $imagegrab.apptype      
+                    $restorableobjects = $imagegrab.restorableobjects
+                    $mountapplianceid = $imagegrab.cluster.clusterid
+                    $mountappliancename = $imagegrab.cluster.name
+                    $imagejobclass = $imagegrab.jobclass   
+                }
+            }
         }
         if ($imagejobclass -eq "OnVault")
         {
@@ -466,19 +518,44 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         if ($endpit)
         {
             write-host ""
-            $recoverypoint = Read-Host "Roll forward time (hitting enter means no roll-forward)`: $consistencydate to $endpit"
-            if ($recoverypoint)
+            Write-Host "Log handling"
+            Write-Host "1`: Mount without applying logs (default)"
+            Write-Host "2`: Enter a recovery point"
+            Write-Host "3`: Apply all available logs (lowest RPO)"
+            Write-Host ""
+            While ($true) 
             {
-                if ([datetime]$recoverypoint -lt $consistencydate)
+                [int]$logselection = Read-Host "Please select from this list (1-3)"
+                if ($logselection -eq "") { $logselection = 1 }
+                if ($logselection -lt 1 -or $logselection -gt 3)
                 {
-                    Get-AGMErrorMessage -messagetoprint "Specified recovery point $recoverypoint is earlier than image consistency date $consistencydate.  Specify an earlier image."
-                    return
-                }
-                elseif ([datetime]$recoverypoint -gt $endpit)
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-3]"
+                } 
+                else
                 {
-                    Get-AGMErrorMessage -messagetoprint "Specified recovery point $recoverypoint is later than available logs that go to $endpit"
-                    return
+                    break
                 }
+            }
+            if ($logselection -eq 2)
+            {
+                $recoverypoint = Read-Host "Roll forward time (hitting enter means no roll-forward)`: $consistencydate to $endpit"
+                if ($recoverypoint)
+                {
+                    if ([datetime]$recoverypoint -lt $consistencydate)
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Specified recovery point $recoverypoint is earlier than image consistency date $consistencydate.  Specify an earlier image."
+                        return
+                    }
+                    elseif ([datetime]$recoverypoint -gt $endpit)
+                    {
+                        Get-AGMErrorMessage -messagetoprint "Specified recovery point $recoverypoint is later than available logs that go to $endpit"
+                        return
+                    }
+                }
+            }
+            if ($logselection -eq 3)
+            {
+                $recoverypoint="latest"
             }
         }
     
@@ -887,7 +964,15 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         Write-Host "Guided selection is complete.  The values entered would result in the following command:"
         Write-Host ""
       
-        Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -sqlinstance `"$sqlinstance`""
+        Write-Host -nonewline "New-AGMLibMSSQLMount -appid $appid -mountapplianceid $mountapplianceid  -targethostid $targethostid -sqlinstance `"$sqlinstance`""
+        if ($rposelection -eq 2 )
+        {
+            Write-Host -nonewline "-imagename `"$imagename`""
+        }
+        if ($recoverypoint)
+        {
+            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
+        } 
         if ($dbname)
         {
             Write-Host -nonewline " -dbname `"$dbname`""
@@ -912,10 +997,6 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
         {
             Write-Host -nonewline " -overwrite `"$overwrite`""
         }
-        if ($recoverypoint)
-        {
-            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
-        }    
         if ($recoverdb)
         {
             Write-Host -nonewline " -recoverdb `"$recoverdb`""
@@ -1042,9 +1123,18 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
                     $restorelist = Read-Host "Please enter a list of file,sourcedir,targetdirs"
                 }
             }
+            if ($rposelection -eq 1)
+            {
+                $printimagename = ""
+                $printimageid = ""
+            }
+            else {
+                $printimagename = $imagename
+                $printimageid = $imageid
+            }
 
             write-host "appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,label,dbname,consistencygroupname,dbnamelist,dbrenamelist,dbnameprefix,dbnamesuffix,recoverdb,userlogins,username,password,base64password,mountmode,mapdiskstoallesxhosts,mountpointperimage,sltid,slpid,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist"
-            write-host -nonewline "`"$appid`",`"$appname`",`"$imagename`",`"$imageid`",`"$mountapplianceid`",`"$targethostid`",`"$targethostname`",`"$sqlinstance`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$dbname`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbrenamelist`",`"$dbnameprefix`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
+            write-host -nonewline "`"$appid`",`"$appname`",`"$printimagename`",`"$printimageid`",`"$mountapplianceid`",`"$targethostid`",`"$targethostname`",`"$sqlinstance`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$dbname`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbrenamelist`",`"$dbnameprefix`",`"$dbnamesuffix`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$mountpointperimage`",`"$sltid`",`"$slpid`","
             if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
             write-host -nonewline "`"$perfoption`",`"$migrate`",$copythreadcount,$frequency,`"$dontrenamedatabasefiles`",`"$volumes`",`"$files`",`"$restorelist`""
             write-host ""
@@ -1118,7 +1208,7 @@ Function New-AGMLibMSSQLMount ([string]$appid,[string]$targethostid,[string]$mou
     }
 
     # recovery point handling
-    if ($recoverypoint)
+    if (($recoverypoint) -and ($recoverypoint -ne "latest"))
     {
         $recoverytime = Convert-ToUnixDate $recoverypoint
     }
