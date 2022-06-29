@@ -643,7 +643,7 @@ Or just import every image in that disk pool:
 ```
 If you want to monitor the import, add **-monitor** to the command:
 ```
- Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -monitor
+Import-AGMLibOnVault -diskpoolid 199085 -applianceid 1415019931 -monitor
 ```
 Note you can also add **-forget** to forget learned images, or **-owner** to take ownership of those images.
 
