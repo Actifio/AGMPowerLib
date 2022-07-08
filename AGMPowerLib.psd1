@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.53'
+ModuleVersion = '0.0.0.54'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -181,6 +181,9 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.54] 2022-07-08
+        New-AGMLibGCPInstance Cross project recovery was showing source project networks
+
         ## [0.0.0.53] 2022-06-27
         Significantly improved useability of Import-AGMLibOnVault.   Added latest image section to New-AGMLibMSSQLMount
 
