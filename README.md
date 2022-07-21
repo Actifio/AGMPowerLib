@@ -24,7 +24,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
-**[License](#license)**<br>
+**[Disclaimer](#disclaimer)**<br>
 
 ## Prerequisites
 
@@ -1921,7 +1921,7 @@ Our import is now complete.
 Have a patch that will benefit this project? Awesome! Follow these steps to have
 it accepted.
 
-1.  Please sign our [Contributor License Agreement](CONTRIB.md).
+1.  Please sign our [Contributor License Agreement](CONTRIBUTING.md).
 1.  Fork this Git repository and make your changes.
 1.  Create a Pull Request.
 1.  Incorporate review feedback to your changes.
@@ -1932,3 +1932,5 @@ it accepted.
 All files in this repository are under the
 [Apache License, Version 2.0](LICENSE) unless noted otherwise.
 
+## Disclaimer
+This is not an official Google product.

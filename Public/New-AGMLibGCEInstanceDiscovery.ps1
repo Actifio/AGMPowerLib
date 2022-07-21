@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[string]$applianceid,[string]$project,[string]$zone) 
 {
      <#
     .SYNOPSIS
@@ -29,10 +29,15 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named googlebackupplan and a valid template name
 
-        .EXAMPLE
+    .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named corporatepolicy and a valid template name
+
+    .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -credentialid 259643 -applianceid 141805487622 -projectid avwservicelab1 -zone australia-southeast1-b -usertag backupplan -backup
+
+    Instead os using a discovery file the four required variables are specified by the user.
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
@@ -60,13 +65,26 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
-    
-    if (!($discoveryfile))
+
+    if (($credentialid) -and ($applianceid) -and ($project) -and ($zone))
+    {
+        $searchlist = @()
+        $searchlist += [pscustomobject]@{
+            credentialid = $credentialid
+            applianceid = $applianceid
+            project = $project
+            zone = $zone
+        }
+    }
+    elseif ($discoveryfile)
+    {
+        $searchlist = Import-Csv -Path $discoveryfile
+    }
+    else
     {
         Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -discoveryfile xxxx.csv"
         return;
     }
-    $searchlist = Import-Csv -Path $discoveryfile
 
     if ($nobackup)
     {
