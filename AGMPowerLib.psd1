@@ -182,7 +182,8 @@ PrivateData = @{
         # ReleaseNotes of this module
         ReleaseNotes = '
         ## [0.0.0.54] 2022-07-08
-        New-AGMLibGCPInstance Cross project recovery was showing source project networks
+        New-AGMLibGCPInstance Cross project recovery was showing source project networks, offer option to re-use source name and IP.  Offer option to output all VMs, not just the one being mounted
+        Teach New-AGMLibGCEInstanceDiscovery to use paramaters rather than use a CSV file
 
         ## [0.0.0.53] 2022-06-27
         Significantly improved useability of Import-AGMLibOnVault.   Added latest image section to New-AGMLibMSSQLMount

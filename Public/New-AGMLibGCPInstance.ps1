@@ -204,10 +204,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             $appname =  $vmgrab.appname
             $appid = $vmgrab.id
+            $vmipaddress = $vmgrab.host.sources.ipaddress
         }
         else {
             $appname =  $vmgrab.appname[($vmselection - 1)]
             $appid = $vmgrab.id[($vmselection - 1)]
+            $vmipaddress = $vmgrab.host.sources.ipaddress[($vmselection - 1)]
         }
     }
 
@@ -439,6 +441,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     write-host "Fetching selection data for project $projectname"
                     write-host ""
                     # ensure we are using a different selected project
+                    foreach ($row in $recoverygrab.fields)
+                    {
+                        $row.modified = $false
+                    }
+                    foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                    {
+                        $row.modified = $false
+                    }
                     ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
                     (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
                     ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
@@ -449,7 +459,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     if (!($recoverygrab.fields))
                     {
@@ -651,7 +660,20 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if (!($instancename))
         {
             write-host ""
+            write-host ""
+            Write-Host "New Instance name"
+            Write-Host "1`: Use source instance name $appname (default)"
+            Write-Host "2`: Enter a different name"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) 
+            {
             While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+            }
+            else {
+                $instancename = $appname
+                $retaininstancename = $true
+            }
         }
 
         # machine type
@@ -696,6 +718,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 else
                 {  
                     $machinetype = ($machinetypelist| where-object { $_.selected -eq $true }).name 
+                    $retainmachinetype = $true
                 }
             }
             else 
@@ -882,9 +905,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host "NIC0 Internal IP?"
         Write-Host "1`: Auto Assign (default)"
         Write-Host "2`: Manual Assign"
+        Write-Host "3`: Use the currently assigned IP address ($vmipaddress)"
         Write-Host ""
-        [int]$userselection = Read-Host "Please select from this list (1-2)"
-        if ($userselection -eq 2) { [string]$nic0internalip = Read-Host "IP address" }
+        [int]$userselection = Read-Host "Please select from this list (1-3)"
+        if ($userselection -eq 2) 
+        { 
+            [string]$nic0internalip = Read-Host "IP address" 
+        }
+        if ($userselection -eq 3) 
+        { 
+            [string]$nic0internalip = $vmipaddress
+            $retainvmipaddress = $true
+        }
 
         if ($niccount -eq 2)
         {
@@ -1082,13 +1114,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Write comma separated output.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
-        Write-Host "3`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-3)"
-        if ($userchoice -eq 3)
-        {
-            return
-        }
+        Write-Host "2`: Write comma separated output for this Instance.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
+        Write-Host "3`: Write comma separated output for every known instance using the same settings.  This output should be carefully checked before being used"
+        Write-Host "4`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-4)"
         if ($userchoice -eq 2)
         {
             write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
@@ -1097,6 +1126,51 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
+        if ($userchoice -eq 3)
+        {
+            $outfile = Read-Host "Please enter the desired output file name"
+
+            $vmexport = @()
+
+            foreach ($vm in $vmgrab)
+            {
+                if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
+                if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
+                
+
+                $vmexport += [pscustomobject]@{
+                    srcid = $srcid
+                    appid = $vm.id
+                    appname = $vm.appname
+                    projectname = $projectname
+                    zone = $zone
+                    instancename = $instancename
+                    machinetype = $machinetype
+                    serviceaccount = $serviceaccount
+                    networktags = $networktags
+                    poweronvm = $poweronvm
+                    labels = $labels
+                    disktype = $disktype
+                    nic0network = $nic0network
+                    nic0subnet = $nic0subnet
+                    nic0externalip = $nic0externalip
+                    nic0internalip = $nic0internalip
+                    nic1network = $nic1network
+                    nic1subnet = $nic1subnet
+                    nic1externalip = $nic1externalip
+                    nic1internalip = $nic1internalip
+                }
+            }
+            $vmexport | Export-Csv -path $outfile            
+            write-host ""
+            return
+        }
+        if ($userchoice -eq 4)
+        {
+            return
+        }
+
 
     }
 
