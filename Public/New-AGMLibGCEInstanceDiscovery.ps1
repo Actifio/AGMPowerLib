@@ -27,7 +27,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
 
-    Adds all new GCE Instances discovered in the nominated projects and zones that have a matching label and and protects any that have a valid template name
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a valid template name
 
     .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
@@ -187,11 +187,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                         $instancelist = ""
                         foreach ($instance in $newvmcommand.items.vm)
                         {
-                            $backupplancheck = $instance.tag | select-string $usertag
-                            if ($backupplancheck)
-                            {
-                                $instancelist = $instancelist + "," +$instance.instanceid  
-                            }
+                            $instancelist = $instancelist + "," +$instance.instanceid  
                         }
                         # remove leading comma
                         if ($instancelist)
