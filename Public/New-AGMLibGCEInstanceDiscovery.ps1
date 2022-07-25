@@ -206,6 +206,8 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                             $newappcommand = Invoke-Expression $addappcommand
                             if ($newappcommand.count -ge 1)
                             {
+                                # here we build $newslalist which we process afterwards.
+                                $newslalist = @()
                                 foreach ($instance in $newappcommand.items)
                                 {
                                     $appid = $instance.id
@@ -232,18 +234,42 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                 }
                                                 if (($sltid) -and ($slpid) -and ($appid))
                                                 {
-                                                        $newsla = 'New-AGMSLA -appid ' +$appid +' -sltid ' +$sltid +' -slpid ' +$slpid
-                                                        if ($textoutput)
-                                                        {
-                                                            $ct = Get-Date
-                                                            write-host "$ct Running" $newsla
-                                                        }
-                                                        $newsla = Invoke-Expression $newsla
-                                                        $newvmcommand.newgceinstancebackup += 1 
+                                                    $newslalist += [pscustomobject]@{
+                                                        appid = $appid
+                                                        sltid = $sltid
+                                                        slpid = $slpid
+                                                    }
+                                                    $newvmcommand.newgceinstancebackup += 1 
                                                 }
                                             }
                                         }
                                     }
+                                }
+                                if ( $((get-host).Version.Major) -gt 5 )
+                                {
+                                    $newslalist | ForEach-Object -parallel {
+                                        $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                        if ($textoutput)
+                                        {
+                                            $ct = Get-Date
+                                            write-host "$ct Running" $newsla
+                                        }
+                                        $agmip = $using:agmip 
+                                        $AGMToken = $using:AGMToken
+                                        $AGMSESSIONID = $using:AGMSESSIONID
+                                        New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                    } -ThrottleLimit $limit
+                                }
+                                else {
+                                    $newslalist | ForEach-Object {
+                                        $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                        if ($textoutput)
+                                        {
+                                            $ct = Get-Date
+                                            write-host "$ct Running" $newsla
+                                        }
+                                        New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                    } 
                                 }
                             }
                         }

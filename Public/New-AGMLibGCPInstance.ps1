@@ -1115,9 +1115,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Write comma separated output for this Instance.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
-        Write-Host "3`: Write comma separated output for every known instance using the same settings.  This output should be carefully checked before being used"
-        Write-Host "4`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-4)"
+        Write-Host "3`: Write comma separated output for every GCE instance using the same settings.  This output should be carefully checked before being used"
+        Write-Host "4`: Update an existing CSV with any new GCE Instances.  This output should be carefully checked before being used"
+        Write-Host "5`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-5)"
         if ($userchoice -eq 2)
         {
             write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
@@ -1126,9 +1127,45 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
-        if ($userchoice -eq 3)
+        if (($userchoice -eq 3) -or ($userchoice -eq 4))
         {
-            $outfile = Read-Host "Please enter the desired output file name"
+            if ($userchoice -eq 4)
+            {
+                While ($true) 
+                {
+                    Write-host ""
+                    $infile = Read-Host "Please enter the input file name"
+                    if (-not ( Test-Path $infile ))
+                    {
+                        write-host "File $infile could not be found."
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $importedvms = Import-CSV -path $infile
+                if ($importedvms.srcid -eq $null) 
+                {
+                    Get-AGMErrorMessage -messagetoprint "Imported file $infile does not appear to be in the correct format to be updated"
+                    return
+                }
+            }
+           
+            While ($true) 
+            {
+                Write-host ""
+                $outfile = Read-Host "Please enter the desired output file name that the new output will be written to"
+                if ( Test-Path $outfile )
+                {
+                    write-host "File $outfile already exists please specify an unused file name"
+                } 
+                else
+                {
+                    break
+                }
+            }
+        
 
             $vmexport = @()
 
@@ -1137,8 +1174,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
                 if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
                 if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
-                
-
                 $vmexport += [pscustomobject]@{
                     srcid = $srcid
                     appid = $vm.id
@@ -1162,11 +1197,52 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     nic1internalip = $nic1internalip
                 }
             }
-            $vmexport | Export-Csv -path $outfile            
+            if ($userchoice -eq 3)
+            {
+                $vmexport | Export-Csv -path $outfile            
+            }
+            if ($userchoice -eq 4)
+            {
+                foreach ($vm in $vmexport)
+                {
+                    $vmpeek = $importedvms | where-object {($_.appname -eq $vm.appname)}
+                    if ($vmpeek)
+                    {
+                        # write-host "Found existing VM: " $vm.sourcevmname
+                    }
+                    else 
+                    {
+                        write-host "Found new VM to add to the csv: " $vm.appname
+                        $importedvms += [pscustomobject]@{
+                            srcid = $vm.srcid
+                            appid = $vm.appid
+                            appname = $vm.appname
+                            projectname = $vm.projectname
+                            zone = $vm.zone
+                            instancename = $vm.instancename
+                            machinetype = $vm.machinetype
+                            serviceaccount = $vm.serviceaccount
+                            networktags = $vm.networktags
+                            poweronvm = $vm.poweronvm
+                            labels = $vm.labels
+                            disktype = $vm.disktype
+                            nic0network = $vm.nic0network
+                            nic0subnet = $vm.nic0subnet
+                            nic0externalip = $vm.nic0externalip
+                            nic0internalip = $vm.nic0internalip
+                            nic1network = $vm.nic1network
+                            nic1subnet = $vm.nic1subnet
+                            nic1externalip = $vm.nic1externalip
+                            nic1internalip = $vm.nic1internalip
+                        }
+                    }
+                }
+                $importedvms | Export-Csv -path $outfile
+            }
             write-host ""
             return
         }
-        if ($userchoice -eq 4)
+        if ($userchoice -eq 5)
         {
             return
         }
