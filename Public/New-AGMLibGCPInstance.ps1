@@ -124,8 +124,57 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         } else
         {
             Clear-Host
-            write-host "Welcome to the Guided Menu for GCE Conversion. "
+            write-host "Welcome to the Guided Menu to run a GCE Instance mount. "
             write-host "You will be offered selections to build a command to run a mount job that will create a new GCE Instance"
+            Write-Host "You have four choices"
+            Write-host ""
+            Write-Host "1`: Follow a guided menu to build the command to mount a single VM  (default)"
+            Write-Host "2`: Follow a guided menu to build a CSV file to mount all available VMs using New-AGMLibGCPInstanceMultiMount.  We will use a single VM as a model"
+            Write-Host "3`: Follow a guided menu to update an existing CSV file with any new VMs that are not currently in that CSV file"
+            Write-Host "4`: Exit without proceeding"
+            $functionchoice = Read-Host "Please select from this list (1-4)"
+            if ($functionchoice -eq 4)
+            {
+                return
+            }
+            if ($functionchoice -eq 3)
+            {
+                While ($true) 
+                {
+                    Write-host ""
+                    $infile = Read-Host "Please enter the input file name"
+                    if (-not ( Test-Path $infile ))
+                    {
+                        write-host "File $infile could not be found."
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $importedvms = Import-CSV -path $infile
+                if ($importedvms.srcid -eq $null) 
+                {
+                    Get-AGMErrorMessage -messagetoprint "Imported file $infile does not appear to be in the correct format to be updated"
+                    return
+                }
+            }
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
+            {
+                While ($true) 
+                {
+                    Write-host ""
+                    $outfile = Read-Host "Please enter the desired output file name that the output will be written to"
+                    if ( Test-Path $outfile )
+                    {
+                        write-host "File $outfile already exists please specify an unused file name"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+            }
             write-host ""
             write-host "Credential Selection menu"
             write-host "The Credential is used to authenticate GCE commands.  Ensure you select the credential on the correct appliance since this will determine which appliance runs the recovery job"
@@ -176,7 +225,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
-        
+
         write-host ""
         write-host "VM Selection menu"
         Write-host ""
@@ -1115,10 +1164,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Write comma separated output for this Instance.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
-        Write-Host "3`: Write comma separated output for every GCE instance using the same settings.  This output should be carefully checked before being used"
-        Write-Host "4`: Update an existing CSV with any new GCE Instances.  This output should be carefully checked before being used"
-        Write-Host "5`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-5)"
+        Write-Host "3`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
             write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
@@ -1127,46 +1174,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
-        if (($userchoice -eq 3) -or ($userchoice -eq 4))
+        if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
         {
-            if ($userchoice -eq 4)
-            {
-                While ($true) 
-                {
-                    Write-host ""
-                    $infile = Read-Host "Please enter the input file name"
-                    if (-not ( Test-Path $infile ))
-                    {
-                        write-host "File $infile could not be found."
-                    } 
-                    else
-                    {
-                        break
-                    }
-                }
-                $importedvms = Import-CSV -path $infile
-                if ($importedvms.srcid -eq $null) 
-                {
-                    Get-AGMErrorMessage -messagetoprint "Imported file $infile does not appear to be in the correct format to be updated"
-                    return
-                }
-            }
-           
-            While ($true) 
-            {
-                Write-host ""
-                $outfile = Read-Host "Please enter the desired output file name that the new output will be written to"
-                if ( Test-Path $outfile )
-                {
-                    write-host "File $outfile already exists please specify an unused file name"
-                } 
-                else
-                {
-                    break
-                }
-            }
-        
-
             $vmexport = @()
 
             foreach ($vm in $vmgrab)
@@ -1197,15 +1206,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     nic1internalip = $nic1internalip
                 }
             }
-            if ($userchoice -eq 3)
+            if ($functionchoice -eq 2)
             {
                 $vmexport | Export-Csv -path $outfile            
             }
-            if ($userchoice -eq 4)
+            if ($functionchoice -eq 3)
             {
                 foreach ($vm in $vmexport)
                 {
-                    $vmpeek = $importedvms | where-object {($_.appname -eq $vm.appname)}
+                    $vmpeek = $importedvms | where-object {($_.appid -eq $vm.appid)}
                     if ($vmpeek)
                     {
                         # write-host "Found existing VM: " $vm.sourcevmname
@@ -1242,7 +1251,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
-        if ($userchoice -eq 5)
+        if ($userchoice -eq 3)
         {
             return
         }
