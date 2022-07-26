@@ -142,7 +142,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 While ($true) 
                 {
                     Write-host ""
-                    $infile = Read-Host "Please enter the input file name"
+                    $infile = Read-Host "Please enter the input file name (the previously created CSV we are updating with any new GCE Instances"
                     if (-not ( Test-Path $infile ))
                     {
                         write-host "File $infile could not be found."
@@ -225,7 +225,62 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
+        if ($functionchoice -eq 3)
+        {
+            write-host ""
+            Write-Host "New Instance name"
+            Write-Host "1`: Use source instance name (default)"
+            Write-Host "2`: Use a different name (will need to be set in the CSV file manually)"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if (($userselection -eq 2) -or ($userselection -eq "")) 
+            {
+                $retaininstancename = $true
+            }
+            Write-Host "NIC0 Internal IP?"
+            Write-Host "1`: Auto Assign (default)"
+            Write-Host "2`: Use the currently assigned IP address"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) 
+            { 
+                $retainvmipaddress = $true
+            }
 
+
+            foreach ($vm in $vmgrab)
+            {
+                $vmpeek = $importedvms | where-object {($_.appid -eq $vm.id)}
+                if ($vmpeek)
+                {
+                    # write-host "Found existing VM: " $vm.sourcevmname
+                }
+                else 
+                {
+                    if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                    if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
+                    write-host "Found new VM to add to the csv: " $vm.appname
+                    $importedvms += [pscustomobject]@{
+                        srcid = $vm.srcid
+                        appid = $vm.id
+                        appname = $vm.appname
+                        instancename = $instancename
+                        machinetype = $vm.host.sources.machinetype
+                        nic0internalip = $nic0internalip
+                    }
+                }
+            }
+            $importedvms | Export-Csv -path $outfile
+            write-host "Input file $infile has been updated and written to new file $outfile"
+            write-host ""
+            write-host "Validate and update this file and then use it with this command to create multiple GCE Instances:"
+            write-host "New-AGMLibGCPInstanceMultiMount -instancelist $outfile"     
+            write-host""     
+            return
+            write-host ""
+            return
+        }
+       
         write-host ""
         write-host "VM Selection menu"
         Write-host ""
@@ -1143,6 +1198,49 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
         }
         #Clear-Host
+         # if user asked for a file, we write the file and exit
+         if ($functionchoice -eq 2) 
+         {
+             $vmexport = @()
+ 
+             foreach ($vm in $vmgrab)
+             {
+                 if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                 if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
+                 if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
+                 $vmexport += [pscustomobject]@{
+                     srcid = $srcid
+                     appid = $vm.id
+                     appname = $vm.appname
+                     projectname = $projectname
+                     zone = $zone
+                     instancename = $instancename
+                     machinetype = $machinetype
+                     serviceaccount = $serviceaccount
+                     networktags = $networktags
+                     poweronvm = $poweronvm
+                     labels = $labels
+                     disktype = $disktype
+                     nic0network = $nic0network
+                     nic0subnet = $nic0subnet
+                     nic0externalip = $nic0externalip
+                     nic0internalip = $nic0internalip
+                     nic1network = $nic1network
+                     nic1subnet = $nic1subnet
+                     nic1externalip = $nic1externalip
+                     nic1internalip = $nic1internalip
+                 }
+             }
+             $vmexport | Export-Csv -path $outfile  
+             write-host ""
+             Write-Host "Guided selection is complete"
+             write-host ""
+             write-host "Output was written to $outfile"
+             write-host "Validate and update this file and then use it with this command to create multiple GCE Instances:"
+             write-host "New-AGMLibGCPInstanceMultiMount -instancelist $outfile"     
+             write-host""     
+             return
+         }
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
@@ -1161,6 +1259,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
+       
+        # non CSV output
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Write comma separated output for this Instance.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
@@ -1174,92 +1274,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
-        if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
-        {
-            $vmexport = @()
-
-            foreach ($vm in $vmgrab)
-            {
-                if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
-                if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
-                if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
-                $vmexport += [pscustomobject]@{
-                    srcid = $srcid
-                    appid = $vm.id
-                    appname = $vm.appname
-                    projectname = $projectname
-                    zone = $zone
-                    instancename = $instancename
-                    machinetype = $machinetype
-                    serviceaccount = $serviceaccount
-                    networktags = $networktags
-                    poweronvm = $poweronvm
-                    labels = $labels
-                    disktype = $disktype
-                    nic0network = $nic0network
-                    nic0subnet = $nic0subnet
-                    nic0externalip = $nic0externalip
-                    nic0internalip = $nic0internalip
-                    nic1network = $nic1network
-                    nic1subnet = $nic1subnet
-                    nic1externalip = $nic1externalip
-                    nic1internalip = $nic1internalip
-                }
-            }
-            if ($functionchoice -eq 2)
-            {
-                $vmexport | Export-Csv -path $outfile            
-            }
-            if ($functionchoice -eq 3)
-            {
-                foreach ($vm in $vmexport)
-                {
-                    $vmpeek = $importedvms | where-object {($_.appid -eq $vm.appid)}
-                    if ($vmpeek)
-                    {
-                        # write-host "Found existing VM: " $vm.sourcevmname
-                    }
-                    else 
-                    {
-                        write-host "Found new VM to add to the csv: " $vm.appname
-                        $importedvms += [pscustomobject]@{
-                            srcid = $vm.srcid
-                            appid = $vm.appid
-                            appname = $vm.appname
-                            projectname = $vm.projectname
-                            zone = $vm.zone
-                            instancename = $vm.instancename
-                            machinetype = $vm.machinetype
-                            serviceaccount = $vm.serviceaccount
-                            networktags = $vm.networktags
-                            poweronvm = $vm.poweronvm
-                            labels = $vm.labels
-                            disktype = $vm.disktype
-                            nic0network = $vm.nic0network
-                            nic0subnet = $vm.nic0subnet
-                            nic0externalip = $vm.nic0externalip
-                            nic0internalip = $vm.nic0internalip
-                            nic1network = $vm.nic1network
-                            nic1subnet = $vm.nic1subnet
-                            nic1externalip = $vm.nic1externalip
-                            nic1internalip = $vm.nic1internalip
-                        }
-                    }
-                }
-                $importedvms | Export-Csv -path $outfile
-            }
-            write-host ""
-            return
-        }
+       
         if ($userchoice -eq 3)
         {
             return
         }
-
-
     }
-
-
 
 
     if ($disktype)
