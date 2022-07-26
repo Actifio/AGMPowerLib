@@ -227,16 +227,19 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         }
         if ($functionchoice -eq 3)
         {
+            $userselection = ""
             write-host ""
             Write-Host "New Instance name"
             Write-Host "1`: Use source instance name (default)"
             Write-Host "2`: Use a different name (will need to be set in the CSV file manually)"
             Write-Host ""
             [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if (($userselection -eq 2) -or ($userselection -eq "")) 
+            if (($userselection -eq 1) -or ($userselection -eq "")) 
             {
                 $retaininstancename = $true
             }
+            $userselection = ""
+            write-host ""
             Write-Host "NIC0 Internal IP?"
             Write-Host "1`: Auto Assign (default)"
             Write-Host "2`: Use the currently assigned IP address"
