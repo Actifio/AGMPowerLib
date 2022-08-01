@@ -864,7 +864,7 @@ Start-AGMLibRansomwareRecovery
 
 
 ### Building a list of images
-First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a synytax like this:
+First we build an object that contains a list of images.  For this we can use Get-AGMLibImageRange in a syntax like this:
 ```
 $imagelist = Get-AGMLibImageRange
 ```
