@@ -916,11 +916,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             if  ($networklist.name.count -eq 1)
             {
-                $nic0network = $networklist.name
-                $selectednic0network = $networklist.name
+                $nic0network = $networklist.displayName
+                $selectednic0network = $networklist.displayName
             } else {
-                $nic0network = $networklist.name[($netselection - 1)]
-                $selectednic0network = $networklist.name[($netselection - 1)]
+                $nic0network = $networklist.displayName[($netselection - 1)]
+                $selectednic0network = $networklist.displayName[($netselection - 1)]
             }
         } 
         else
@@ -990,9 +990,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             if  ($subnetlist.name.count -eq 1)
             {
-                $nic0subnet = $subnetlist.name
+                $nic0subnet = $subnetlist.displayName
             } else {
-                $nic0subnet = $subnetlist.name[($subselection - 1)]
+                $nic0subnet = $subnetlist.displayName[($subselection - 1)]
             }
         }
         elseif (!($nic0subnet))
@@ -1057,11 +1057,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 }
                 if  ($networklist.name.count -eq 1)
                 {
-                    $nic1network = $networklist.name
-                    $selectednic1network = $networklist.name
+                    $nic1network = $networklist.displayName
+                    $selectednic1network = $networklist.displayName
                 } else {
-                    $nic1network = $networklist.name[($netselection - 1)]
-                    $selectednic1network = $networklist.name[($netselection - 1)]
+                    $nic1network = $networklist.displayName[($netselection - 1)]
+                    $selectednic1network = $networklist.displayName[($netselection - 1)]
                 }
             }
             else 
@@ -1119,9 +1119,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                     if  ($subnetlist.name.count -eq 1)
                     {
-                        $nic1subnet = $subnetlist.name
+                        $nic1subnet = $subnetlist.displayName
                     } else {
-                        $nic1subnet = $subnetlist.name[($subselection - 1)]
+                        $nic1subnet = $subnetlist.displayName[($subselection - 1)]
                     }
                 }
                 if (!($nic1subnet))
@@ -1377,6 +1377,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Get-AGMErrorMessage -messagetoprint "Please specify a network for nic0 for the new instance with -nic0network"
         return
     }
+
+
     if (!($nic0subnet))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic0 for the new instance with -nic0subnet"
@@ -1415,6 +1417,45 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic3 for the new instance with -nic3subnet"
         return
     }
+    # convert non http network,  need like https://www.googleapis.com/compute/v1/projects/minimumchips/global/networks/minchipsvpc
+    if (($nic0network) -and ($nic0network.substring(0,5) -ne "https"))
+    {
+        $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+    }
+    if (($nic1network) -and ($nic1network.substring(0,5) -ne "https"))
+    {
+        $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+    }
+    if (($nic2network) -and ($nic2network.substring(0,5) -ne "https"))
+    {
+        $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+    }
+    if (($nic3network) -and ($nic3network.substring(0,5) -ne "https"))
+    {
+        $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+    }
+    # convert non http subnet,  need like  https://www.googleapis.com/compute/v1/projects/$projectname/regions/$regionname/subnetworks/$subnetname
+    $region = $zone -replace ".{2}$"
+    if (($nic0subnet) -and ($nic0subnet.substring(0,5) -ne "https"))
+    {
+        $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic0subnet
+    }
+    if (($nic1subnet) -and ($nic1subnet.substring(0,5) -ne "https"))
+    {
+        $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic1subnet
+    }
+    if (($nic2subnet) -and ($nic2subnet.substring(0,5) -ne "https"))
+    {
+        $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic2subnet
+    }
+    if (($nic3subnet) -and ($nic3subnet.substring(0,5) -ne "https"))
+    {
+        $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic3subnet
+    }
+
+
+
+
 
     # disktype 
     #if ($disktype)
