@@ -1446,19 +1446,19 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     $region = $zone -replace ".{2}$"
     if (($nic0subnet) -and ($nic0subnet.substring(0,5) -ne "https"))
     {
-        $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic0subnet
+        $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
     }
     if (($nic1subnet) -and ($nic1subnet.substring(0,5) -ne "https"))
     {
-        $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic1subnet
+        $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
     }
     if (($nic2subnet) -and ($nic2subnet.substring(0,5) -ne "https"))
     {
-        $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic2subnet
+        $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
     }
     if (($nic3subnet) -and ($nic3subnet.substring(0,5) -ne "https"))
     {
-        $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"subnetworks/" +$nic3subnet
+        $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
     }
 
 
