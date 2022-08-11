@@ -1252,12 +1252,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
         if ($poweronvm) { Write-Host -nonewline " -poweronvm $poweronvm" }
         if ($labels) { Write-Host -nonewline " -labels `"$labels`"" } 
-        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network`""}
-        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
+        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network.split(" ")[0]`""}
+        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet.split(" ")[0]`""}
         if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
         if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
-        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
-        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
+        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network.split(" ")[0]`""}
+        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet.split(" ")[0]``""}
         if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
