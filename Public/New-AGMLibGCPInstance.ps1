@@ -1121,7 +1121,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     {
                         $nic1subnet = $subnetlist.displayName
                     } else {
-                        $nic1subnet = $subnetlist.displayName[($subselection - 1)]
+                        $nic1subnet = $subnetlist.name[($subselection - 1)]
                     }
                 }
                 if (!($nic1subnet))
@@ -1248,16 +1248,24 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host ""
         Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
         Write-Host -nonewline " -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`"" 
+         #remove any bonus material 
+         if ($nic0network) { $nic0network = $nic0network.split(" ")[0] }
+         if ($nic1network) { $nic1network = $nic1network.split(" ")[0] }
+         if ($nic0subnet) { $nic0subnet = $nic0subnet.split(" ")[0] }
+         if ($nic1subnet) { $nic1subnet = $nic1subnet.split(" ")[0] }
+
+
+
         if ($serviceaccount) { Write-Host -nonewline " -serviceaccount `"$serviceaccount`"" }
         if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
         if ($poweronvm) { Write-Host -nonewline " -poweronvm $poweronvm" }
         if ($labels) { Write-Host -nonewline " -labels `"$labels`"" } 
-        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network.split(" ")[0]`""}
-        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet.split(" ")[0]`""}
+        if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network`""}
+        if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
         if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
         if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
-        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network.split(" ")[0]`""}
-        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet.split(" ")[0]``""}
+        if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
+        if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
         if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
