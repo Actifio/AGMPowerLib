@@ -1431,39 +1431,63 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         return
     }
     # convert non http network,  need like https://www.googleapis.com/compute/v1/projects/minimumchips/global/networks/minchipsvpc
-    if (($nic0network) -and ($nic0network.substring(0,5) -ne "https"))
+    if ($nic0network.length -gt 6)
     {
-        $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+        if ($nic0network.substring(0,5) -ne "https")
+        {
+            $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+        }
     }
-    if (($nic1network) -and ($nic1network.substring(0,5) -ne "https"))
+    if ($nic1network.length -gt 6) 
     {
-        $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+        if ($nic1network.substring(0,5) -ne "https")
+        {
+            $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+        }
     }
-    if (($nic2network) -and ($nic2network.substring(0,5) -ne "https"))
+    if ($nic2network.length -gt 6) 
     {
-        $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+        if ($nic2network.substring(0,5) -ne "https")
+        {
+            $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+        }
     }
-    if (($nic3network) -and ($nic3network.substring(0,5) -ne "https"))
+    if ($nic3network.length -gt 6) 
     {
-        $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+        if ($nic3network.substring(0,5) -ne "https")
+        {
+            $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+        }
     }
     # convert non http subnet,  need like  https://www.googleapis.com/compute/v1/projects/$projectname/regions/$regionname/subnetworks/$subnetname
     $region = $zone -replace ".{2}$"
-    if (($nic0subnet) -and ($nic0subnet.substring(0,5) -ne "https"))
+    if ($nic0subnet.length -gt 6) 
     {
-        $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+        if ($nic0subnet.substring(0,5) -ne "https")
+        {
+            $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+        }
     }
-    if (($nic1subnet) -and ($nic1subnet.substring(0,5) -ne "https"))
-    {
-        $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+    if ($nic1subnet.length -gt 6)  
+    {    
+        if ($nic1subnet.substring(0,5) -ne "https")
+        {
+            $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+        }
     }
-    if (($nic2subnet) -and ($nic2subnet.substring(0,5) -ne "https"))
+    if ($nic2subnet.length -gt 6)  
     {
-        $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+        if ($nic2subnet.substring(0,5) -ne "https")
+        {
+            $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+        }
     }
-    if (($nic3subnet) -and ($nic3subnet.substring(0,5) -ne "https"))
+    if ($nic3subnet.length -gt 6)
     {
-        $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+        if ($nic3subnet.substring(0,5) -ne "https")
+        {
+            $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+        }
     }
 
 
