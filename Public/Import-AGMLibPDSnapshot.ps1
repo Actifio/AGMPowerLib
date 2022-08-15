@@ -65,7 +65,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         Write-host "We need to determine which pool to import from and which appliance created the images to import"
         Write-host "If importing we also need to decide whether the importing appliance (which owns the selected pool) should take ownership of the imported images"
         Write-host "Alternatively we can decide to have the appliance forget any previously imported images, rather than discover new ones"
-        write-host "If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds"
+        write-host "If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than the default of 300 seconds"
         Write-host ""
 
         $diskpoolgrab = Get-AGMDiskPool -filtervalue pooltype=vault | Sort-Object name

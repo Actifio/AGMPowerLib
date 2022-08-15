@@ -165,13 +165,16 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 {
                     Write-host ""
                     $outfile = Read-Host "Please enter the desired output file name that the output will be written to"
-                    if ( Test-Path $outfile )
+                    if ($outfile)
                     {
-                        write-host "File $outfile already exists please specify an unused file name"
-                    } 
-                    else
-                    {
-                        break
+                        if ( Test-Path $outfile )
+                        {
+                            write-host "File $outfile already exists please specify an unused file name"
+                        } 
+                        else
+                        {
+                            break
+                        }
                     }
                 }
             }
