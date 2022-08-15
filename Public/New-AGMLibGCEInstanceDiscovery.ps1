@@ -147,6 +147,8 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         {
             # we need to learn the srcid
             $credgrab = (Get-AGMLibCredentialSrcID | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
+            $credgrab
+            break
             if ($credgrab.srcid)
             {
                 $srcid = $credgrab.srcid
@@ -154,7 +156,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                 if ($diskpoolgrab)
                 {
                     $poolname = $diskpoolgrab.name
-                    $slpgrab = Get-AGMSLP -filtervalue performancepool=$poolname
+                    $slpgrab = Get-AGMSLP -filtervalue "performancepool=$poolname&clusterid=$applianceid" -limit 1
                     if ($slpgrab)
                     {
                         $slpid = $slpgrab.id
