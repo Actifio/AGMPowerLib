@@ -1211,6 +1211,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                  if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
                  if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
                  if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
+                 #remove any bonus material 
+                if ($nic0network) { $nic0network = $nic0network.split(" ")[0] }
+                if ($nic1network) { $nic1network = $nic1network.split(" ")[0] }
+                if ($nic0subnet) { $nic0subnet = $nic0subnet.split(" ")[0] }
+                if ($nic1subnet) { $nic1subnet = $nic1subnet.split(" ")[0] }
                  $vmexport += [pscustomobject]@{
                      srcid = $srcid
                      appid = $vm.id
