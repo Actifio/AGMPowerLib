@@ -52,7 +52,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     To learn credential ID and appliance ID, use Get-AGMLibCredentialSrcID
     Then use the desired projects (where the service account for the credential exists) and the desired zones you want to check for new Instances.
 
-    The default is to fetch 10 Instances at a time.  You can change this with -limit.  You may need to specify a larger timeout when running Connect-AGM
+    The default is to fetch 5 Instances at a time.  You can change this with -limit.  You may need to specify a larger timeout when running Connect-AGM
     You can also manually supply credentialid, applianceid, project and zone rather than using a CSV file
 
     #>
@@ -88,7 +88,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -discoveryfile xxxx.csv"
         return;
     }
-    if (!($limit)) { $limit = 10}
+    if (!($limit)) { $limit = 5}
     $offset = 0
 
     if ($nobackup)
@@ -258,6 +258,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                         $AGMToken = $using:AGMToken
                                         $AGMSESSIONID = $using:AGMSESSIONID
                                         New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                        start-sleep -seconds 5
                                     } -ThrottleLimit $limit
                                 }
                                 else {
