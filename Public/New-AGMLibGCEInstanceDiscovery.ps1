@@ -147,8 +147,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         {
             # we need to learn the srcid
             $credgrab = (Get-AGMLibCredentialSrcID | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
-            $credgrab
-            break
             if ($credgrab.srcid)
             {
                 $srcid = $credgrab.srcid
