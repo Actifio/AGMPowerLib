@@ -1438,12 +1438,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
         }
     }
+    else {
+        $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+    }
     if ($nic1network.length -gt 6) 
     {
         if ($nic1network.substring(0,5) -ne "https")
         {
             $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
         }
+    }
+    else {
+        $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
     }
     if ($nic2network.length -gt 6) 
     {
@@ -1452,12 +1458,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
         }
     }
+    else {
+        $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+    }
     if ($nic3network.length -gt 6) 
     {
         if ($nic3network.substring(0,5) -ne "https")
         {
             $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
         }
+    }
+    else {
+        $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
     }
     # convert non http subnet,  need like  https://www.googleapis.com/compute/v1/projects/$projectname/regions/$regionname/subnetworks/$subnetname
     $region = $zone -replace ".{2}$"
@@ -1468,12 +1480,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
         }
     }
+    else {
+        $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+    }
     if ($nic1subnet.length -gt 6)  
     {    
         if ($nic1subnet.substring(0,5) -ne "https")
         {
             $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
         }
+    }
+    else {
+        $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
     }
     if ($nic2subnet.length -gt 6)  
     {
@@ -1482,12 +1500,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
         }
     }
+    else {
+        $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+    }
     if ($nic3subnet.length -gt 6)
     {
         if ($nic3subnet.substring(0,5) -ne "https")
         {
             $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
         }
+    }
+    else {
+        $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
     }
 
 
