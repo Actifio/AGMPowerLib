@@ -94,7 +94,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     }
     if (!($limit))
     {
-        $limit = 4
+        $limit = 5
     }
 
 
@@ -131,8 +131,8 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             $agmip = $using:agmip 
             $AGMToken = $using:AGMToken
             $AGMSESSIONID = $using:AGMSESSIONID
-            $runcommand = Invoke-Expression $mountcommand 
-            $runcommand
+            Invoke-Expression $mountcommand 
+            Start-Sleep -seconds 15
         } -throttlelimit $limit
 
     }
