@@ -94,7 +94,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     }
     if (!($limit))
     {
-        $limit = 10
+        $limit = 4
     }
 
 
@@ -103,7 +103,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     {
         $printarray = @()
     }
-    if ( $((get-host).Version.Major) -gt 5 )
+    if ( $((get-host).Version.Major) -gt 6 )
     {
         $recoverylist | ForEach-Object -parallel {
             $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
@@ -134,6 +134,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             $runcommand = Invoke-Expression $mountcommand 
             $runcommand
         } -throttlelimit $limit
+
     }
     else 
     {
