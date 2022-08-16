@@ -32,6 +32,8 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     To learn instanceid use:  Get-AGMHost -filtervalue vmtype=GCP -sort hostname:asc | select hostname,uniquename
     To learn imageid if hostname is called centos, use this:
     Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot&hostname=centos" | select appname,id,consistencydate
+
+    project, region and zone are not mandatory and will be learned from the instance host 
     
     #>
 
