@@ -49,10 +49,11 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
 
     if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
     if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
+    if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
     if (!($projectid)) { Get-AGMErrorMessage -messagetoprint "Parameter -projectid is mandatory"}
     if (!($region)) { Get-AGMErrorMessage -messagetoprint "Parameter -region is mandatory"}
     if (!($zone)) { Get-AGMErrorMessage -messagetoprint "Parameter -zone is mandatory"}
-    if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
+
     if ($disktype)
     {
         if (($disktype -ne "pd-balanced") -and ($disktype -ne "pd-extreme") -and ($disktype -ne "pd-ssd") -and ($disktype -ne "pd-standard"))
