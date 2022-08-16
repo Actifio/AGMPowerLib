@@ -19,14 +19,16 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
 [string]$region,
 [string]$zone,
 [string]$instanceid,
-[string]$disktype) 
+[string]$disktype,
+[string]$hostname,
+[string]$hostid) 
 {
     <#
     .SYNOPSIS
     Mounts a GCE Instance backup to an existing GCE Instance
 
     .EXAMPLE
-    New-AGMLibGCEMountExisting -srcid 5230 -projectid "backupproject-356800" -region "australia-southeast1" -zone "australia-southeast1-b" -instanceid 3259136228063997846 -imageid 81107 -disktype "pd-ssd"
+    New-AGMLibGCEMountExisting -srcid 5230 -instanceid 3259136228063997846 -imageid 81107 -disktype "pd-ssd"
 
     To learn srcid use:  Get-AGMLibCredentialSrcID
     To learn instanceid use:  Get-AGMHost -filtervalue vmtype=GCP -sort hostname:asc | select hostname,uniquename
@@ -49,26 +51,15 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
         return
     }
 
-    if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
-    if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
-    if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
-    
-    $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 
-    if ($hostgrab.count -ne 1)
+    # complain about parameters we absolutely need
+    if ((!($instanceid)) -and (!($hostid)) -and (!($hostname)))
     {
-        Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
+        Get-AGMErrorMessage -messagetoprint "Please supply either -hostid or -hostname or -instanceid"
         return
     }
-    if (!($zone)) { $zone = $hostgrab.zone}
-    if (!($region)) { $region = $zone -replace ".{2}$"}
-    if (!($projectid)) { $projectid = $hostgrab.cloudcredential.projectid}
-
-    if (!($projectid)) { Get-AGMErrorMessage -messagetoprint "Parameter -projectid is mandatory"}
-    if (!($region)) { Get-AGMErrorMessage -messagetoprint "Parameter -region is mandatory"}
-    if (!($zone)) { Get-AGMErrorMessage -messagetoprint "Parameter -zone is mandatory"}
-
-
-
+    if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
+    if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
+    # if user asks for a disktype, then validate it
     if ($disktype)
     {
         if (($disktype -ne "pd-balanced") -and ($disktype -ne "pd-extreme") -and ($disktype -ne "pd-ssd") -and ($disktype -ne "pd-standard"))
@@ -78,6 +69,30 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
         }
     }
 
+    # learn about the host based on either hostname, hostid or instanceid
+    if ($hostname) { $hostgrab = Get-AGMHost -filtervalue hostname=$hostname }
+    if ($hostid) { $hostgrab = Get-AGMHost -filtervalue id=$hostid }
+    if ($instanceid) { $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 }
+    
+    # complain if we didn't find a matching host
+    if ($hostgrab.count -ne 1) 
+    {
+        Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
+        return
+    }
+    # use what we learned about the host 
+    if (!($instanceid)) { $instanceid = $hostgrab.uniquename }
+    if (!($zone)) { $zone = $hostgrab.zone}
+    if (!($region)) { $region = $zone -replace ".{2}$"}
+    if (!($projectid)) { $projectid = $hostgrab.cloudcredential.projectid}
+
+    # if we still dont have what we need, complain
+    if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
+    if (!($projectid)) { Get-AGMErrorMessage -messagetoprint "Parameter -projectid is mandatory"}
+    if (!($region)) { Get-AGMErrorMessage -messagetoprint "Parameter -region is mandatory"}
+    if (!($zone)) { Get-AGMErrorMessage -messagetoprint "Parameter -zone is mandatory"}
+
+    # we need to know what disks are in this image so learn them.   If user set a disk type then respect that
     $recoverygrab = Get-AGMAPIData -endpoint /backup/$imageid/mount -extrarequests "&formtype=existingmount"
     if ($recoverygrab.err_message)
     {
@@ -107,6 +122,7 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     }
     $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
 
+    # now build our JSON.   Idealled we should change this section to use the $recoverygrab
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","name":"Existing Mount","fields":[{"displayName":"Note:","name":"message","helpId":"","type":"textmessage","readonly":true,"currentValue":"","modified":false},{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":"","type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"name","name":"'
     $json = $json +$srcid
     $json = $json +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","region","zone","instance"],"_default":"1234"},{"displayName":"PROJECT NAME","name":"project","helpId":"access-data/mount-snapshot-images-of-cloud-instances","type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"project","name":"'
@@ -121,5 +137,6 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     $json = $json +$diskjson
     $json = $json +'],"version":1,"cloudtype":"GCP","formtype":"existingmount"}}'
 
+    # run the mount.   Job name should be returned
     New-AGMMount -imageid $imageid -jsonbody $json
 }
