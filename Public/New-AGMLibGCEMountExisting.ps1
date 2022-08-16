@@ -71,15 +71,25 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
 
     # learn about the host based on either hostname, hostid or instanceid
     if ($hostname) { $hostgrab = Get-AGMHost -filtervalue hostname=$hostname }
+    if ($hostgrab.count -ne 1) 
+    {
+        Get-AGMErrorMessage -messagetoprint "Could not find host with hostname $hostname using:  get-agmhost -filtervalue hostname=$hostname"
+        return
+    }
     if ($hostid) { $hostgrab = Get-AGMHost -filtervalue id=$hostid }
+    if ($hostgrab.count -ne 1) 
+    {
+        Get-AGMErrorMessage -messagetoprint "Could not find host with host ID $hostid using:  get-agmhost -filtervalue id=$hostid"
+        return
+    }
     if ($instanceid) { $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 }
-    
-    # complain if we didn't find a matching host
     if ($hostgrab.count -ne 1) 
     {
         Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
         return
     }
+    
+
     # use what we learned about the host 
     if (!($instanceid)) { $instanceid = $hostgrab.uniquename }
     if (!($zone)) { $zone = $hostgrab.zone}
