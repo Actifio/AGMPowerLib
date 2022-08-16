@@ -50,9 +50,22 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
     if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
     if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
+    
+    $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 
+    if ($hostgrab.count -ne 1)
+    {
+        Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
+        return
+    }
+    if (!($zone)) { $zone = $hostgrab.zone}
+    if (!($region)) { $region = $zone -replace ".{2}$"}
+    if (!($projectid)) { $projectid = $hostgrab.cloudcredential.projectid}
+
     if (!($projectid)) { Get-AGMErrorMessage -messagetoprint "Parameter -projectid is mandatory"}
     if (!($region)) { Get-AGMErrorMessage -messagetoprint "Parameter -region is mandatory"}
     if (!($zone)) { Get-AGMErrorMessage -messagetoprint "Parameter -zone is mandatory"}
+
+
 
     if ($disktype)
     {
