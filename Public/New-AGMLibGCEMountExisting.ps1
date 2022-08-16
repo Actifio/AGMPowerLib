@@ -30,6 +30,12 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     .EXAMPLE
     New-AGMLibGCEMountExisting -srcid 5230 -instanceid 3259136228063997846 -imageid 81107 -disktype "pd-ssd"
 
+    .EXAMPLE
+    New-AGMLibGCEMountExisting -srcid 5230 -hostname centos -imageid 81107 
+
+     .EXAMPLE
+    New-AGMLibGCEMountExisting -srcid 5230 -hostid 47208 -imageid 81107
+
     To learn srcid use:  Get-AGMLibCredentialSrcID
     To learn instanceid use:  Get-AGMHost -filtervalue vmtype=GCP -sort hostname:asc | select hostname,uniquename
     To learn imageid if hostname is called centos, use this:
