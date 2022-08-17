@@ -20,12 +20,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     Mounts a PD Snapshot as a new GCP Instance (VM)
 
     .EXAMPLE
-    New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "default" -nic0subnet "default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 
     This mounts the specified imageid 56410933
 
     .EXAMPLE
-    New-AGMLibGCPInstance -appid 1234 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
+    New-AGMLibGCPInstance -appid 1234 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "default" -nic0subnet "default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
 
     This mounts the most recent snapshot from appid 1234
 
@@ -55,8 +55,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
     -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance.   Partial label retention is not supported.
                      If a label is specified that already exists in the source VM, then the user specified key value will be prefered over the retained label from the source
-    -nic0network     The network name in URL format for nic0
-    -nic0subnet      The subnet name in URL format for nic0
+    -nic0network     The network name in plain name or URL format for nic0
+    -nic0subnet      The subnet name in plain name or URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
     -poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
@@ -64,8 +64,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
   
 
     Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
-    -nic1network     The network name in URL format for nic1
-    -nic1subnet      The subnet name in URL format for nic1
+    -nic1network     The network name in plain name or URL format for nic1
+    -nic1subnet      The subnet name in plain name or URL format for nic1
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
     -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
  
@@ -76,7 +76,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
   
-    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds
+    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 300 seconds
 
     #>
 
