@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
 {
      <#
     .SYNOPSIS
@@ -59,6 +59,15 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     The default is to fetch 5 Instances at a time.  You can change this with -limit.  You may need to specify a larger timeout when running Connect-AGM
     You can also manually supply credentialid, applianceid, project and zone rather than using a CSV file
+    
+    If the following is specified then discovery will occur with no backup plans being applied:
+    -nobackup
+
+    If the following are specified in combination then all instances will have a backup plan applied to it:
+    -backup -sltname "<name"
+    -backup -sltid <slt ID learned with Get-AGMSLT>
+    If the following is added then only boot disks will be protected:
+    -bootonly
 
     #>
 
@@ -95,6 +104,27 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     if (!($limit)) { $limit = 5}
     $offset = 0
+
+    if ($sltid)
+    {
+        $sltgrab = GetAGMSLT $sltid
+        if ($sltgrab.id.count -ne 1)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with ID $sltid"
+            return;
+        }
+    }
+    if ($sltname)
+    {
+        $sltgrab = GetAGMSLT -filtervalue name=$sltname
+        if ($sltgrab.id.count -ne 1)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with name $sltname"
+            return;
+        }
+        $sltid = $sltgrab.id
+    }
+
 
     if ($nobackup)
     {
@@ -220,6 +250,19 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     $newapphostuniquename = $instance.host.sources.uniquename
                                     $taggrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
                                     $backupplancheck = $taggrab.tag | select-string $usertag
+                                    # if user supplied default sltid then use that
+                                    if ((!($backupplancheck)) -and ($sltid))
+                                    {
+                                        if (($sltid) -and ($slpid) -and ($appid))
+                                        {
+                                            $newslalist += [pscustomobject]@{
+                                                appid = $appid
+                                                sltid = $sltid
+                                                slpid = $slpid
+                                            }
+                                            $newvmcommand.newgceinstancebackup += 1 
+                                        }
+                                    }
                                     if ($backupplancheck)
                                     {
                                         # remove the leadering  and trailing { and }
