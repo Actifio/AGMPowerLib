@@ -104,7 +104,9 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     { 
         $srcidsniff = $hostgrab.cloudcredential.sources.srcid 
         if ($srcidsniff.count -eq 1)
-        $srcid = $srcidsniff
+        {
+            $srcid = $srcidsniff
+        }
     }
     if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
 
