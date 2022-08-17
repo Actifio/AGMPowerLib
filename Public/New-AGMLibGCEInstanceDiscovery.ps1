@@ -59,7 +59,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     The default is to fetch 5 Instances at a time.  You can change this with -limit.  You may need to specify a larger timeout when running Connect-AGM
     You can also manually supply credentialid, applianceid, project and zone rather than using a CSV file
-    
+
     If the following is specified then discovery will occur with no backup plans being applied:
     -nobackup
 
@@ -107,7 +107,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     if ($sltid)
     {
-        $sltgrab = GetAGMSLT $sltid
+        $sltgrab = Get-AGMSLT $sltid
         if ($sltgrab.id.count -ne 1)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with ID $sltid"
@@ -116,7 +116,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     if ($sltname)
     {
-        $sltgrab = GetAGMSLT -filtervalue name=$sltname
+        $sltgrab = Get-AGMSLT -filtervalue name=$sltname
         if ($sltgrab.id.count -ne 1)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with name $sltname"
