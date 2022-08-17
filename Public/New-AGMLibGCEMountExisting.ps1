@@ -76,7 +76,7 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     }
 
     # learn about the host based on either hostname, hostid or instanceid
-    if ($hostname) { $hostgrab = Get-AGMHost -filtervalue hostname=$hostname }
+    if ($hostname) { $hostgrab = Get-AGMHost -filtervalue "vmtype=GCP&hostname=$hostname" }
     if ($hostgrab.id.count -ne 1) 
     {
         Get-AGMErrorMessage -messagetoprint "Could not find host with hostname $hostname using:  get-agmhost -filtervalue hostname=$hostname"
