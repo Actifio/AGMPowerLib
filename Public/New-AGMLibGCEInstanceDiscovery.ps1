@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
 {
      <#
     .SYNOPSIS
@@ -28,6 +28,11 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a valid template name
+
+    .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -boot
+
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects only the boot drive or any that have a valid template name
 
     .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
@@ -247,6 +252,13 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                 }
                                 if ( $((get-host).Version.Major) -gt 5 )
                                 {
+                                    if ($bootonly)
+                                    {
+                                        $jsonbody = '{"type":"boot"}'
+                                        $newslalist | ForEach-Object {
+                                            Put-AGMAPIData  -endpoint /application/$_.appid/memberrule -body $jsonbody
+                                        }
+                                    }
                                     $newslalist | ForEach-Object -parallel {
                                         $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
                                         if ($textoutput)
@@ -262,6 +274,13 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     } -ThrottleLimit $limit
                                 }
                                 else {
+                                    if ($bootonly)
+                                    {
+                                        $jsonbody = '{"type":"boot"}'
+                                        $newslalist | ForEach-Object {
+                                            Put-AGMAPIData  -endpoint /application/$_.appid/memberrule -body $jsonbody
+                                        }
+                                    }
                                     $newslalist | ForEach-Object {
                                         $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
                                         if ($textoutput)
