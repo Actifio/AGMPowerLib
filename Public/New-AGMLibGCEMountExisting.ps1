@@ -33,13 +33,14 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     .EXAMPLE
     New-AGMLibGCEMountExisting -srcid 5230 -hostname centos -imageid 81107 
 
-     .EXAMPLE
+    .EXAMPLE
     New-AGMLibGCEMountExisting -srcid 5230 -hostid 47208 -imageid 81107
 
     To learn srcid use:  Get-AGMLibCredentialSrcID
     To learn instanceid use:  Get-AGMHost -filtervalue vmtype=GCP -sort hostname:asc | select hostname,uniquename
     To learn imageid if hostname is called centos, use this:
-    Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot&hostname=centos" | select appname,id,consistencydate
+    $hostname = "centos"
+    Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot&hostname=$hostname" | select appname,id,consistencydate
 
     project, region and zone are not mandatory and will be learned from the instance host 
     
@@ -64,7 +65,6 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
         return
     }
     if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
-    if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
     # if user asks for a disktype, then validate it
     if ($disktype)
     {
@@ -95,12 +95,18 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
         return
     }
     
-
     # use what we learned about the host 
-    if (!($instanceid)) { $instanceid = $hostgrab.uniquename }
-    if (!($zone)) { $zone = $hostgrab.zone}
+    if (!($instanceid)) { $instanceid = $hostgrab.sources.uniquename }
+    if (!($zone)) { $zone = $hostgrab.sources.zone}
     if (!($region)) { $region = $zone -replace ".{2}$"}
-    if (!($projectid)) { $projectid = $hostgrab.cloudcredential.projectid}
+    if (!($projectid)) { $projectid = $hostgrab.sources.friendlypath.split(":")[3] }
+    if (!($srcid)) 
+    { 
+        $srcidsniff = $hostgrab.cloudcredential.sources.srcid 
+        if ($srcidsniff.count -eq 1)
+        $srcid = $srcidsniff
+    }
+    if (!($srcid)) { Get-AGMErrorMessage -messagetoprint "Parameter -srcid is mandatory"}
 
     # if we still dont have what we need, complain
     if (!($instanceid)) { Get-AGMErrorMessage -messagetoprint "Parameter -instanceid is mandatory"}
