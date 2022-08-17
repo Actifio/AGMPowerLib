@@ -299,7 +299,8 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     {
                                         $jsonbody = '{"type":"boot"}'
                                         $newslalist | ForEach-Object {
-                                            Put-AGMAPIData  -endpoint /application/$_.appid/memberrule -body $jsonbody
+                                            $appid = $_.appid
+                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
                                         }
                                     }
                                     $newslalist | ForEach-Object -parallel {
@@ -321,7 +322,8 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     {
                                         $jsonbody = '{"type":"boot"}'
                                         $newslalist | ForEach-Object {
-                                            Put-AGMAPIData  -endpoint /application/$_.appid/memberrule -body $jsonbody
+                                            $appid = $_.appid
+                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
                                         }
                                     }
                                     $newslalist | ForEach-Object {
