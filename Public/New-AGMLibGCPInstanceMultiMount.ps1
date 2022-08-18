@@ -129,7 +129,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
             if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
             $agmip = $using:agmip 
-            $AGMToken = $using:AGMToken
+            if ($AGMToken) { $AGMToken = $using:AGMToken }
             $AGMSESSIONID = $using:AGMSESSIONID
             Invoke-Expression $mountcommand 
             Start-Sleep -seconds 15

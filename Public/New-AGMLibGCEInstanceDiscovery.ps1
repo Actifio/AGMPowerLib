@@ -311,7 +311,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             write-host "$ct Running" $newsla
                                         }
                                         $agmip = $using:agmip 
-                                        $AGMToken = $using:AGMToken
+                                        if ($AGMToken) { $AGMToken = $using:AGMToken }
                                         $AGMSESSIONID = $using:AGMSESSIONID
                                         New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
                                         start-sleep -seconds 5
