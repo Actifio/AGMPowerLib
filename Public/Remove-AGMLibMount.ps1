@@ -294,7 +294,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                 $body = @{delete=$true;preservevm=$true}
                 $json = $body | ConvertTo-Json
                 $agmip = $using:agmip 
-                $AGMToken = $using:AGMToken
+                if ($AGMToken) { $AGMToken = $using:AGMToken }
                 $AGMSESSIONID = $using:AGMSESSIONID
                 $id = $_.id
                 Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
