@@ -8,3 +8,4 @@ Started Change log file as per release 0.0.0.54
 * Teach New-AGMLibGCEInstanceDiscovery to use paramaters rather than use a CSV file
 * Added parallel execution to Remove-AGMLibMount for Forget GCE Instance and New-AGMLibGCPInstanceMultiMount for mounts
 * Add New-AGMLibGCEMountExisting
+* Get-AGMLibApplianceParameter.ps1 - change to use id rather than applianceid as this was confusing the two IDs
