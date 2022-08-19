@@ -290,15 +290,29 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
         {
             if (!($limit)) { $limit = 10 }
             $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}
+            if ($AGMToken)
+            {
             $mountlist | ForEach-Object -parallel {
-                $body = @{delete=$true;preservevm=$true}
-                $json = $body | ConvertTo-Json
-                $agmip = $using:agmip 
-                if ($AGMToken) { $AGMToken = $using:AGMToken }
-                $AGMSESSIONID = $using:AGMSESSIONID
-                $id = $_.id
-                Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
-            } -ThrottleLimit $limit
+                    $body = @{delete=$true;preservevm=$true}
+                    $json = $body | ConvertTo-Json
+                    $agmip = $using:agmip 
+                    $AGMToken = $using:AGMToken 
+                    $AGMSESSIONID = $using:AGMSESSIONID
+                    $id = $_.id
+                    Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+                } -ThrottleLimit $limit
+            }
+            else 
+            {
+                $mountlist | ForEach-Object -parallel {
+                    $body = @{delete=$true;preservevm=$true}
+                    $json = $body | ConvertTo-Json
+                    $agmip = $using:agmip 
+                    $AGMSESSIONID = $using:AGMSESSIONID
+                    $id = $_.id
+                    Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+                } -ThrottleLimit $limit
+            }
         }
         else {
             $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}

@@ -105,36 +105,69 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     }
     if ( $((get-host).Version.Major) -gt 6 )
     {
-        $recoverylist | ForEach-Object -parallel {
-            $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
-            if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
-            if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
-            if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
-            if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
-            if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
-            if ($_.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$_.nic0externalip } 
-            if ($_.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$_.nic0internalip } 
-            if ($_.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$_.nic1network +'"'} 
-            if ($_.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$_.nic1subnet +'"'} 
-            if ($_.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$_.nic1internalip } 
-            if ($_.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$_.nic1externalip } 
-            if ($_.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$_.nic2network +'"'} 
-            if ($_.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$_.nic2subnet +'"'} 
-            if ($_.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$_.nic2internalip } 
-            if ($_.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$_.nic2externalip } 
-            if ($_.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$_.nic3network +'"'} 
-            if ($_.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$_.nic3subnet +'"'} 
-            if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
-            if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
-            if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
-            if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
-            $agmip = $using:agmip 
-            if ($AGMToken) { $AGMToken = $using:AGMToken }
-            $AGMSESSIONID = $using:AGMSESSIONID
-            Invoke-Expression $mountcommand 
-            Start-Sleep -seconds 15
-        } -throttlelimit $limit
-
+        if ($AGMToken)
+        {
+            $recoverylist | ForEach-Object -parallel {
+                $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
+                if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
+                if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
+                if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
+                if ($_.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$_.nic0externalip } 
+                if ($_.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$_.nic0internalip } 
+                if ($_.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$_.nic1network +'"'} 
+                if ($_.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$_.nic1subnet +'"'} 
+                if ($_.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$_.nic1internalip } 
+                if ($_.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$_.nic1externalip } 
+                if ($_.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$_.nic2network +'"'} 
+                if ($_.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$_.nic2subnet +'"'} 
+                if ($_.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$_.nic2internalip } 
+                if ($_.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$_.nic2externalip } 
+                if ($_.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$_.nic3network +'"'} 
+                if ($_.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$_.nic3subnet +'"'} 
+                if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
+                if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
+                if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
+                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                $agmip = $using:agmip 
+                $AGMToken = $using:AGMToken 
+                $AGMSESSIONID = $using:AGMSESSIONID
+                Invoke-Expression $mountcommand 
+                Start-Sleep -seconds 15
+            } -throttlelimit $limit
+        }
+        else 
+        {
+            $recoverylist | ForEach-Object -parallel {
+                $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
+                if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
+                if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
+                if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
+                if ($_.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$_.nic0externalip } 
+                if ($_.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$_.nic0internalip } 
+                if ($_.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$_.nic1network +'"'} 
+                if ($_.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$_.nic1subnet +'"'} 
+                if ($_.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$_.nic1internalip } 
+                if ($_.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$_.nic1externalip } 
+                if ($_.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$_.nic2network +'"'} 
+                if ($_.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$_.nic2subnet +'"'} 
+                if ($_.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$_.nic2internalip } 
+                if ($_.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$_.nic2externalip } 
+                if ($_.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$_.nic3network +'"'} 
+                if ($_.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$_.nic3subnet +'"'} 
+                if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
+                if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
+                if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
+                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                $agmip = $using:agmip 
+                $AGMSESSIONID = $using:AGMSESSIONID
+                Invoke-Expression $mountcommand 
+                Start-Sleep -seconds 15
+            } -throttlelimit $limit
+        }
     }
     else 
     {

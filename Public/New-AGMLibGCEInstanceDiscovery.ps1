@@ -303,19 +303,38 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
                                         }
                                     }
-                                    $newslalist | ForEach-Object -parallel {
-                                        $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
-                                        if ($textoutput)
-                                        {
-                                            $ct = Get-Date
-                                            write-host "$ct Running" $newsla
-                                        }
-                                        $agmip = $using:agmip 
-                                        if ($AGMToken) { $AGMToken = $using:AGMToken }
-                                        $AGMSESSIONID = $using:AGMSESSIONID
-                                        New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
-                                        start-sleep -seconds 5
-                                    } -ThrottleLimit $limit
+                                    if ($AGMToken)
+                                    {
+                                        $newslalist | ForEach-Object -parallel {
+                                            $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct Running" $newsla
+                                            }
+                                            $agmip = $using:agmip 
+                                            $AGMToken = $using:AGMToken 
+                                            $AGMSESSIONID = $using:AGMSESSIONID
+                                            New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                            start-sleep -seconds 5
+                                        } -ThrottleLimit $limit
+                                    }
+                                    else 
+                                    {
+                                        $newslalist | ForEach-Object -parallel {
+                                            $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct Running" $newsla
+                                            }
+                                            $agmip = $using:agmip  
+                                            $AGMSESSIONID = $using:AGMSESSIONID
+                                            New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                            start-sleep -seconds 5
+                                        } -ThrottleLimit $limit
+                                    }
+                                    
                                 }
                                 else {
                                     if ($bootonly)
