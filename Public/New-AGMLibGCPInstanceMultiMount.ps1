@@ -164,6 +164,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
                 $agmip = $using:agmip 
                 $AGMSESSIONID = $using:AGMSESSIONID
+                $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
                 Invoke-Expression $mountcommand 
                 Start-Sleep -seconds 15
             } -throttlelimit $limit

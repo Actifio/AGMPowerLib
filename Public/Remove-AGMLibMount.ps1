@@ -309,6 +309,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
                     $json = $body | ConvertTo-Json
                     $agmip = $using:agmip 
                     $AGMSESSIONID = $using:AGMSESSIONID
+                    $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
                     $id = $_.id
                     Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
                 } -ThrottleLimit $limit

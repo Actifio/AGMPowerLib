@@ -330,6 +330,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             }
                                             $agmip = $using:agmip  
                                             $AGMSESSIONID = $using:AGMSESSIONID
+                                            $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
                                             New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
                                             start-sleep -seconds 5
                                         } -ThrottleLimit $limit
