@@ -34,9 +34,9 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
     srcid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
-    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
+    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
+    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
+    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
  
     If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
     #>

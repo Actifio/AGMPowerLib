@@ -68,6 +68,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     -backup -sltid <slt ID learned with Get-AGMSLT>
     If the following is added then only boot disks will be protected:
     -bootonly
+    If you want to use a label to determine what template is used, then on the Instance set a label 'backupplan' where the value is:
+    - A valid template name
+    - ignored  <-- If this is detected then the application will be added as ignored
+    - unmanaged <-- If this is detected then the application will be added as unmanaged
 
     #>
 
@@ -276,18 +280,27 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             # if the tag name is googlebackupplan we can protect it
                                             if ($name | select-string $usertag)
                                             {
-                                                if ($sltgrab | where-object {$_.name -eq $value})
+                                                if ($value -eq "ignored")
                                                 {
-                                                    $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
+                                                    $jsonbody = '{"ignore":true}'
+                                                    $appid = $_.appid
+                                                    Put-AGMAPIData  -endpoint /application/$appid -body $jsonbody
                                                 }
-                                                if (($sltid) -and ($slpid) -and ($appid))
+                                                elseif ($value -ne "unmanaged")
                                                 {
-                                                    $newslalist += [pscustomobject]@{
-                                                        appid = $appid
-                                                        sltid = $sltid
-                                                        slpid = $slpid
+                                                    if ($sltgrab | where-object {$_.name -eq $value})
+                                                    {
+                                                        $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
                                                     }
-                                                    $newvmcommand.newgceinstancebackup += 1 
+                                                    if (($sltid) -and ($slpid) -and ($appid))
+                                                    {
+                                                        $newslalist += [pscustomobject]@{
+                                                            appid = $appid
+                                                            sltid = $sltid
+                                                            slpid = $slpid
+                                                        }
+                                                        $newvmcommand.newgceinstancebackup += 1 
+                                                    }
                                                 }
                                             }
                                         }
