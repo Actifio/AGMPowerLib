@@ -3,9 +3,25 @@
 Started Change log file as per release 0.0.0.54
 
 ## AGMPowerLIB  (0.0.0.54)
+Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.0.54
+
 * [GitHub commits](https://github.com/Actifio/AGMPowerLIB/commits/v0.0.0.54)
-* New-AGMLibGCPInstance Cross project recovery was showing source project networks, offer option to re-use source name and IP.  Offer option to output all VMs, not just the one being mounted
-* Teach New-AGMLibGCEInstanceDiscovery to use paramaters rather than use a CSV file
-* Added parallel execution to Remove-AGMLibMount for Forget GCE Instance and New-AGMLibGCPInstanceMultiMount for mounts
-* Add New-AGMLibGCEMountExisting
-* Get-AGMLibApplianceParameter.ps1 - change to use id rather than applianceid as this was confusing the two IDs
+* New-AGMLibGCPInstance 
+  * Cross project recovery was showing source project networks
+  * Offer option to re-use source name and IP. 
+  * Offer option to output all VMs, not just the one being mounted
+  * Offer option to update existing CSV
+  * Allow user to use simple network and subnet names without using URL format
+* New-AGMLibGCEInstanceDiscovery
+  * Allow user to use parameters rather than use a CSV file
+  * Offer bootonly option to allow boot drive 
+  * Offer sltname and sltid to be used in combination with -backup to auto backup all discovered VMs
+  * Added parallel execution when run under PS7
+* Remove-AGMLibMount  
+  * Added parallel execution for Forget GCE Instance when run under PS7
+* New-AGMLibGCPInstanceMultiMount 
+  * Added parallel execution when run under PS7
+* New-AGMLibGCEMountExisting
+  * New funtion to allow mount of a GCE Instance backup to an existing GCE Instance    
+* Get-AGMLibApplianceParameter 
+  * change to use id rather than applianceid as this was confusing the two IDs.  Needs AGMPowerCLI 0.0.0.39
