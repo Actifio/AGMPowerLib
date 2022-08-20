@@ -22,6 +22,6 @@ Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.
 * New-AGMLibGCPInstanceMultiMount 
   * Added parallel execution when run under PS7
 * New-AGMLibGCEMountExisting
-  * New funtion to allow mount of a GCE Instance backup to an existing GCE Instance    
+  * New function to allow mount of a GCE Instance backup to an existing GCE Instance    
 * Get-AGMLibApplianceParameter 
   * change to use id rather than applianceid as this was confusing the two IDs.  Needs AGMPowerCLI 0.0.0.39
