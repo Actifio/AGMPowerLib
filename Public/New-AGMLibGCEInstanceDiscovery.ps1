@@ -283,7 +283,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                 if ($value -eq "ignored")
                                                 {
                                                     $jsonbody = '{"ignore":true}'
-                                                    $appid = $_.appid
                                                     Put-AGMAPIData  -endpoint /application/$appid -body $jsonbody
                                                 }
                                                 elseif ($value -ne "unmanaged")
