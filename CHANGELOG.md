@@ -15,6 +15,7 @@ Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.
   * Allow user to use parameters rather than use a CSV file
   * Offer bootonly option to allow boot drive 
   * Offer sltname and sltid to be used in combination with -backup to auto backup all discovered VMs
+  * If usertag is set and the value is 'ignored' or 'unmanaged' then do that rather than try and protect the instance with matching sltname
   * Added parallel execution when run under PS7
 * Remove-AGMLibMount  
   * Added parallel execution for Forget GCE Instance when run under PS7
