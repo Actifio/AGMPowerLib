@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.53'
+ModuleVersion = '0.0.0.54'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -116,6 +116,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibGCEConversion',
 'New-AGMLibGCEConversionMulti',
 'New-AGMLibGCEInstanceDiscovery',
+'New-AGMLibGCEMountExisting',
 'New-AGMLibGCVEfailover',
 'New-AGMLibGCPInstance',
 'New-AGMLibGCPInstanceMultiMount',
@@ -181,6 +182,8 @@ PrivateData = @{
 
         # ReleaseNotes of this module
         ReleaseNotes = '
+        ## [0.0.0.54] 2022-07-08
+
         ## [0.0.0.53] 2022-06-27
         Significantly improved useability of Import-AGMLibOnVault.   Added latest image section to New-AGMLibMSSQLMount
 

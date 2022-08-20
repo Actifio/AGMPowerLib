@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
 {
      <#
     .SYNOPSIS
@@ -27,12 +27,22 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
 
-    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named googlebackupplan and a valid template name
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a valid template name
 
-        .EXAMPLE
+    .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -boot
+
+    Adds all new GCE Instances discovered in the nominated projects and zones and protects only the boot drive or any that have a valid template name
+
+    .EXAMPLE
     New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named corporatepolicy and a valid template name
+
+    .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -credentialid 259643 -applianceid 141805487622 -projectid avwservicelab1 -zone australia-southeast1-b -usertag backupplan -backup
+
+    Instead of using a discovery file the four required variables are specified by the user.
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
@@ -47,6 +57,22 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     To learn credential ID and appliance ID, use Get-AGMLibCredentialSrcID
     Then use the desired projects (where the service account for the credential exists) and the desired zones you want to check for new Instances.
 
+    The default is to fetch 5 Instances at a time.  You can change this with -limit.  You may need to specify a larger timeout when running Connect-AGM
+    You can also manually supply credentialid, applianceid, project and zone rather than using a CSV file
+
+    If the following is specified then discovery will occur with no backup plans being applied:
+    -nobackup
+
+    If the following are specified in combination then all instances will have a backup plan applied to it:
+    -backup -sltname "<name"
+    -backup -sltid <slt ID learned with Get-AGMSLT>
+    If the following is added then only boot disks will be protected:
+    -bootonly
+    If you want to use a label to determine what template is used, then on the Instance set a label 'backupplan' where the value is:
+    - A valid template name
+    - ignored  <-- If this is detected then the application will be added as ignored
+    - unmanaged <-- If this is detected then the application will be added as unmanaged
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -60,13 +86,49 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
-    
-    if (!($discoveryfile))
+
+    if (($credentialid) -and ($applianceid) -and ($project) -and ($zone))
+    {
+        $searchlist = @()
+        $searchlist += [pscustomobject]@{
+            credentialid = $credentialid
+            applianceid = $applianceid
+            project = $project
+            zone = $zone
+        }
+    }
+    elseif ($discoveryfile)
+    {
+        $searchlist = Import-Csv -Path $discoveryfile
+    }
+    else
     {
         Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -discoveryfile xxxx.csv"
         return;
     }
-    $searchlist = Import-Csv -Path $discoveryfile
+    if (!($limit)) { $limit = 5}
+    $offset = 0
+
+    if ($sltid)
+    {
+        $sltgrab = Get-AGMSLT $sltid
+        if ($sltgrab.id.count -ne 1)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with ID $sltid"
+            return;
+        }
+    }
+    if ($sltname)
+    {
+        $sltgrab = Get-AGMSLT -filtervalue name=$sltname
+        if ($sltgrab.id.count -ne 1)
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find an SLT with name $sltname"
+            return;
+        }
+        $sltid = $sltgrab.id
+    }
+
 
     if ($nobackup)
     {
@@ -75,25 +137,40 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             $done = 0
             do 
             {
-                $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone
-                $runcommand = Invoke-Expression $searchcommand
-                if ($runcommand.totalcount -gt 0)
+                $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                if ($textoutput)
                 {
-                    foreach ($instance in $runcommand.items.vm)
+                    $ct = Get-Date
+                    write-host "$ct Running" $searchcommand
+                }
+                $newvmcommand = Invoke-Expression $searchcommand
+                if ($newvmcommand.totalcount -gt 0)
+                {
+                    $offset += 1
+                    $instancelist = ""
+                    foreach ($instance in $newvmcommand.items.vm)
                     {
-                        $addcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid ' +$instance.instanceid
-                        $runcommand = Invoke-Expression $addcommand
+                        $instancelist = $instancelist + "," +$instance.instanceid  
                     }
+                    # remove leading comma
+                    $instancelist = $instancelist.substring(1)    
+                    $addcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid "' +$instancelist +'"'
+                    if ($textoutput)
+                    {
+                        $ct = Get-Date
+                        write-host "$ct Running" $addcommand
+                    }
+                    $addvmcommand = Invoke-Expression $addcommand
+                    $addvmcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
+                    $addvmcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
+                    $addvmcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
+                    $addvmcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
+                    $addvmcommand 
                 }
                 else 
                 {
                     $done = 1
                 }
-                $runcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
-                $runcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
-                $runcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
-                $runcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
-                $runcommand 
             }  until ($done -eq 1)
         }
     }
@@ -108,7 +185,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         foreach ($cred in $searchlist)
         {
             # we need to learn the srcid
-            $credgrab = (Get-AGMLibCredentialSrcID | where-object {$_.credentialid -eq $cred.credentialid})
+            $credgrab = (Get-AGMLibCredentialSrcID | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
             if ($credgrab.srcid)
             {
                 $srcid = $credgrab.srcid
@@ -116,7 +193,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                 if ($diskpoolgrab)
                 {
                     $poolname = $diskpoolgrab.name
-                    $slpgrab = Get-AGMSLP -filtervalue performancepool=$poolname
+                    $slpgrab = Get-AGMSLP -filtervalue "performancepool=$poolname&clusterid=$applianceid" -limit 1
                     if ($slpgrab)
                     {
                         $slpid = $slpgrab.id
@@ -128,65 +205,183 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                 $done = 0
                 do 
                 {
-                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone
-                    $runcommand = Invoke-Expression $searchcommand
-                    $runcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
-                    $runcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
-                    $runcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
-                    $runcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
-                    $runcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue 0
-                    $runcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue 0
-                    if ($runcommand.totalcount -gt 0)
+                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                    if ($textoutput)
                     {
-                        foreach ($instance in $runcommand.items.vm)
+                        $ct = Get-Date
+                        write-host "$ct Running" $searchcommand
+                    }
+                    $newvmcommand = Invoke-Expression $searchcommand
+                    $newvmcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
+                    $newvmcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
+                    $newvmcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
+                    $newvmcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
+                    $newvmcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue 0
+                    $newvmcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue 0
+                    if ($newvmcommand.totalcount -gt 0)
+                    {
+                        $offset += 1
+                        # we need the instance data
+                        $matchinginstances = $newvmcommand.items.vm
+                        $instancelist = ""
+                        foreach ($instance in $newvmcommand.items.vm)
                         {
-                            # we always add the VM
-                            $addappcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid ' +$instance.instanceid
-                            $newappcommand = Invoke-Expression $addappcommand
-                            if ($newappcommand.count -eq 1)
+                            $instancelist = $instancelist + "," +$instance.instanceid  
+                        }
+                        # remove leading comma
+                        if ($instancelist)
+                        {
+                            $instancelist = $instancelist.substring(1) 
+                        }
+                        if ($instancelist -ne "")
+                        {
+                       
+                            $addappcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid "' +$instancelist +'"'
+                            if ($textoutput)
                             {
-                                $appid = $newappcommand.items.id
-                                $runcommand.newgceinstances += 1 
+                                $ct = Get-Date
+                                write-host "$ct Running" $addappcommand
                             }
-                            $backupplancheck = $instance.tag | select-string $usertag
-                            if ($backupplancheck)
+                            $newappcommand = Invoke-Expression $addappcommand
+                            if ($newappcommand.count -ge 1)
                             {
-                                # remove the leadering  and trailing { and }
-                                $taglist = $instance.tag.Substring(1,$instance.tag.Length-2).Split(",")
-                                # now for the backup tag
-                                foreach ($tag in $taglist)
+                                # here we build $newslalist which we process afterwards.
+                                $newslalist = @()
+                                foreach ($instance in $newappcommand.items)
                                 {
-                                    $name = $tag.trim().split("=") | Select-object -First 1
-                                    $value = $tag.trim().split("=") | Select-object -skip 1
-                                    $sltid = ""
-                                    # if the tag name is googlebackupplan we can protect it
-                                    if ($name | select-string $usertag)
+                                    $appid = $instance.id
+                                    $newvmcommand.newgceinstances += 1 
+                                    $newapphostuniquename = $instance.host.sources.uniquename
+                                    $taggrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
+                                    $backupplancheck = $taggrab.tag | select-string $usertag
+                                    # if user supplied default sltid then use that
+                                    if ((!($backupplancheck)) -and ($sltid))
                                     {
-                                        if ($sltgrab | where-object {$_.name -eq $value})
-                                        {
-                                            $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
-                                        }
                                         if (($sltid) -and ($slpid) -and ($appid))
                                         {
-                                                $newsla = 'New-AGMSLA -appid ' +$appid +' -sltid ' +$sltid +' -slpid ' +$slpid
-                                                $newsla = Invoke-Expression $newsla
-                                                $runcommand.newgceinstancebackup += 1 
+                                            $newslalist += [pscustomobject]@{
+                                                appid = $appid
+                                                sltid = $sltid
+                                                slpid = $slpid
+                                            }
+                                            $newvmcommand.newgceinstancebackup += 1 
+                                        }
+                                    }
+                                    if ($backupplancheck)
+                                    {
+                                        # remove the leadering  and trailing { and }
+                                        $taglist = $taggrab.tag.substring(1,$taggrab.tag.Length-2).Split(",")
+                                        # now for the backup tag
+                                        foreach ($tag in $taglist)
+                                        {
+                                            $name = $tag.trim().split("=") | Select-object -First 1
+                                            $value = $tag.trim().split("=") | Select-object -skip 1
+                                            $sltid = ""
+                                            # if the tag name is googlebackupplan we can protect it
+                                            if ($name | select-string $usertag)
+                                            {
+                                                if ($value -eq "ignored")
+                                                {
+                                                    $jsonbody = '{"ignore":true}'
+                                                    Put-AGMAPIData  -endpoint /application/$appid -body $jsonbody
+                                                }
+                                                elseif ($value -ne "unmanaged")
+                                                {
+                                                    if ($sltgrab | where-object {$_.name -eq $value})
+                                                    {
+                                                        $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
+                                                    }
+                                                    if (($sltid) -and ($slpid) -and ($appid))
+                                                    {
+                                                        $newslalist += [pscustomobject]@{
+                                                            appid = $appid
+                                                            sltid = $sltid
+                                                            slpid = $slpid
+                                                        }
+                                                        $newvmcommand.newgceinstancebackup += 1 
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                if ( $((get-host).Version.Major) -gt 5 )
+                                {
+                                    if ($bootonly)
+                                    {
+                                        $jsonbody = '{"type":"boot"}'
+                                        $newslalist | ForEach-Object {
+                                            $appid = $_.appid
+                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
+                                        }
+                                    }
+                                    if ($AGMToken)
+                                    {
+                                        $newslalist | ForEach-Object -parallel {
+                                            $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct Running" $newsla
+                                            }
+                                            $agmip = $using:agmip 
+                                            $AGMToken = $using:AGMToken 
+                                            $AGMSESSIONID = $using:AGMSESSIONID
+                                            New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                            start-sleep -seconds 5
+                                        } -ThrottleLimit $limit
+                                    }
+                                    else 
+                                    {
+                                        $newslalist | ForEach-Object -parallel {
+                                            $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct Running" $newsla
+                                            }
+                                            $agmip = $using:agmip  
+                                            $AGMSESSIONID = $using:AGMSESSIONID
+                                            $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
+                                            New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                            start-sleep -seconds 5
+                                        } -ThrottleLimit $limit
+                                    }
+                                    
+                                }
+                                else {
+                                    if ($bootonly)
+                                    {
+                                        $jsonbody = '{"type":"boot"}'
+                                        $newslalist | ForEach-Object {
+                                            $appid = $_.appid
+                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
+                                        }
+                                    }
+                                    $newslalist | ForEach-Object {
+                                        $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
+                                        if ($textoutput)
+                                        {
+                                            $ct = Get-Date
+                                            write-host "$ct Running" $newsla
+                                        }
+                                        New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid
+                                    } 
+                                }
                             }
-                        }
-                        if ($runcommand.totalcount -lt 51)
-                        {
-                            $done = 1
                         }
                     }
                     else 
                     {
                         $done = 1
                     }
-                    $runcommand 
+                    $newvmcommand 
                 }  until ($done -eq 1)
+                if ($textoutput)
+                {
+                    $ct = Get-Date
+                    write-host "$ct Complete"
+                }
             }
         }
     }

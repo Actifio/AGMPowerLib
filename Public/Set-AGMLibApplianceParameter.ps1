@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[string]$value) 
+Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$id,[string]$param,[string]$value) 
 {
     <#
     .SYNOPSIS
@@ -23,7 +23,7 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[strin
     If an error occurs this will be reported.
 
     .EXAMPLE
-    Set-AGMLibApplianceParameter -applianceid  1234 -param maxsnapslots -value 10
+    Set-AGMLibApplianceParameter -id 1234 -param maxsnapslots -value 10
     Sets the maxsnapslots param to a value of 10 on the appliance with ID 1234
 
     .DESCRIPTION
@@ -42,6 +42,8 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[strin
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
+    if ($id)
+    { $applianceid = $id }
     
     # first we need an applianceid
     if (!($applianceid))
@@ -94,9 +96,9 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$param,[strin
     }
 
 
-    $oldvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
-    $set = Set-AGMAPIApplianceTask -applianceid $applianceid -command "setparameter" -arguments "param=$param&value=$value"
-    $newvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
+    $oldvaluegrab = Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" -arguments "param=$param"
+    $set = Set-AGMAPIApplianceTask -id $applianceid -command "setparameter" -arguments "param=$param&value=$value"
+    $newvaluegrab = Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" -arguments "param=$param"
     $oldvalue = $oldvaluegrab.$param
     $newvalue = $newvaluegrab.$param
     if ($set.err_message)

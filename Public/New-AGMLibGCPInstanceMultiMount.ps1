@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textoutput) 
+Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textoutput,[decimal]$limit) 
 {
     <#
     .SYNOPSIS
@@ -34,9 +34,9 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
     srcid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip
-    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
-    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,https://www.googleapis.com/compute/v1/projects/project1/global/networks/network3,https://www.googleapis.com/compute/v1/projects/project1/regions/australia-southeast1/subnetworks/sydney,,,,,,
+    28417,lab2tiny,project1,australia-southeast1-a,gcetest2,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
+    28417,mysq57,project1,australia-southeast1-a,gcetest3,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
+    28417,postgres11,project1,australia-southeast1-a,gcetest4,e2-micro,,,TRUE,,pd-ssd,network3,sydney,,,,,,
  
     If you specify both appname and appid then appid will be used.  The appname is mandatory so you know the name of the source VM.
     #>
@@ -92,6 +92,10 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
         if ($app.appname -eq "")  { write-host "The following mandatory value is missing: appname row $row" ; return}
         $row += 1
     }
+    if (!($limit))
+    {
+        $limit = 5
+    }
 
 
     write-host ""
@@ -99,110 +103,181 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
     {
         $printarray = @()
     }
-    foreach ($app in $recoverylist)
+    if ( $((get-host).Version.Major) -gt 6 )
     {
-    
-        $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
-        if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
-        if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
-        if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
-        if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 
-        if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
-        if ($app.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$app.nic0externalip } 
-        if ($app.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$app.nic0internalip } 
-        if ($app.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$app.nic1network +'"'} 
-        if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
-        if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
-        if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip } 
-        if ($app.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$app.nic2network +'"'} 
-        if ($app.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$app.nic2subnet +'"'} 
-        if ($app.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$app.nic2internalip } 
-        if ($app.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$app.nic2externalip } 
-        if ($app.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$app.nic3network +'"'} 
-        if ($app.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$app.nic3subnet +'"'} 
-        if ($app.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$app.nic3internalip } 
-        if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
-        if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
-        if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
+        if ($AGMToken)
+        {
+            $recoverylist | ForEach-Object -parallel {
+                $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
+                if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
+                if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
+                if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
+                if ($_.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$_.nic0externalip } 
+                if ($_.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$_.nic0internalip } 
+                if ($_.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$_.nic1network +'"'} 
+                if ($_.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$_.nic1subnet +'"'} 
+                if ($_.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$_.nic1internalip } 
+                if ($_.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$_.nic1externalip } 
+                if ($_.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$_.nic2network +'"'} 
+                if ($_.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$_.nic2subnet +'"'} 
+                if ($_.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$_.nic2internalip } 
+                if ($_.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$_.nic2externalip } 
+                if ($_.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$_.nic3network +'"'} 
+                if ($_.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$_.nic3subnet +'"'} 
+                if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
+                if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
+                if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
+                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                $agmip = $using:agmip 
+                $AGMToken = $using:AGMToken 
+                $AGMSESSIONID = $using:AGMSESSIONID
+                Invoke-Expression $mountcommand 
+                Start-Sleep -seconds 15
+            } -throttlelimit $limit
+        }
+        else 
+        {
+            $recoverylist | ForEach-Object -parallel {
+                $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
+                if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
+                if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
+                if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
+                if ($_.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$_.nic0externalip } 
+                if ($_.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$_.nic0internalip } 
+                if ($_.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$_.nic1network +'"'} 
+                if ($_.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$_.nic1subnet +'"'} 
+                if ($_.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$_.nic1internalip } 
+                if ($_.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$_.nic1externalip } 
+                if ($_.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$_.nic2network +'"'} 
+                if ($_.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$_.nic2subnet +'"'} 
+                if ($_.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$_.nic2internalip } 
+                if ($_.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$_.nic2externalip } 
+                if ($_.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$_.nic3network +'"'} 
+                if ($_.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$_.nic3subnet +'"'} 
+                if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
+                if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
+                if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
+                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                $agmip = $using:agmip 
+                $AGMSESSIONID = $using:AGMSESSIONID
+                $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
+                Invoke-Expression $mountcommand 
+                Start-Sleep -seconds 15
+            } -throttlelimit $limit
+        }
+    }
+    else 
+    {
+        foreach ($app in $recoverylist)
+        {
+        
+            $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
+            if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+            if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+            if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
+            if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 
+            if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 
+            if ($app.nic0externalip) { $mountcommand = $mountcommand + ' -nic0externalip ' +$app.nic0externalip } 
+            if ($app.nic0internalip) { $mountcommand = $mountcommand + ' -nic0internalip ' +$app.nic0internalip } 
+            if ($app.nic1network) { $mountcommand = $mountcommand + ' -nic1network "' +$app.nic1network +'"'} 
+            if ($app.nic1subnet) { $mountcommand = $mountcommand + ' -nic1subnet "' +$app.nic1subnet +'"'} 
+            if ($app.nic1internalip) { $mountcommand = $mountcommand + ' -nic1internalip ' +$app.nic1internalip } 
+            if ($app.nic1externalip) { $mountcommand = $mountcommand + ' -nic1externalip ' +$app.nic1externalip } 
+            if ($app.nic2network) { $mountcommand = $mountcommand + ' -nic2network "' +$app.nic2network +'"'} 
+            if ($app.nic2subnet) { $mountcommand = $mountcommand + ' -nic2subnet "' +$app.nic2subnet +'"'} 
+            if ($app.nic2internalip) { $mountcommand = $mountcommand + ' -nic2internalip ' +$app.nic2internalip } 
+            if ($app.nic2externalip) { $mountcommand = $mountcommand + ' -nic2externalip ' +$app.nic2externalip } 
+            if ($app.nic3network) { $mountcommand = $mountcommand + ' -nic3network "' +$app.nic3network +'"'} 
+            if ($app.nic3subnet) { $mountcommand = $mountcommand + ' -nic3subnet "' +$app.nic3subnet +'"'} 
+            if ($app.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$app.nic3internalip } 
+            if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
+            if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
+            if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
 
-        $runcommand = Invoke-Expression $mountcommand 
-       
-        if ($runcommand.errormessage)
-        { 
-            if ($textoutput)
-            {
-                write-host "The following command encountered this error: " $runcommand.errormessage 
-                $mountcommand
-                write-host ""
+            $runcommand = Invoke-Expression $mountcommand 
+        
+            if ($runcommand.errormessage)
+            { 
+                if ($textoutput)
+                {
+                    write-host "The following command encountered this error: " $runcommand.errormessage 
+                    $mountcommand
+                    write-host ""
+                }
+                else {
+                    $printarray += [pscustomobject]@{
+                        appname = $app.appname
+                        appid = $app.appid
+                        instancename = $app.instancename
+                        result = "failed"
+                        message = $runcommand.errormessage.Trim() 
+                        command =  $mountcommand }
+                }
             }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    instancename = $app.instancename
-                    result = "failed"
-                    message = $runcommand.errormessage.Trim() 
-                    command =  $mountcommand }
+            elseif ($runcommand.err_message)
+            { 
+                if ($textoutput)
+                {
+                    write-host "The following command encountered this error: " $runcommand.err_message 
+                    $mountcommand
+                    write-host ""
+                }
+                else {
+                    $printarray += [pscustomobject]@{
+                        appname = $app.appname
+                        appid = $app.appid
+                        instancename = $app.instancename
+                        result = "failed"
+                        message = $runcommand.err_message.Trim()
+                        errorcode = $runcommand.err_code 
+                        command =  $mountcommand }
+                }
+            }
+            elseif ($runcommand.jobstatus)
+            {
+                if ($textoutput)
+                {
+                    write-host "The following command started this job: " $runcommand.jobstatus
+                    $mountcommand 
+                    write-host ""
+                }
+                else 
+                {
+                    $printarray += [pscustomobject]@{
+                        appname = $app.appname
+                        appid = $app.appid
+                        instancename = $app.instancename
+                        result = "started"
+                        message = $runcommand.jobstatus 
+                        command =  $mountcommand }
+                }
+            }
+            else
+            {
+                if ($textoutput)
+                {
+                    write-host "The following command may not have started: " $runcommand
+                    $mountcommand 
+                    write-host ""
+                }
+                else {
+                    $printarray += [pscustomobject]@{
+                        appname = $app.appname
+                        appid = $app.appid
+                        result = "unknown"
+                        command =  $mountcommand }
+                }
             }
         }
-        elseif ($runcommand.err_message)
-        { 
-            if ($textoutput)
-            {
-                write-host "The following command encountered this error: " $runcommand.err_message 
-                $mountcommand
-                write-host ""
-            }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    instancename = $app.instancename
-                    result = "failed"
-                    message = $runcommand.err_message.Trim()
-                    errorcode = $runcommand.err_code 
-                    command =  $mountcommand }
-            }
-        }
-        elseif ($runcommand.jobstatus)
+        
+        if (!($textoutput))
         {
-            if ($textoutput)
-            {
-                write-host "The following command started this job: " $runcommand.jobstatus
-                $mountcommand 
-                write-host ""
-            }
-            else 
-            {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    instancename = $app.instancename
-                    result = "started"
-                    message = $runcommand.jobstatus 
-                    command =  $mountcommand }
-            }
-        }
-        else
-        {
-            if ($textoutput)
-            {
-                write-host "The following command may not have started: " $runcommand
-                $mountcommand 
-                write-host ""
-            }
-            else {
-                $printarray += [pscustomobject]@{
-                    appname = $app.appname
-                    appid = $app.appid
-                    result = "unknown"
-                    command =  $mountcommand }
-            }
+            $printarray
         }
     }
-       
-    if (!($textoutput))
-    {
-        $printarray
-    }
+    
 }

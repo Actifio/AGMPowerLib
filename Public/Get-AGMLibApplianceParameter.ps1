@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switch]$allparams,[switch]$slots) 
+Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$id,[string]$param,[switch]$allparams,[switch]$slots) 
 {
     <#
     .SYNOPSIS
@@ -21,15 +21,15 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
     You can learn the applianceid by running Get-AGMAppliance and using the value in the id field for the relevant appliance
 
     .EXAMPLE
-    Get-AGMLibApplianceParameter -applianceid 1234 
+    Get-AGMLibApplianceParameter -id 1234 
     Display the value of all parameters for appliance with ID 1234
 
     .EXAMPLE
-    Get-AGMLibApplianceParameter -applianceid 1234 -param maxsnapslots
+    Get-AGMLibApplianceParameter -id 1234 -param maxsnapslots
     Display the value of the maxsnapslots parameter for appliance with ID 1234
 
     .EXAMPLE
-    Get-AGMLibApplianceParameter -applianceid 1234 -slots
+    Get-AGMLibApplianceParameter -id 1234 -slots
     Display the value of the commonly changed slot parameters for appliance with ID 1234
 
     .DESCRIPTION
@@ -48,6 +48,9 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
+    if ($id)
+    { $applianceid = $id }
+
     
     # first we need an applianceid
     if (!($applianceid))
@@ -96,11 +99,11 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
    
     if ($param)
     {
-        Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
+        Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" -arguments "param=$param"
     }
     elseif ($slots)
     {
-        $paramgrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" 
+        $paramgrab = Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" 
         if ($paramgrab.maxsnapslots)
         {
             $paramarray = @()
@@ -122,6 +125,6 @@ Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$param,[switc
     }
     else 
     {
-        Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" 
+        Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" 
     }
 }

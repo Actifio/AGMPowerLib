@@ -20,12 +20,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     Mounts a PD Snapshot as a new GCP Instance (VM)
 
     .EXAMPLE
-    New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
+    New-AGMLibGCPInstance -imageid 56410933 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "default" -nic0subnet "default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false
 
     This mounts the specified imageid 56410933
 
     .EXAMPLE
-    New-AGMLibGCPInstance -appid 1234 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "https://www.googleapis.com/compute/v1/projects/projectname/global/networks/default" -nic0subnet "https://www.googleapis.com/compute/v1/projects/projectname/regions/australia-southeast1/subnetworks/default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
+    New-AGMLibGCPInstance -appid 1234 -srcid 1234 -zone australia-southeast1-c -projectname myproject -instancename avtest21 -machinetype e2-micro -networktags "http-server,https-server" -labels "dog:cat,sheep:cow" -nic0network "default" -nic0subnet "default" -nic0externalip auto -nic0internalip "10.152.0.200" -poweronvm false -disktype pd-ssd
 
     This mounts the most recent snapshot from appid 1234
 
@@ -55,8 +55,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
     -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance.   Partial label retention is not supported.
                      If a label is specified that already exists in the source VM, then the user specified key value will be prefered over the retained label from the source
-    -nic0network     The network name in URL format for nic0
-    -nic0subnet      The subnet name in URL format for nic0
+    -nic0network     The network name in plain name or URL format for nic0
+    -nic0subnet      The subnet name in plain name or URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
     -poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
@@ -64,8 +64,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
   
 
     Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
-    -nic1network     The network name in URL format for nic1
-    -nic1subnet      The subnet name in URL format for nic1
+    -nic1network     The network name in plain name or URL format for nic1
+    -nic1subnet      The subnet name in plain name or URL format for nic1
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
     -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
  
@@ -76,7 +76,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     1)  Specifying more than one internal IP per subnet.
     2)  Specifying different disk types per disk
   
-    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 60 seconds
+    If you are having what look like timeout issues, please run connect-agm with a -agmtimeout value larger than then the default of 300 seconds
 
     #>
 
@@ -124,8 +124,60 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         } else
         {
             Clear-Host
-            write-host "Welcome to the Guided Menu for GCE Conversion. "
+            write-host "Welcome to the Guided Menu to run a GCE Instance mount. "
             write-host "You will be offered selections to build a command to run a mount job that will create a new GCE Instance"
+            Write-Host "You have four choices"
+            Write-host ""
+            Write-Host "1`: Follow a guided menu to build the command to mount a single VM  (default)"
+            Write-Host "2`: Follow a guided menu to build a CSV file to mount all available VMs using New-AGMLibGCPInstanceMultiMount.  We will use a single VM as a model"
+            Write-Host "3`: Follow a guided menu to update an existing CSV file with any new VMs that are not currently in that CSV file"
+            Write-Host "4`: Exit without proceeding"
+            $functionchoice = Read-Host "Please select from this list (1-4)"
+            if ($functionchoice -eq 4)
+            {
+                return
+            }
+            if ($functionchoice -eq 3)
+            {
+                While ($true) 
+                {
+                    Write-host ""
+                    $infile = Read-Host "Please enter the input file name (the previously created CSV we are updating with any new GCE Instances"
+                    if (-not ( Test-Path $infile ))
+                    {
+                        write-host "File $infile could not be found."
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                $importedvms = Import-CSV -path $infile
+                if ($importedvms.srcid -eq $null) 
+                {
+                    Get-AGMErrorMessage -messagetoprint "Imported file $infile does not appear to be in the correct format to be updated"
+                    return
+                }
+            }
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
+            {
+                While ($true) 
+                {
+                    Write-host ""
+                    $outfile = Read-Host "Please enter the desired output file name that the output will be written to"
+                    if ($outfile)
+                    {
+                        if ( Test-Path $outfile )
+                        {
+                            write-host "File $outfile already exists please specify an unused file name"
+                        } 
+                        else
+                        {
+                            break
+                        }
+                    }
+                }
+            }
             write-host ""
             write-host "Credential Selection menu"
             write-host "The Credential is used to authenticate GCE commands.  Ensure you select the credential on the correct appliance since this will determine which appliance runs the recovery job"
@@ -176,7 +228,65 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
-        
+        if ($functionchoice -eq 3)
+        {
+            $userselection = ""
+            write-host ""
+            Write-Host "New Instance name"
+            Write-Host "1`: Use source instance name (default)"
+            Write-Host "2`: Use a different name (will need to be set in the CSV file manually)"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if (($userselection -eq 1) -or ($userselection -eq "")) 
+            {
+                $retaininstancename = $true
+            }
+            $userselection = ""
+            write-host ""
+            Write-Host "NIC0 Internal IP?"
+            Write-Host "1`: Auto Assign (default)"
+            Write-Host "2`: Use the currently assigned IP address"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) 
+            { 
+                $retainvmipaddress = $true
+            }
+
+
+            foreach ($vm in $vmgrab)
+            {
+                $vmpeek = $importedvms | where-object {($_.appid -eq $vm.id)}
+                if ($vmpeek)
+                {
+                    # write-host "Found existing VM: " $vm.sourcevmname
+                }
+                else 
+                {
+                    if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                    if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
+                    write-host "Found new VM to add to the csv: " $vm.appname
+                    $importedvms += [pscustomobject]@{
+                        srcid = $vm.srcid
+                        appid = $vm.id
+                        appname = $vm.appname
+                        instancename = $instancename
+                        machinetype = $vm.host.sources.machinetype
+                        nic0internalip = $nic0internalip
+                    }
+                }
+            }
+            $importedvms | Export-Csv -path $outfile
+            write-host "Input file $infile has been updated and written to new file $outfile"
+            write-host ""
+            write-host "Validate and update this file and then use it with this command to create multiple GCE Instances:"
+            write-host "New-AGMLibGCPInstanceMultiMount -instancelist $outfile"     
+            write-host""     
+            return
+            write-host ""
+            return
+        }
+       
         write-host ""
         write-host "VM Selection menu"
         Write-host ""
@@ -204,10 +314,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             $appname =  $vmgrab.appname
             $appid = $vmgrab.id
+            $vmipaddress = $vmgrab.host.sources.ipaddress
         }
         else {
             $appname =  $vmgrab.appname[($vmselection - 1)]
             $appid = $vmgrab.id[($vmselection - 1)]
+            $vmipaddress = $vmgrab.host.sources.ipaddress[($vmselection - 1)]
         }
     }
 
@@ -439,6 +551,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     write-host "Fetching selection data for project $projectname"
                     write-host ""
                     # ensure we are using a different selected project
+                    foreach ($row in $recoverygrab.fields)
+                    {
+                        $row.modified = $false
+                    }
+                    foreach ($row in ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children)
+                    {
+                        $row.modified = $false
+                    }
                     ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
                     (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).modified = $true
                     ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
@@ -449,7 +569,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
-                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
                     if (!($recoverygrab.fields))
                     {
@@ -459,7 +578,6 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
                     $serviceaccountgrab = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "serviceaccount" }).currentValue
                     $zonelist = (($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | sort-object name
-                    $selectedproject = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).name
                     $selectedzone = ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }).name
                     $networklist = ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | sort-object displayName | Get-Unique
                     $selectednetwork = (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }).name | select-object  -first 1
@@ -543,6 +661,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                             $row.modified = $false
                         }
                         # correct region
+                        ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                        ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                         (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "region"}).modified = $true
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.selected -eq $true}).selected = $false
                         ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "region" }).choices.choices | where-object {$_.name -eq $region}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
@@ -606,6 +726,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     {
                         $row.modified = $false
                     }
+                    ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                    ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                     ($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).modified = $true
                     (($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).modified = $true
                     foreach ($row in ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "zone" }).choices | where-object { $_.selected -eq $true }))
@@ -648,7 +770,20 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if (!($instancename))
         {
             write-host ""
+            write-host ""
+            Write-Host "New Instance name"
+            Write-Host "1`: Use source instance name $appname (default)"
+            Write-Host "2`: Enter a different name"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq 2) 
+            {
             While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+            }
+            else {
+                $instancename = $appname
+                $retaininstancename = $true
+            }
         }
 
         # machine type
@@ -693,6 +828,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 else
                 {  
                     $machinetype = ($machinetypelist| where-object { $_.selected -eq $true }).name 
+                    $retainmachinetype = $true
                 }
             }
             else 
@@ -783,11 +919,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             if  ($networklist.name.count -eq 1)
             {
-                $nic0network = $networklist.name
-                $selectednic0network = $networklist.name
+                $nic0network = $networklist.displayName
+                $selectednic0network = $networklist.displayName
             } else {
-                $nic0network = $networklist.name[($netselection - 1)]
-                $selectednic0network = $networklist.name[($netselection - 1)]
+                $nic0network = $networklist.displayName[($netselection - 1)]
+                $selectednic0network = $networklist.displayName[($netselection - 1)]
             }
         } 
         else
@@ -806,6 +942,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 {
                     $row.modified = $false
                 }
+                ((($recoverygrab.fields | where-object { $_.name -eq "cloudcredentials" }).children| where-object  { $_.name -eq "project" }).choices | where-object { $_.selected -eq $true }).selected = $false
+                ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "project"}).choices | where-object {$_.name -eq $projectname}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
                 ($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).modified = $true
                 ((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).modified = $true
                 foreach ($row in (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.selected -eq $true }))
@@ -855,9 +993,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             if  ($subnetlist.name.count -eq 1)
             {
-                $nic0subnet = $subnetlist.name
+                $nic0subnet = $subnetlist.displayName
             } else {
-                $nic0subnet = $subnetlist.name[($subselection - 1)]
+                $nic0subnet = $subnetlist.displayName[($subselection - 1)]
             }
         }
         elseif (!($nic0subnet))
@@ -877,9 +1015,18 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host "NIC0 Internal IP?"
         Write-Host "1`: Auto Assign (default)"
         Write-Host "2`: Manual Assign"
+        Write-Host "3`: Use the currently assigned IP address ($vmipaddress)"
         Write-Host ""
-        [int]$userselection = Read-Host "Please select from this list (1-2)"
-        if ($userselection -eq 2) { [string]$nic0internalip = Read-Host "IP address" }
+        [int]$userselection = Read-Host "Please select from this list (1-3)"
+        if ($userselection -eq 2) 
+        { 
+            [string]$nic0internalip = Read-Host "IP address" 
+        }
+        if ($userselection -eq 3) 
+        { 
+            [string]$nic0internalip = $vmipaddress
+            $retainvmipaddress = $true
+        }
 
         if ($niccount -eq 2)
         {
@@ -913,11 +1060,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 }
                 if  ($networklist.name.count -eq 1)
                 {
-                    $nic1network = $networklist.name
-                    $selectednic1network = $networklist.name
+                    $nic1network = $networklist.displayName
+                    $selectednic1network = $networklist.displayName
                 } else {
-                    $nic1network = $networklist.name[($netselection - 1)]
-                    $selectednic1network = $networklist.name[($netselection - 1)]
+                    $nic1network = $networklist.displayName[($netselection - 1)]
+                    $selectednic1network = $networklist.displayName[($netselection - 1)]
                 }
             }
             else 
@@ -975,7 +1122,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                     }
                     if  ($subnetlist.name.count -eq 1)
                     {
-                        $nic1subnet = $subnetlist.name
+                        $nic1subnet = $subnetlist.displayName
                     } else {
                         $nic1subnet = $subnetlist.name[($subselection - 1)]
                     }
@@ -1057,10 +1204,66 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             $diskjson = $volumelist | ConvertTo-json -depth 10 -compress
         }
         #Clear-Host
+         # if user asked for a file, we write the file and exit
+         if ($functionchoice -eq 2) 
+         {
+             $vmexport = @()
+ 
+             foreach ($vm in $vmgrab)
+             {
+                 if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                 if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
+                 if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
+                 #remove any bonus material 
+                if ($nic0network) { $nic0network = $nic0network.split(" ")[0] }
+                if ($nic1network) { $nic1network = $nic1network.split(" ")[0] }
+                if ($nic0subnet) { $nic0subnet = $nic0subnet.split(" ")[0] }
+                if ($nic1subnet) { $nic1subnet = $nic1subnet.split(" ")[0] }
+                 $vmexport += [pscustomobject]@{
+                     srcid = $srcid
+                     appid = $vm.id
+                     appname = $vm.appname
+                     projectname = $projectname
+                     zone = $zone
+                     instancename = $instancename
+                     machinetype = $machinetype
+                     serviceaccount = $serviceaccount
+                     networktags = $networktags
+                     poweronvm = $poweronvm
+                     labels = $labels
+                     disktype = $disktype
+                     nic0network = $nic0network
+                     nic0subnet = $nic0subnet
+                     nic0externalip = $nic0externalip
+                     nic0internalip = $nic0internalip
+                     nic1network = $nic1network
+                     nic1subnet = $nic1subnet
+                     nic1externalip = $nic1externalip
+                     nic1internalip = $nic1internalip
+                 }
+             }
+             $vmexport | Export-Csv -path $outfile  
+             write-host ""
+             Write-Host "Guided selection is complete"
+             write-host ""
+             write-host "Output was written to $outfile"
+             write-host "Validate and update this file and then use it with this command to create multiple GCE Instances:"
+             write-host "New-AGMLibGCPInstanceMultiMount -instancelist $outfile"     
+             write-host""     
+             return
+         }
         Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
         Write-Host -nonewline " -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`"" 
+         #remove any bonus material 
+         if ($nic0network) { $nic0network = $nic0network.split(" ")[0] }
+         if ($nic1network) { $nic1network = $nic1network.split(" ")[0] }
+         if ($nic0subnet) { $nic0subnet = $nic0subnet.split(" ")[0] }
+         if ($nic1subnet) { $nic1subnet = $nic1subnet.split(" ")[0] }
+
+
+
         if ($serviceaccount) { Write-Host -nonewline " -serviceaccount `"$serviceaccount`"" }
         if ($networktags) { Write-Host -nonewline " -networktags `"$networktags`"" } 
         if ($poweronvm) { Write-Host -nonewline " -poweronvm $poweronvm" }
@@ -1075,15 +1278,13 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
         if ($preferedsource) { Write-Host -nonewline " -preferedsource `"$preferedsource`""}
         if ($disktype) { Write-Host -nonewline " -disktype `"$disktype`""}
+       
+        # non CSV output
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Write comma separated output.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
+        Write-Host "2`: Write comma separated output for this Instance.  This can be used to mount the most recently created image for that application using New-AGMLibGCPInstanceMultiMount"
         Write-Host "3`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
-        if ($userchoice -eq 3)
-        {
-            return
-        }
         if ($userchoice -eq 2)
         {
             write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
@@ -1092,10 +1293,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             write-host ""
             return
         }
-
+       
+        if ($userchoice -eq 3)
+        {
+            return
+        }
     }
-
-
 
 
     if ($disktype)
@@ -1190,6 +1393,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Get-AGMErrorMessage -messagetoprint "Please specify a network for nic0 for the new instance with -nic0network"
         return
     }
+
+
     if (!($nic0subnet))
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic0 for the new instance with -nic0subnet"
@@ -1227,6 +1432,113 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     {
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic3 for the new instance with -nic3subnet"
         return
+    }
+    # convert non http network,  need like https://www.googleapis.com/compute/v1/projects/minimumchips/global/networks/minchipsvpc
+    if ($nic0network)
+    {
+        if ($nic0network.length -gt 6)
+        {
+            if ($nic0network.substring(0,5) -ne "https")
+            {
+                $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+            }
+        }
+        else {
+            $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+        }
+    }
+    if ($nic1network)
+    {
+        if ($nic1network.length -gt 6) 
+        {
+            if ($nic1network.substring(0,5) -ne "https")
+            {
+                $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+            }
+        }
+        else {
+            $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+        }
+    }
+    if ($nic2network)
+    {
+        if ($nic2network.length -gt 6) 
+        {
+            if ($nic2network.substring(0,5) -ne "https")
+            {
+                $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+            }
+        }
+        else {
+            $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+        }
+    }
+    if ($nic3network)
+    {
+        if ($nic3network.length -gt 6) 
+        {
+            if ($nic3network.substring(0,5) -ne "https")
+            {
+                $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+            }
+        }
+        else {
+            $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+        }
+    }
+    # convert non http subnet,  need like  https://www.googleapis.com/compute/v1/projects/$projectname/regions/$regionname/subnetworks/$subnetname
+    $region = $zone -replace ".{2}$"
+    if ($nic0subnet)
+    {
+        if ($nic0subnet.length -gt 6) 
+        {
+            if ($nic0subnet.substring(0,5) -ne "https")
+            {
+                $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+            }
+        }
+        else {
+            $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+        }
+    }
+    if ($nic1subnet)
+    {
+        if ($nic1subnet.length -gt 6)  
+        {    
+            if ($nic1subnet.substring(0,5) -ne "https")
+            {
+                $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+            }
+        }
+        else {
+            $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+        }
+    }
+    if ($nic2subnet)
+    {
+        if ($nic2subnet.length -gt 6)  
+        {
+            if ($nic2subnet.substring(0,5) -ne "https")
+            {
+                $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+            }
+        }
+        else {
+            $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+        }
+    }
+    if ($ni3subnet)
+        {    
+        if ($nic3subnet.length -gt 6)
+        {
+            if ($nic3subnet.substring(0,5) -ne "https")
+            {
+                $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+            }
+        }
+        else {
+            $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+        }
     }
 
     # disktype 

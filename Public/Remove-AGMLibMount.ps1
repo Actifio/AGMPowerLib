@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[switch][alias("d")]$delete,[switch][alias("g")]$gceinstanceforget,[switch][alias("p")]$preservevm,[switch][alias("f")]$force)
+function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[string]$limit,[switch][alias("d")]$delete,[switch][alias("g")]$gceinstanceforget,[switch][alias("p")]$preservevm,[switch][alias("f")]$force)
 {
     <#
     .SYNOPSIS
@@ -286,13 +286,44 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
     }
     elseif ($gceinstanceforget) 
     {
-        $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}
-        foreach ($mount in $mountlist)
+        if ( $((get-host).Version.Major) -gt 5 )
         {
-            $id = $mount.id
-            $body = @{delete=$true;preservevm=$true}
-            $json = $body | ConvertTo-Json
-            Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+            if (!($limit)) { $limit = 10 }
+            $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}
+            if ($AGMToken)
+            {
+            $mountlist | ForEach-Object -parallel {
+                    $body = @{delete=$true;preservevm=$true}
+                    $json = $body | ConvertTo-Json
+                    $agmip = $using:agmip 
+                    $AGMToken = $using:AGMToken 
+                    $AGMSESSIONID = $using:AGMSESSIONID
+                    $id = $_.id
+                    Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+                } -ThrottleLimit $limit
+            }
+            else 
+            {
+                $mountlist | ForEach-Object -parallel {
+                    $body = @{delete=$true;preservevm=$true}
+                    $json = $body | ConvertTo-Json
+                    $agmip = $using:agmip 
+                    $AGMSESSIONID = $using:AGMSESSIONID
+                    $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
+                    $id = $_.id
+                    Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+                } -ThrottleLimit $limit
+            }
+        }
+        else {
+            $mountlist = Get-AGMLibActiveImage | where-object  {$_.apptype -eq "GCPInstance"}
+            foreach ($mount in $mountlist)
+            {
+                $id = $mount.id
+                $body = @{delete=$true;preservevm=$true}
+                $json = $body | ConvertTo-Json
+                Post-AGMAPIData -endpoint /backup/$id/unmount -body $json
+            }
         }
     }
     else
