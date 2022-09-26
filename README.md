@@ -22,6 +22,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
+**[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
@@ -1772,12 +1773,11 @@ PS /tmp/agmpowercli>
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
 ```
-### Appliance Slots and how they are used to control the number of running jobs
+## User Story: Appliance parameter management and slot limits
 
-The Appliance running your jobs may hit a slot limit, which means that you may see a case where jobs go into queued status, waiting for free slots, rather than starting immediately. 
+Each backup appliance uses a pacing mechanism known as slots to manage the number of jobs that can run simultaneously.   This means the Appliance running your jobs may hit a slot limit, resulting in your jobs going into queued status, waiting for free slots, rather than starting immediately. 
 
-To resolve this we need to adjust what are called slot values.  Slots are effectively used as a pacing mechanism to control how many jobs can be running on an appliance at any point in time.
-Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
+To manage this we can adjust what are called slot values.  Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
 **Get-Command -module AGMPowerCLI**
 
 Firstly learn the ID of the relevant Appliance.  In this case the appliance running our jobs is **project1sky** so we will use applianceid **361153**
