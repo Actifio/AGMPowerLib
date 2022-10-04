@@ -95,7 +95,7 @@ Function Get-AGMLibBackupSKUUsage ([string]$applianceid)
                 if ($id.AppType -eq "SqlInstance") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" } 
                 if ($id.AppType -eq "SQLServerAvailabilityGroup") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" } 
                 if ($id.AppType -eq "SqlServerWriter") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" } 
-            $AGMArray += [pscustomobject]@{
+                $AGMArray += [pscustomobject]@{
                     appliancename = $appliance.name
                     applianceid = $appliance.id
                     apptype = $id.AppType
