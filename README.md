@@ -1775,7 +1775,66 @@ PS /tmp/agmpowercli>
 ```
 ## User Story: Appliance parameter management and slot limits
 
-Each backup appliance uses a pacing mechanism known as slots to manage the number of jobs that can run simultaneously.   This means the Appliance running your jobs may hit a slot limit, resulting in your jobs going into queued status, waiting for free slots, rather than starting immediately. 
+Each backup appliance has a set of parameters that are used to do things like
+
+* Enable and disable functions.  These parameters usually are either 0 (off) or 1 (on)
+* Set limits on things like concurrent running jobs using slots
+* Set values such as timeouts
+
+### Display and setting parameters
+
+If you have a single appliance then you can run this command to display all available parameters:
+```
+Get-AGMLibApplianceParameter
+```
+If you have multiple appliances then first learn the appliance ID of the relevant appliance and then use that ID, like this:
+```
+PS > Get-AGMAppliance | select id,name
+
+id     name
+--     ----
+406219 backup-server-29736
+
+PS > Get-AGMLibApplianceParameter -applianceid 406219
+
+enableexpiration                      : 1
+< output truncated>
+```
+To display a specific parameter use syntax like this:
+```
+Get-AGMLibApplianceParameter -param enablescheduler
+```
+To set a parameter use syntax like this (you may need the **-applianceid** parameter):
+```
+Get-AGMLibApplianceParameter -param enablescheduler
+Set-AGMLibApplianceParameter -param enablescheduler -value 0
+```
+### Changing maximum backup jobs per host (appliance level)
+
+There is a system parameter that controls the maximum number of backup jobs that can be run against every host in the system. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
+
+You can display and change this setting using the following command (you may need the **-applianceid** parameter):
+```
+Get-AGMLibApplianceParameter -param backupjobsperhost
+Set-AGMLibApplianceParameter -param backupjobsperhost -value 2
+```
+### Changing maximum mount jobs per host (appliance level)
+
+By default only one mount job can run on a host at one point in time.
+
+This value can be displayed with(you may need the **-applianceid** parameter):
+```
+Get-AGMLibApplianceParameter -param maxconcurrentmountsperhost
+```
+It can be changed with syntax like this (where in this example the value is changed to 2)
+```
+Set-AGMLibApplianceParameter -param maxconcurrentmountsperhost -value 2
+```
+Note this is a system wide parameter. There is no way to set this on a per host basis.
+
+### Changing maximum mount and backup jobs per appliance using slots
+
+Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the Appliance running your jobs may hit a slot limit, resulting in excess jobs (over the slot limit) going into queued status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
 
 To manage this we can adjust what are called slot values.  Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
 **Get-Command -module AGMPowerCLI**
@@ -1790,6 +1849,7 @@ id     name
 296357 londonsky.c.project1.internal
 ```
 Now depending on which job type, we modify different slots.
+
 #### Slot limits for mount jobs
 We need to learn the current value of the params that relate to **ondemand** slots. This is because a mount job is an ondemand job, meaning each mount job uses one ondemand slot while it is running.  There are three relevant slots:
 * **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  

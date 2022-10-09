@@ -78,13 +78,13 @@ Function Get-AGMLibBackupSKUUsage ([string]$applianceid)
                 if ($id.AppType -eq "NFS") { $skuname = "Default Backup SKU for VM (GCE and VMware) and File system data" }
                 if ($id.AppType -eq "VMBackup") { $skuname = "Default Backup SKU for VM (GCE and VMware) and File system data" }
                 if ($id.AppType -eq "DB2") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
-                if ($id.AppType -eq "DB2 Instance") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
+                if ($id.AppType -eq "DB2Instance") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
                 if ($id.AppType -eq "MAXDB") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
                 if ($id.AppType -eq "Oracle") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
                 if ($id.AppType -eq "SAP ASE") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
                 if ($id.AppType -eq "SAP HANA") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
-                if ($id.AppType -eq "SYBASE IQ") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
-                if ($id.AppType -eq "SYBASE Instance") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }              
+                if ($id.AppType -eq "SYBASEIQ") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }
+                if ($id.AppType -eq "SYBASEInstance") { $skuname = "Backup SKU for DB2, Oracle, SAP HANA, SAP ASE and SAP MAXdb" }              
                 if ($id.AppType -eq "LVM Volume") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" }    
                 if ($id.AppType -eq "MARIADB") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" } 
                 if ($id.AppType -eq "MARIADBInstance") { $skuname = "Tier2 Database backup usage. Includes backup of Microsoft SQL Server, MySQL, PostgreSQL, MongoDB" } 
