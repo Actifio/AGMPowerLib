@@ -23,6 +23,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
+**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
@@ -1775,7 +1776,67 @@ PS /tmp/agmpowercli>
 ```
 ## User Story: Appliance parameter management and slot limits
 
-Each backup appliance uses a pacing mechanism known as slots to manage the number of jobs that can run simultaneously.   This means the Appliance running your jobs may hit a slot limit, resulting in your jobs going into queued status, waiting for free slots, rather than starting immediately. 
+Each backup appliance has a set of parameters that are used to:
+
+* Enable and disable functions.  These parameters are usually: 0 (off) or 1 (on)
+* Use slot limits to control concurrently running jobs
+* Set values such as timeouts
+
+### Display and setting parameters
+
+If you have a single appliance then you can run this command to display all available parameters:
+```
+Get-AGMLibApplianceParameter
+```
+If you have multiple appliances then learn the appliance ID of the relevant appliance and then use that ID, like this:
+```
+PS > Get-AGMAppliance | select id,name
+
+id     name
+--     ----
+406219 backup-server-29736
+406230 backup-server-32142
+
+PS > Get-AGMLibApplianceParameter -applianceid 406219
+
+enableexpiration                      : 1
+< output truncated>
+```
+To display a specific parameter use syntax like this (you may need the **-applianceid** parameter):
+```
+Get-AGMLibApplianceParameter -param enablescheduler
+```
+To set a parameter use syntax like this (you may need the **-applianceid** parameter).  In this example we disable the scheduler by setting it to 0:
+```
+Get-AGMLibApplianceParameter -param enablescheduler
+Set-AGMLibApplianceParameter -param enablescheduler -value 0
+```
+### Changing maximum backup jobs per host (appliance level)
+
+There is a system parameter that controls the maximum number of backup jobs that can be run against every host on that appliance. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
+
+You can display and change this setting using the following command (you may need the **-applianceid** parameter).  In this example we allow 2 backup jobs per host:
+```
+Get-AGMLibApplianceParameter -param backupjobsperhost
+Set-AGMLibApplianceParameter -param backupjobsperhost -value 2
+```
+### Changing maximum mount jobs per host (appliance level)
+
+By default only one mount job can run on a host at one point in time.
+
+This value can be displayed using this syntax (you may need the **-applianceid** parameter):
+```
+Get-AGMLibApplianceParameter -param maxconcurrentmountsperhost
+```
+It can be changed with syntax like this (you may need the **-applianceid** parameter).  In this example we allow two concurrent mount jobs per host:
+```
+Set-AGMLibApplianceParameter -param maxconcurrentmountsperhost -value 2
+```
+Note this is a system wide parameter. There is no way to set this on a per host basis.
+
+### Changing maximum mount and backup jobs per appliance using slots
+
+Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously on that appliance.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the appliance running your jobs may hit a slot limit, resulting in the excess jobs over the slot limit going into *queued* status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
 
 To manage this we can adjust what are called slot values.  Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
 **Get-Command -module AGMPowerCLI**
@@ -1790,6 +1851,7 @@ id     name
 296357 londonsky.c.project1.internal
 ```
 Now depending on which job type, we modify different slots.
+
 #### Slot limits for mount jobs
 We need to learn the current value of the params that relate to **ondemand** slots. This is because a mount job is an ondemand job, meaning each mount job uses one ondemand slot while it is running.  There are three relevant slots:
 * **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
@@ -1858,6 +1920,29 @@ Set-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots -value
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots -value 15
 Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
+## User Story: Displaying Backup SKU Usage
+
+Usage for the Backup and DR Service is charged on a per GiB of protected application (front end) data.    Pricing is documented here:
+https://cloud.google.com/backup-disaster-recovery/pricing
+
+If you wish to display how large your applications are in GiB per SKU type (to help allocate Backup SKU usage between business departments or just to understand how large an application is), then you can use the following command:
+```
+Get-AGMLibBackupSKUUsage
+```
+Output will look like this:
+```
+PS > Get-AGMLibBackupSKUUsage
+
+appliancename  : backup-server-29736
+applianceid    : 406219
+apptype        : VMBackup
+hostname       : avw tiny
+appname        : AVW Tiny
+skudescription : Default Backup SKU for VM (GCE and VMware) and File system data
+skuusageGiB    : 4.051
+```
+If the SKU description is not listed then please open an Issue in GitHub and share the listed apptype.
+
 ## User Story: Importing and Exporting AGM Policy Templates
 
 In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them into a different AGM.

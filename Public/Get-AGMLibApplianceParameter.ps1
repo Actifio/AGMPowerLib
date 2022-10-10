@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$id,[string]$param,[switch]$allparams,[switch]$slots) 
+Function Get-AGMLibApplianceParameter([string]$applianceid,[string]$id,[string]$param,[switch]$slots) 
 {
     <#
     .SYNOPSIS

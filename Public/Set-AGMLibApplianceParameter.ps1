@@ -96,9 +96,9 @@ Function Set-AGMLibApplianceParameter([string]$applianceid,[string]$id,[string]$
     }
 
 
-    $oldvaluegrab = Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" -arguments "param=$param"
-    $set = Set-AGMAPIApplianceTask -id $applianceid -command "setparameter" -arguments "param=$param&value=$value"
-    $newvaluegrab = Get-AGMAPIApplianceInfo -id $applianceid -command "getparameter" -arguments "param=$param"
+    $oldvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
+    $set = Set-AGMAPIApplianceTask -applianceid $applianceid -command "setparameter" -arguments "param=$param&value=$value"
+    $newvaluegrab = Get-AGMAPIApplianceInfo -applianceid $applianceid -command "getparameter" -arguments "param=$param"
     $oldvalue = $oldvaluegrab.$param
     $newvalue = $newvaluegrab.$param
     if ($set.err_message)

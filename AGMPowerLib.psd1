@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.54'
+ModuleVersion = '0.0.0.55'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -91,9 +91,9 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibApplicationID',
 'Get-AGMLibApplianceParameter',
 'Get-AGMLibAppPolicies',
+'Get-AGMLibBackupSKUUsage',
 'Get-AGMLibContainerYAML',
 'Get-AGMLibCredentialSrcID',
-'New-AGMLibGCPInstance',
 'Get-AGMLibHostID',
 'Get-AGMLibHostList',
 'Get-AGMLibImageDetails',
@@ -111,6 +111,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibAWSVM',
 'New-AGMLibAzureVM',
 'New-AGMLibContainerMount',
+'New-AGMLibGCPInstance',
 'New-AGMLibDb2Mount',
 'New-AGMLibFSMount',
 'New-AGMLibGCEConversion',

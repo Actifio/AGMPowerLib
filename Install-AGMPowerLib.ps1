@@ -76,14 +76,7 @@ function InstallMenu
 function RemoveModuleContent 
 {
   # Attempts to remove contents from an existing installation
-  try 
-  {
-    Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$true
-  }
-  catch 
-  {
-    throw "$($_.ErrorDetails)"
-  }
+  Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$true
 }
 
 function CreateModuleContent
