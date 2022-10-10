@@ -1812,7 +1812,7 @@ Set-AGMLibApplianceParameter -param enablescheduler -value 0
 ```
 ### Changing maximum backup jobs per host (appliance level)
 
-There is a system parameter that controls the maximum number of backup jobs that can be run against every host in the system. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
+There is a system parameter that controls the maximum number of backup jobs that can be run against every host on that appliance. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
 
 You can display and change this setting using the following command (you may need the **-applianceid** parameter).  In this example we allow 2 backup jobs per host:
 ```
@@ -1823,7 +1823,7 @@ Set-AGMLibApplianceParameter -param backupjobsperhost -value 2
 
 By default only one mount job can run on a host at one point in time.
 
-This value can be displayed with(you may need the **-applianceid** parameter):
+This value can be displayed using this syntax (you may need the **-applianceid** parameter):
 ```
 Get-AGMLibApplianceParameter -param maxconcurrentmountsperhost
 ```
@@ -1835,7 +1835,7 @@ Note this is a system wide parameter. There is no way to set this on a per host 
 
 ### Changing maximum mount and backup jobs per appliance using slots
 
-Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the Appliance running your jobs may hit a slot limit, resulting in the excess jobs over the slot limit going into *queued* status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
+Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously on that appliance.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the appliance running your jobs may hit a slot limit, resulting in the excess jobs over the slot limit going into *queued* status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
 
 To manage this we can adjust what are called slot values.  Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
 **Get-Command -module AGMPowerCLI**
