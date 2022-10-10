@@ -1787,20 +1787,21 @@ If you have a single appliance then you can run this command to display all avai
 ```
 Get-AGMLibApplianceParameter
 ```
-If you have multiple appliances then first learn the appliance ID of the relevant appliance and then use that ID, like this:
+If you have multiple appliances then learn the appliance ID of the relevant appliance and then use that ID, like this:
 ```
 PS > Get-AGMAppliance | select id,name
 
 id     name
 --     ----
 406219 backup-server-29736
+406230 backup-server-32142
 
 PS > Get-AGMLibApplianceParameter -applianceid 406219
 
 enableexpiration                      : 1
 < output truncated>
 ```
-To display a specific parameter use syntax like this:
+To display a specific parameter use syntax like this (you may need the **-applianceid** parameter):
 ```
 Get-AGMLibApplianceParameter -param enablescheduler
 ```
