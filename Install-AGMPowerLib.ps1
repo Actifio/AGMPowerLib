@@ -78,11 +78,11 @@ function RemoveModuleContent
   # Attempts to remove contents from an existing installation
   try 
   {
-    Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$true
+    $remove = Remove-Item -Path $InstallPath -Recurse -Force -ErrorAction Stop -Confirm:$true
   }
   catch 
   {
-    throw "$($_.ErrorDetails)"
+    throw $remove
   }
 }
 
