@@ -1782,7 +1782,7 @@ Each backup appliance has a set of parameters that are used to:
 * Set slot limits to control concurrently running jobs
 * Set values such as timeouts
 
-### Display and setting parameters
+### Displaying and setting parameters
 
 If you have a single appliance then you can run this command to display all available parameters:
 ```
