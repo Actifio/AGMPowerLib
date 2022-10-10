@@ -4,6 +4,7 @@ Started Change log file as per release 0.0.0.54
 
 ## AGMPowerLIB  (0.0.0.55)
 * Added Get-AGMLibBackupSKU
+* Corrected issue with Set-AGMLibApplianceParameter asking for applianceid when it was supplied
 
 ## AGMPowerLIB  (0.0.0.54)
 Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.0.54

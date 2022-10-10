@@ -23,6 +23,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
+**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
@@ -1919,6 +1920,29 @@ Set-AGMLibApplianceParameter -applianceid 361153 -param reservedsnapslots -value
 Set-AGMLibApplianceParameter -applianceid 361153 -param maxsnapslots -value 15
 Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
+## User Story: Displaying Backup SKU Usage
+
+Usage for the Backup and DR Service is charged on a per GiB of protected application (front end) data.    Pricing is documented here:
+https://cloud.google.com/backup-disaster-recovery/pricing
+
+If you wish to display how large your applications are in GiB per SKU type (to help allocate Backup SKU usage between business departments or just to understand how large an application is), then you can use the following command:
+```
+Get-AGMLibBackupSKUUsage
+```
+Output will look like this:
+```
+PS > Get-AGMLibBackupSKUUsage
+
+appliancename  : backup-server-29736
+applianceid    : 406219
+apptype        : VMBackup
+hostname       : avw tiny
+appname        : AVW Tiny
+skudescription : Default Backup SKU for VM (GCE and VMware) and File system data
+skuusageGiB    : 4.051
+```
+If the SKU description is not listed then please open an Issue in GitHub and share the listed apptype.
+
 ## User Story: Importing and Exporting AGM Policy Templates
 
 In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them into a different AGM.
