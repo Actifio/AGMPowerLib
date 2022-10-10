@@ -1775,10 +1775,10 @@ PS /tmp/agmpowercli>
 ```
 ## User Story: Appliance parameter management and slot limits
 
-Each backup appliance has a set of parameters that are used to do things like
+Each backup appliance has a set of parameters that are used to:
 
-* Enable and disable functions.  These parameters usually are either 0 (off) or 1 (on)
-* Set limits on things like concurrent running jobs using slots
+* Enable and disable functions.  These parameters are usually: 0 (off) or 1 (on)
+* Use slot limits to control concurrently running jobs
 * Set values such as timeouts
 
 ### Display and setting parameters
@@ -1804,7 +1804,7 @@ To display a specific parameter use syntax like this:
 ```
 Get-AGMLibApplianceParameter -param enablescheduler
 ```
-To set a parameter use syntax like this (you may need the **-applianceid** parameter):
+To set a parameter use syntax like this (you may need the **-applianceid** parameter).  In this example we disable the scheduler by setting it to 0:
 ```
 Get-AGMLibApplianceParameter -param enablescheduler
 Set-AGMLibApplianceParameter -param enablescheduler -value 0
@@ -1813,7 +1813,7 @@ Set-AGMLibApplianceParameter -param enablescheduler -value 0
 
 There is a system parameter that controls the maximum number of backup jobs that can be run against every host in the system. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
 
-You can display and change this setting using the following command (you may need the **-applianceid** parameter):
+You can display and change this setting using the following command (you may need the **-applianceid** parameter).  In this example we allow 2 backup jobs per host:
 ```
 Get-AGMLibApplianceParameter -param backupjobsperhost
 Set-AGMLibApplianceParameter -param backupjobsperhost -value 2
@@ -1826,7 +1826,7 @@ This value can be displayed with(you may need the **-applianceid** parameter):
 ```
 Get-AGMLibApplianceParameter -param maxconcurrentmountsperhost
 ```
-It can be changed with syntax like this (where in this example the value is changed to 2)
+It can be changed with syntax like this (you may need the **-applianceid** parameter).  In this example we allow two concurrent mount jobs per host:
 ```
 Set-AGMLibApplianceParameter -param maxconcurrentmountsperhost -value 2
 ```
@@ -1834,7 +1834,7 @@ Note this is a system wide parameter. There is no way to set this on a per host 
 
 ### Changing maximum mount and backup jobs per appliance using slots
 
-Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the Appliance running your jobs may hit a slot limit, resulting in excess jobs (over the slot limit) going into queued status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
+Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the Appliance running your jobs may hit a slot limit, resulting in the excess jobs over the slot limit going into *queued* status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
 
 To manage this we can adjust what are called slot values.  Note that while we are using AGMPowerLib commands to do this, you need to ensure your AGMPowerCLI is on version 0.0.0.35 or higher.   You can check your AGMPowerCLI version with this command:
 **Get-Command -module AGMPowerCLI**
