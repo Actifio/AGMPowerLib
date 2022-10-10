@@ -1779,7 +1779,7 @@ PS /tmp/agmpowercli>
 Each backup appliance has a set of parameters that are used to:
 
 * Enable and disable functions.  These parameters are usually: 0 (off) or 1 (on)
-* Use slot limits to control concurrently running jobs
+* Set slot limits to control concurrently running jobs
 * Set values such as timeouts
 
 ### Display and setting parameters
