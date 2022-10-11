@@ -1675,7 +1675,7 @@ We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 ```
-This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit), but will be started in series.
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit).  In PowerShell 5 they are started in series, however beginning with PowerShell 7 they are started in parallel in groups of 5 (which you can change with **-limit XX**)
    
 What is not supported right now:
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logtypes,[string]$startdate,[string]$enddate) 
+Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logtypes,[string]$startdate,[string]$enddate,[string]$hostid) 
 {
     <#
     .SYNOPSIS
@@ -24,6 +24,11 @@ Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logty
     .EXAMPLE
     Get-AGMLibApplianceLogs -applianceid 1234 -logtypes "patch,tomcat"
     Gets the patch and tomcat logs for appliance with ID 1234 for the last three days
+
+    .EXAMPLE
+    Get-AGMLibApplianceLogs -applianceid 1234 -logtypes "agent" -hostid "460500"
+    Gets the agent log from host ID 460500.   Learn hostid with Get-AGMHost
+    Note that if your using this with an Actifio AGM, use "connector" instead or "agent"
 
     .EXAMPLE
     Get-AGMLibApplianceLogs -logtypes "udppm,psrv" -startdate "2022-10-01" -enddate "2022-10-04"
@@ -111,7 +116,8 @@ Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logty
         tomcat
         udppm
         supportbundle
-        agent"
+        agent
+        connector"
         write-host ""
         $logtypes = Read-Host "Enter desired log types, comma separated"
     }
@@ -119,6 +125,19 @@ Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logty
     if (!($startdate)) { $startdate = "$((get-date).adddays(-3).ToString("yyyy-MM-dd"))" }
     if (!($enddate)) { $enddate = "$((get-date).ToString("yyyy-MM-dd"))" }
     $command = "?startdate=$startdate&enddate=$enddate&logtypes=$logtypes"
+    if ($hostid)
+    {
+        $hostgrab = Get-AGMHost -id $hostid
+        if (!($hostgrab.srcid))
+        {
+            Get-AGMErrorMessage -messagetoprint "Failed to find srcid from host with ID $hostid using command:   Get-AGMHost -id $hostid"
+            return
+        }
+        else {
+            $srcid = $hostgrab.srcid
+            $command = "?startdate=$startdate&enddate=$enddate&logtypes=$logtypes&hostid=$srcid"
+        }
+    }
     Try
     {
         $url = "https://$AGMIP/actifio/appliancedelegation/$applianceid/config/download/log" + "$command" 
