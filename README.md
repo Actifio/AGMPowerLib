@@ -1482,7 +1482,7 @@ We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCPInstanceMultiMount -instancelist recoverylist.csv
 ```
-This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  They will run in parallel but be started serially.
+This will load the contents of the file recoverylist.csv and use it to run multiple **New-AGMLibGCPInstance** jobs.  The jobs will run in parallel (up to the slot limit). In PowerShell 5 they are started in series, however beginning with PowerShell 7 they are started in parallel in groups of 5 (which you can change with -limit XX)
  
 If you specify both appid and appname, then the appname column will be ignored.  However having appname is mandatory as it gives you the name of the source application.
 
@@ -1675,8 +1675,8 @@ We can then run a command like this specifying our CSV file:
 ```
 New-AGMLibGCEConversionMulti -instancelist recoverylist.csv 
 ```
-This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   The jobs will run in parallel (up to the slot limit).  In PowerShell 5 they are started in series, however beginning with PowerShell 7 they are started in parallel in groups of 5 (which you can change with **-limit XX**)
-   
+This will load the contents of the file **recoverylist.csv** and use it to start multiple **New-AGMLibGCEConversion** jobs.   They will run in parallel but be started serially.
+
 What is not supported right now:
 
 1.  Specifying more than one internal IP per subnet.
