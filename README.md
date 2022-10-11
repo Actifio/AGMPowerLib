@@ -1115,7 +1115,7 @@ appid,appname,imagename,imageid,mountapplianceid,targethostid,targethostname,sql
 
 ### Create the CSV runfile
 
-Where the source file needs to exist before you start,  the runrile will be created the first time you run **New-AGMLibMSSQLMulti** by specifying the name of a new file that doesnt yet exist.
+Where the source file needs to exist before you start,  the runfile will be created the first time you run **New-AGMLibMSSQLMulti** by specifying the name of a new file that doesnt yet exist.
 The idea is that you will use this file throughout one DR or test event.   Once all databases are finalized then you can delete the runfile and start your next test using a a new file
 
 If you want to use the latest point in time image, leave imagename and imageid columns empty.   If you want the image rolled forward to the latest log point in time, just enter **latest** in the recoverypoint column.
