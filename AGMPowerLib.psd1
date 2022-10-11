@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.55'
+ModuleVersion = '0.0.0.56'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -89,6 +89,7 @@ RequiredModules = @('AGMPowerCLI')
 FunctionsToExport = @('Export-AGMLibSLT',
 'Get-AGMLibActiveImage',
 'Get-AGMLibApplicationID',
+'Get-AGMLibApplianceLogs',
 'Get-AGMLibApplianceParameter',
 'Get-AGMLibAppPolicies',
 'Get-AGMLibBackupSKUUsage',
