@@ -2,6 +2,9 @@
 
 Started Change log file as per release 0.0.0.54
 
+## AGMPowerLIB  (0.0.0.56)
+* Added Get-AGMLibApplianceLogs
+
 ## AGMPowerLIB  (0.0.0.55)
 * Added Get-AGMLibBackupSKU
 * Corrected issue with Set-AGMLibApplianceParameter asking for applianceid when it was supplied
