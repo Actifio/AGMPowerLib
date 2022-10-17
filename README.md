@@ -1811,7 +1811,7 @@ To set a parameter use syntax like this (you may need the **-applianceid** param
 Get-AGMLibApplianceParameter -param enablescheduler
 Set-AGMLibApplianceParameter -param enablescheduler -value 0
 ```
-### Changing maximum backup jobs per host (appliance level)
+### Changing maximum backup jobs per host (appliance level - affects all hosts)
 
 There is a system parameter that controls the maximum number of backup jobs that can be run against every host on that appliance. By default this value is 1, meaning a maximum of one backup job can be run per host. Scheduled jobs will queue behind the running job. Ondemand jobs with the -queue option will join the queue waiting for the running job to finish.
 
@@ -1820,7 +1820,7 @@ You can display and change this setting using the following command (you may nee
 Get-AGMLibApplianceParameter -param backupjobsperhost
 Set-AGMLibApplianceParameter -param backupjobsperhost -value 2
 ```
-### Changing maximum mount jobs per host (appliance level)
+### Changing maximum mount jobs per host (appliance level - affects all hosts)
 
 By default only one mount job can run on a host at one point in time.
 
@@ -1834,7 +1834,8 @@ Set-AGMLibApplianceParameter -param maxconcurrentmountsperhost -value 2
 ```
 Note this is a system wide parameter. There is no way to set this on a per host basis.
 
-### Changing maximum mount and backup jobs per appliance using slots
+### Changing maximum mount and backup jobs per appliance using slots (appliance level - affects all hosts)
+
 
 Each backup appliance uses a pacing mechanism known as *slots* to manage the number of jobs that can run simultaneously on that appliance.   This means that if has a policy has more applications attempting to start a backup job than there are available slots, that the appliance running your jobs may hit a slot limit, resulting in the excess jobs over the slot limit going into *queued* status, waiting for free slots, rather than starting immediately.    There is nothing inherantly wrong this, its simply a form of *pacing*.
 
@@ -1853,20 +1854,20 @@ id     name
 Now depending on which job type, we modify different slots.
 
 #### Slot limits for mount jobs
-We need to learn the current value of the params that relate to **ondemand** slots. This is because a mount job is an ondemand job, meaning each mount job uses one ondemand slot while it is running.  There are three relevant slots:
-* **reservedondemandslots** This is the guaranteed number of ondemand jobs that can run at any time.  
-* **maxondemandslots** This controls the maximum number of ondemand jobs that can run at any time.  
+We need to learn the current value of the params that relate to **dataaccess** slots. This is because a mount job is an data access job, meaning each mount job uses one data access slot while it is running.  There are three relevant slots:
+* **reserveddataaccessslots** This is the guaranteed number of data access jobs that can run at any time.  
+* **maxdataaccessslots** This controls the maximum number of data access jobs that can run at any time.  
 * **unreservedslots** Unreserved slots are used if all the reserved slots are in use but more jobs wants to run up to the maximum number for that type.
 
 We learn the values with:
 ```
-Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
-Get-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param reserveddataaccessslots
+Get-AGMLibApplianceParameter -applianceid 361153 -param maxdataaccessslots
 Get-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots
 ```
 Here is an example:
 ```
-PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots
+PS > Get-AGMLibApplianceParameter -applianceid 361153 -param reserveddataaccessslots
 
 reservedondemandslots
 ---------------------
@@ -1874,13 +1875,13 @@ reservedondemandslots
 ```
 We can set the slots to larger values like this:
 ```
-Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
-Set-AGMLibApplianceParameter -applianceid 361153 -param maxondemandslots -value 15
+Set-AGMLibApplianceParameter -applianceid 361153 -param reserveddataaccessslots -value 10
+Set-AGMLibApplianceParameter -applianceid 361153 -param maxdataaccessslots -value 15
 Set-AGMLibApplianceParameter -applianceid 361153 -param unreservedslots -value 15
 ```
 Here is an example:
 ```
-PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reservedondemandslots -value 10
+PS > Set-AGMLibApplianceParameter -applianceid 361153 -param reserveddataaccessslots -value 10
 
 reservedondemandslots changed from 3 to 10
 ```
