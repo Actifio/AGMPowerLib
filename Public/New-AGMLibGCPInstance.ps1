@@ -230,7 +230,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
-        if ($functionchoice -eq 3)
+        if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
         {
             $userselection = ""
             write-host ""
@@ -373,24 +373,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     {
         if (!($imagename))
         {
-            # prefered sourcce
-            write-host ""
-            $userselection = ""
-            Write-Host "Image selection"
-            Write-Host "1`: Use the most recent backup for lowest RPO (default)"
-            Write-Host "2`: Select a backup"
-            Write-Host ""
-            While ($true) 
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
             {
-                [int]$userselection = Read-Host "Please select from this list (1-2)"
-                if ($userselection -eq "") { $userselection = 1 }
-                if ($userselection -lt 1 -or $userselection -gt 2)
+                $userselection = 1
+            }
+            else 
+            {
+                # prefered sourcce
+                write-host ""
+                $userselection = ""
+                Write-Host "Image selection"
+                Write-Host "1`: Use the most recent backup for lowest RPO (default)"
+                Write-Host "2`: Select a backup"
+                Write-Host ""
+                While ($true) 
                 {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
-                } 
-                else
-                {
-                    break
+                    [int]$userselection = Read-Host "Please select from this list (1-2)"
+                    if ($userselection -eq "") { $userselection = 1 }
+                    if ($userselection -lt 1 -or $userselection -gt 2)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
+                    } 
+                    else
+                    {
+                        break
+                    }
                 }
             }
             if ($userselection -eq 1)
