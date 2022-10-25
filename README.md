@@ -1252,14 +1252,14 @@ PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-
 
 ## User Story: Auto adding GCE Instances and protecting them with tags
 
-If we are onboarding large numbers of GCE Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
+If we are onboarding large numbers of Compute Engine Instances or we want to auto protect new instances using automation, we can use a function called: **New-AGMLibGCEInstanceDiscovery**
 
 This function needs a CSV file as input to supply the following data to the function:
 
 * **credentialid**  This is used to determine which stored credential is used to connect to Google Cloud. Learn this by running Get-AGMLibCredentialSrcID
-* **applianceid**  This is used to determine which backup appliance will manage the new GCE Instance. Learn this by running Get-AGMLibCredentialSrcID
-* **project**  this is the project where we are going to look for new GCE Instances
-* **zone** this is the zone where we are going to look for new GCE Instances
+* **applianceid**  This is used to determine which backup appliance will manage the new Compute Engine Instance. Learn this by running Get-AGMLibCredentialSrcID
+* **project**  this is the project where we are going to look for new Compute Engine Instances
+* **zone** this is the zone where we are going to look for new Compute Engine Instances
 
 So if you have two projects, then ensure the credential you have added as a Cloud Credential has been added to both projects as a service account in IAM and then add a line in the CSV for each zone in that project where you want to search.  This does mean if you add new zones to your project you will need to update the CSV to search in those zones.
 An example CSV file is as follows:
@@ -1270,8 +1270,8 @@ credentialid,applianceid,project,zone
 6654,143112195179,avwarglab1,australia-southeast2-b
 ```
 When you run  **New-AGMLibGCEInstanceDiscovery** you have to specify one of these two choices:
-* **-nobackup**  This will add all new GCE Instances it finds without protecting them
-* **-backup**  This will add  all new GCE Instances it finds and for each Instance it will look for a label called **googlebackupplan** (or a label you specify with **-usertag**)  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
+* **-nobackup**  This will add all new Compute Engine Instances it finds without protecting them
+* **-backup**  This will add  all new Compute Engine Instances it finds and for each Instance it will look for a label called **googlebackupplan** (or a label you specify with **-usertag**)  If the value for that label is the name of an existing policy template, it will automatically protect that instance using that template
 
 An example run is as follows.  In the first zone, no new instances were found.  In the second zone, 3 were found and two protected.   A second run is made on each zone where more than 50 instances need to be processed (since we process 50 at a time).  The third zone had no new VMs.   
 ```
@@ -1332,7 +1332,7 @@ This function has to add them all to ensure each instance is examined.   If you 
 
 ## User Story: Creating GCE Instance from PD Snapshots
 
-In this user story we are going to use Persistent Disk Snapshots to create a new GCE Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
+In this user story we are going to use Persistent Disk Snapshots to create a new Compute Engine Instance.  This will be done by using the following command:   **New-AGMLibGCPInstance**
 
 This command requires several inputs so first we explore how to get them.
 
@@ -1399,13 +1399,13 @@ There are many parameters that need to be supplied:
 -machinetype     This is the GCP instance machine type such as:  e2-micro
 -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
 -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,drink:milk"
--retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance. Partial label retention is not supported.
+-retainlabel     Specify true and then any labels in the selected image will be retained in the new Compute Engine instance. Partial label retention is not supported.
 -nic0hostproject The project ID of the host project.  This is only needed if nic0network is not in URL format and if the target project is a service project
 -nic0network     The network name in URL format for nic0
 -nic0subnet      The subnet name in URL format for nic0
 -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
 -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
--poweronvm       By default the new GCE Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
+-poweronvm       By default the new Compute Engine Instance will be powered on.   If you want it to be created but left powered off, then specify: -poweronvm false
                  There is no need to specify: -poweronvm true 
 ```
 Optionally you can request a second NIC with these parameters:
@@ -1420,11 +1420,11 @@ Optionally you can also change the disk type of the disks in the new GCP VM:
 ```
 -disktype        Has to be one of:   pd-balanced, pd-extreme, pd-ssd, pd-standard   All disks in the instance will use this disk type
 ```
-You can specify any labels you want to supply for this new GCE VM with -label, for instance:
+You can specify any labels you want to supply for this new Compute Engine VM with -label, for instance:
 
  **-label "pet:cat,drink:milk"**
 
-However if you add **-retainlabel true** then any labels that were used the GCE Instance when the snapshot was created will be applied to the new VM.
+However if you add **-retainlabel true** then any labels that were used the Compute Engine Instance when the snapshot was created will be applied to the new VM.
 Lets imagine the original VM had a label:
 
 **bird:parrot** 
@@ -1454,7 +1454,7 @@ The expected configuration in this scenario is that the end-user wants to recove
 The goal is to offer a simplified way to manage failover or failback where:
 * The backup mechanism is persistent disk snapshots
 * The images are created by a Backup Appliance in an alternate zone
-* DR occurs by issuing commands to the DR Appliance to create new GCE Instances in the DR zone.
+* DR occurs by issuing commands to the DR Appliance to create new Compute Engine Instances in the DR zone.
 
 ### Demo video
 
@@ -1495,7 +1495,7 @@ What is not supported right now:
 
 #### Cleaning up after a multi-mount run
 
-After the multi-mount has finished you may have a large number of GCE Instances to clean up or retain.
+After the multi-mount has finished you may have a large number of Compute Engine Instances to clean up or retain.
 One simple strategy is to run this command:
 ```
 Remove-AGMLibMount -gceinstanceforget
@@ -1543,7 +1543,7 @@ PS >
 
 ## User Story: Creating GCE Instance from VMware Snapshots
 
-In this user story we are going to use VMware VM snapshots (or system state backups) to create a new GCE Instance.  This will be done by using the **New-AGMLibGCEConversion** command.
+In this user story we are going to use VMware VM snapshots (or system state backups) to create a new Compute EngineInstance.  This will be done by using the **New-AGMLibGCEConversion** command.
 
 This command requires several inputs so first we explore how to get them.
 
@@ -1608,8 +1608,8 @@ There are many parameters that may need to be supplied:
 -nic0subnet      The subnet name in URL format for nic0
 -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
 -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
--poweroffvm      By default the new GCE Instance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
--migratevm       By default the new GCE Instance will be dependent on the Actifio Appliance.  To migrate all data onto GCE PD, then specify this flag.
+-poweroffvm      By default the new Compute EngineInstance will be left powered on after creation.   If you want it to be created but then powered off, then specify this flag.
+-migratevm       By default the new Compute EngineInstance will be dependent on the Actifio Appliance.  To migrate all data onto Compute Engine Persistent Disk, then specify this flag.
 -preferedsource  Optional,  used if we want to force selection of images from a particular storage pool, either snapshot, streamsnap or onvault  (use lower case)
 ```
 Optionally you can request a second NIC using nic1:
@@ -1765,13 +1765,13 @@ imagestate       : Mounted
 ```
 We have two choices on how to handle this image:
 
-1. Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the GCE Instance on the GCP side.
+1. Unmount and delete. This command deletes the mounted image record on the Actifio GO side and the Compute Engine Instance on the GCP side.
 
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d
 PS /tmp/agmpowercli>
 ```
-2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the GCE Instance on the GCP side. In the AGM GUI this is called forgetting the image.   You can see the only difference with the choice above is the -p for preserve.
+2. Preserve the image on GCP side. This command deletes the mounted image record on Actifio GO side but leaves the Compute Engine Instance on the GCP side. In the AGM GUI this is called forgetting the image.   You can see the only difference with the choice above is the -p for preserve.
 ```
 PS /tmp/agmpowercli> Remove-AGMMount Image_0021181  -d -p
 PS /tmp/agmpowercli>
@@ -1941,7 +1941,7 @@ applianceid    : 406219
 apptype        : VMBackup
 hostname       : avw tiny
 appname        : AVW Tiny
-skudescription : Default Backup SKU for VM (GCE and VMware) and File system data
+skudescription : Default Backup SKU for VM (Compute Engine and VMware) and File system data
 skuusageGiB    : 4.051
 ```
 If the SKU description is not listed then please open an Issue in GitHub and share the listed apptype.
