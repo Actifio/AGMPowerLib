@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel,[switch]$diagmode) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0hostproject,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1hostproject,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2hostproject,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3hostproject,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel,[switch]$diagmode) 
 {
     <#
     .SYNOPSIS
@@ -56,6 +56,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance.   Partial label retention is not supported.
                      If a label is specified that already exists in the source VM, then the user specified key value will be prefered over the retained label from the source
     -nic0network     The network name in plain name or URL format for nic0
+    -nic0hostproject The project ID of the host project.  This is only needed if nic0network is not in URL format and if the target project is a service project
     -nic0subnet      The subnet name in plain name or URL format for nic0
     -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
     -nic0internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic0 will be auto assigned.   
@@ -65,6 +66,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
 
     Optionally you can request a second, third or fourth NIC using nic1, nic2 or nic3.   nic1 example shown:
     -nic1network     The network name in plain name or URL format for nic1
+    -nic1hostproject The project ID of the host project.  This is only needed if nic1network is not in URL format and if the target project is a service project
     -nic1subnet      The subnet name in plain name or URL format for nic1
     -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
     -nic1internalip  Only specify this is you want to set an internal IP.  Otherwise the IP for nic1 will be auto assigned.   
@@ -86,7 +88,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         return
     }
     $sessiontest = Get-AGMVersion
-    if ($sessiontest.errormessage)
+    if (($sessiontest.errormessage) -or (!($sessiontest)))
     {
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
@@ -228,7 +230,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             if ($userselectionapps -eq 3)  { Get-AGMErrorMessage -messagetoprint "There are no imported GCPInstance apps to list.  You may need to run Import-AGMLibPDSnapshot first" }
             return
         }
-        if ($functionchoice -eq 3)
+        if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
         {
             $userselection = ""
             write-host ""
@@ -241,6 +243,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             {
                 $retaininstancename = $true
             }
+        }
+        if ($functionchoice -eq 3)
+        {
             $userselection = ""
             write-host ""
             Write-Host "NIC0 Internal IP?"
@@ -253,6 +258,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $retainvmipaddress = $true
             }
 
+        }
+        if ($functionchoice -eq 3)
+        {
 
             foreach ($vm in $vmgrab)
             {
@@ -263,7 +271,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 }
                 else 
                 {
-                    if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                    if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "" }
                     if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
                     write-host "Found new VM to add to the csv: " $vm.appname
                     $importedvms += [pscustomobject]@{
@@ -371,24 +379,31 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     {
         if (!($imagename))
         {
-            # prefered sourcce
-            write-host ""
-            $userselection = ""
-            Write-Host "Image selection"
-            Write-Host "1`: Use the most recent backup for lowest RPO (default)"
-            Write-Host "2`: Select a backup"
-            Write-Host ""
-            While ($true) 
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
             {
-                [int]$userselection = Read-Host "Please select from this list (1-2)"
-                if ($userselection -eq "") { $userselection = 1 }
-                if ($userselection -lt 1 -or $userselection -gt 2)
+                $userselection = 1
+            }
+            else 
+            {
+                # prefered sourcce
+                write-host ""
+                $userselection = ""
+                Write-Host "Image selection"
+                Write-Host "1`: Use the most recent backup for lowest RPO (default)"
+                Write-Host "2`: Select a backup"
+                Write-Host ""
+                While ($true) 
                 {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
-                } 
-                else
-                {
-                    break
+                    [int]$userselection = Read-Host "Please select from this list (1-2)"
+                    if ($userselection -eq "") { $userselection = 1 }
+                    if ($userselection -lt 1 -or $userselection -gt 2)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
+                    } 
+                    else
+                    {
+                        break
+                    }
                 }
             }
             if ($userselection -eq 1)
@@ -769,20 +784,26 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         # learn name of new VM
         if (!($instancename))
         {
-            write-host ""
-            write-host ""
-            Write-Host "New Instance name"
-            Write-Host "1`: Use source instance name $appname (default)"
-            Write-Host "2`: Enter a different name"
-            Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if ($userselection -eq 2) 
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
             {
-            While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+                # write-host "Instance name setting was made earlier"
             }
             else {
-                $instancename = $appname
-                $retaininstancename = $true
+                write-host ""
+                write-host ""
+                Write-Host "New Instance name"
+                Write-Host "1`: Use source instance name $appname (default)"
+                Write-Host "2`: Enter a different name"
+                Write-Host ""
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq 2) 
+                {
+                While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+                }
+                else {
+                    $instancename = $appname
+                    $retaininstancename = $true
+            }
             }
         }
 
@@ -921,10 +942,14 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             {
                 $nic0network = $networklist.displayName
                 $selectednic0network = $networklist.displayName
+                $selectednic0networkname = $networklist.name
             } else {
                 $nic0network = $networklist.displayName[($netselection - 1)]
                 $selectednic0network = $networklist.displayName[($netselection - 1)]
-            }
+                $selectednic0networkname = $networklist.name[($netselection - 1)]
+                
+            }         
+            $nic0hostproject = $selectednic0networkname.Split("/")[6]   
         } 
         else
         {
@@ -1062,10 +1087,13 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 {
                     $nic1network = $networklist.displayName
                     $selectednic1network = $networklist.displayName
+                    $selectednic1networkname = $networklist.name
                 } else {
                     $nic1network = $networklist.displayName[($netselection - 1)]
                     $selectednic1network = $networklist.displayName[($netselection - 1)]
+                    $selectednic1networkname = $networklist.name[($netselection - 1)]
                 }
+                $nic1hostproject = $selectednic1networkname.Split("/")[6]
             }
             else 
             {
@@ -1211,7 +1239,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
  
              foreach ($vm in $vmgrab)
              {
-                 if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "<NEED DATA>" }
+                 if ($retaininstancename)  {   $instancename = $vm.appname } else { $instancename = "" }
                  if ($retainvmipaddress)  {   $nic0internalip = $vm.host.sources.ipaddress } 
                  if ($retainmachinetype)  {   $machinetype = $vm.host.sources.machinetype } 
                  #remove any bonus material 
@@ -1232,10 +1260,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                      poweronvm = $poweronvm
                      labels = $labels
                      disktype = $disktype
+                     nic0hostproject = $nic0hostproject
                      nic0network = $nic0network
                      nic0subnet = $nic0subnet
                      nic0externalip = $nic0externalip
                      nic0internalip = $nic0internalip
+                     nic1hostproject = $nic1hostproject
                      nic1network = $nic1network
                      nic1subnet = $nic1subnet
                      nic1externalip = $nic1externalip
@@ -1247,7 +1277,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
              Write-Host "Guided selection is complete"
              write-host ""
              write-host "Output was written to $outfile"
-             write-host "Validate and update this file and then use it with this command to create multiple GCE Instances:"
+             write-host "Validate and update this file, particularly instancename column, and then use it with this command to create multiple GCE Instances:"
              write-host "New-AGMLibGCPInstanceMultiMount -instancelist $outfile"     
              write-host""     
              return
@@ -1269,10 +1299,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         if ($poweronvm) { Write-Host -nonewline " -poweronvm $poweronvm" }
         if ($labels) { Write-Host -nonewline " -labels `"$labels`"" } 
         if ($nic0network) { Write-Host -nonewline " -nic0network `"$nic0network`""}
+        if ($nic0hostproject) { Write-Host -nonewline " -nic0hostproject `"$nic0hostproject`""}
         if ($nic0subnet) { Write-Host -nonewline " -nic0subnet `"$nic0subnet`""}
         if ($nic0externalip) { Write-Host -nonewline " -nic0externalip `"$nic0externalip`""}
         if ($nic0internalip) { Write-Host -nonewline " -nic0internalip `"$nic0internalip`""}
         if ($nic1network) { Write-Host -nonewline " -nic1network `"$nic1network`""}
+        if ($nic1hostproject) { Write-Host -nonewline " -nic1hostproject `"$nic1hostproject`""}
         if ($nic1subnet) { Write-Host -nonewline " -nic1subnet `"$nic1subnet`""}
         if ($nic1externalip) { Write-Host -nonewline " -nic1externalip `"$nic1externalip`""}
         if ($nic1internalip) { Write-Host -nonewline " -nic1internalip `"$nic1internalip`""}
@@ -1287,9 +1319,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip"
+            write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0hostproject,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1hostproject,nic1network,nic1subnet,nic1externalip,nic1internalip"
             write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
-            write-host -nonewline ",$poweronvm,$labels,$disktype,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
+            write-host -nonewline ",$poweronvm,$labels,$disktype,$nic0hostproject,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1hostproject,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
             write-host ""
             return
         }
@@ -1433,6 +1465,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Get-AGMErrorMessage -messagetoprint "Please specify a subnet for nic3 for the new instance with -nic3subnet"
         return
     }
+    if ($nic0hostproject) { $mount0project = $nic0hostproject } else { $mount0project = $projectname}
+    if ($nic1hostproject) { $mount1project = $nic1hostproject } else { $mount1project = $projectname}
+    if ($nic2hostproject) { $mount2project = $nic2hostproject } else { $mount2project = $projectname}
+    if ($nic3hostproject) { $mount3project = $nic3hostproject } else { $mount3project = $projectname}
+
     # convert non http network,  need like https://www.googleapis.com/compute/v1/projects/minimumchips/global/networks/minchipsvpc
     if ($nic0network)
     {
@@ -1440,11 +1477,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic0network.substring(0,5) -ne "https")
             {
-                $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+                $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$mount0project +"/global/networks/" +$nic0network
             }
         }
         else {
-            $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic0network
+            $nic0network = "https://www.googleapis.com/compute/v1/projects/" +$mount0project +"/global/networks/" +$nic0network
         }
     }
     if ($nic1network)
@@ -1453,11 +1490,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic1network.substring(0,5) -ne "https")
             {
-                $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+                $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$mount1project +"/global/networks/" +$nic1network
             }
         }
         else {
-            $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic1network
+            $nic1network = "https://www.googleapis.com/compute/v1/projects/" +$mount1project +"/global/networks/" +$nic1network
         }
     }
     if ($nic2network)
@@ -1466,11 +1503,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic2network.substring(0,5) -ne "https")
             {
-                $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+                $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$mount2project +"/global/networks/" +$nic2network
             }
         }
         else {
-            $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic2network
+            $nic2network = "https://www.googleapis.com/compute/v1/projects/" +$mount2project +"/global/networks/" +$nic2network
         }
     }
     if ($nic3network)
@@ -1479,11 +1516,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic3network.substring(0,5) -ne "https")
             {
-                $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+                $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$mount3project +"/global/networks/" +$nic3network
             }
         }
         else {
-            $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/global/networks/" +$nic3network
+            $nic3network = "https://www.googleapis.com/compute/v1/projects/" +$mount3project +"/global/networks/" +$nic3network
         }
     }
     # convert non http subnet,  need like  https://www.googleapis.com/compute/v1/projects/$projectname/regions/$regionname/subnetworks/$subnetname
@@ -1494,11 +1531,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic0subnet.substring(0,5) -ne "https")
             {
-                $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+                $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount0project +"/regions/" +$region +"/subnetworks/" +$nic0subnet
             }
         }
         else {
-            $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic0subnet
+            $nic0subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount0project +"/regions/" +$region +"/subnetworks/" +$nic0subnet
         }
     }
     if ($nic1subnet)
@@ -1507,11 +1544,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {    
             if ($nic1subnet.substring(0,5) -ne "https")
             {
-                $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+                $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount1project +"/regions/" +$region +"/subnetworks/" +$nic1subnet
             }
         }
         else {
-            $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic1subnet
+            $nic1subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount1project +"/regions/" +$region +"/subnetworks/" +$nic1subnet
         }
     }
     if ($nic2subnet)
@@ -1520,11 +1557,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic2subnet.substring(0,5) -ne "https")
             {
-                $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+                $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount2project +"/regions/" +$region +"/subnetworks/" +$nic2subnet
             }
         }
         else {
-            $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic2subnet
+            $nic2subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount2project +"/regions/" +$region +"/subnetworks/" +$nic2subnet
         }
     }
     if ($ni3subnet)
@@ -1533,11 +1570,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         {
             if ($nic3subnet.substring(0,5) -ne "https")
             {
-                $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+                $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount3project +"/regions/" +$region +"/subnetworks/" +$nic3subnet
             }
         }
         else {
-            $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$projectname +"/regions/" +$region +"/subnetworks/" +$nic3subnet
+            $nic3subnet = "https://www.googleapis.com/compute/v1/projects/" +$mount3project +"/regions/" +$region +"/subnetworks/" +$nic3subnet
         }
     }
 
@@ -1799,11 +1836,12 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     $json = $json + '"version":1,"formtype":"newmount","image":"' +$imagename +'","cloudtype":"GCP"}}'
 
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
-
     if ($newgcp.fields)
     {
-        $invalid = (($newgcp.fields | Select-Object children).children | Select-Object invalid).invalid
-        Get-AGMErrorMessage -messagetoprint $invalid
+
+        $invalidmessage = (($newgcp.fields | Select-Object children).children | Select-Object invalid).invalid
+        $errormessage = (($newgcp.fields | Select-Object children).children | Select-Object errorMessage).errorMessage
+        Get-AGMErrorMessage -messagetoprint "$errormessage $invalidmessage"
     }
     elseif ($newgcp.jobstatus) 
     {
