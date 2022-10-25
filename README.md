@@ -1340,7 +1340,7 @@ This command requires several inputs so first we explore how to get them.
 
 This video will help you understand how to use this command:   https://youtu.be/hh1seRvRZos
 
-### Creating a single GCE Instance from Snapshot
+### Creating a single Compute Engine Instance from Snapshot
 
 The best way to create the syntax for this command, at least for the first time you run it,  is to simply run the **New-AGMLibGCPInstance** command without any parameters.
 This starts what we called *guided mode* which will help you learn all the syntax to run the command.
@@ -1400,6 +1400,7 @@ There are many parameters that need to be supplied:
 -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
 -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,drink:milk"
 -retainlabel     Specify true and then any labels in the selected image will be retained in the new GCE instance. Partial label retention is not supported.
+-nic0hostproject The project ID of the host project.  This is only needed if nic0network is not in URL format and if the target project is a service project
 -nic0network     The network name in URL format for nic0
 -nic0subnet      The subnet name in URL format for nic0
 -nic0externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic0 is 'none'
@@ -1409,6 +1410,7 @@ There are many parameters that need to be supplied:
 ```
 Optionally you can request a second NIC with these parameters:
 ```
+-nic1hostproject The project ID of the host project.  This is only needed if nic0network is not in URL format and if the target project is a service project
 -nic1network     The network name in URL format for nic1
 -nic1subnet      The subnet name in URL format for nic1
 -nic1externalip  Only 'none' and 'auto' are valid choices.  If you don't use this variable then the default for nic1 is 'none'
@@ -1472,10 +1474,10 @@ We then run the **New-AGMLibGCPInstanceMultiMount** command specifying the CSV f
 
 Here is an example of the CSV file:
 ```
-appid,srcid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
-35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",default,default,,, ,,,,pd-balanced,TRUE,TRUE
-51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,default,default,auto,,actifioanz,australia,auto,10.186.0.200,,,,
-36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,default,default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
+appid,srcid,projectname,zone,instancename,machinetype,serviceaccount,networktags,labels,nic0hostproject,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1hostproject,nic1network,nic1subnet,nic1externalip,nic1internalip,disktype,poweronvm,retainlabel
+35590,28417,prodproject1,australia-southeast1-c,tinym,e2-micro,,"http-server,https-server","dog:cat,sheep:cow",,default,default,,, ,,,,pd-balanced,TRUE,TRUE
+51919,28417,prodproject1,australia-southeast1-c,mysqlsourcem,e2-medium,,,,default,default,auto,,,actifioanz,australia,auto,10.186.0.200,,,,
+36104,28417,prodproject1,australia-southeast1-c,mysqltargetm,e2-medium,,,,,default,default,,10.152.0.200,,,,,pd-ssd,TRUE,TRUE
 ```
 The main thing is the headers in the CSV file needs to be exactly as shown, as they are the parameters we pass to the command (although the field order is not important).
 We can then run a command like this specifying our CSV file:
