@@ -243,7 +243,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             {
                 $retaininstancename = $true
             }
-        
+        }
+        if ($functionchoice -eq 3)
+        {
             $userselection = ""
             write-host ""
             Write-Host "NIC0 Internal IP?"
