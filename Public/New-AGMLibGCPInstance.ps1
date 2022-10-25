@@ -782,20 +782,26 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         # learn name of new VM
         if (!($instancename))
         {
-            write-host ""
-            write-host ""
-            Write-Host "New Instance name"
-            Write-Host "1`: Use source instance name $appname (default)"
-            Write-Host "2`: Enter a different name"
-            Write-Host ""
-            [int]$userselection = Read-Host "Please select from this list (1-2)"
-            if ($userselection -eq 2) 
+            if (($functionchoice -eq 2) -or ($functionchoice -eq 3))
             {
-            While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+                # write-host "Instance name setting was made earlier"
             }
             else {
-                $instancename = $appname
-                $retaininstancename = $true
+                write-host ""
+                write-host ""
+                Write-Host "New Instance name"
+                Write-Host "1`: Use source instance name $appname (default)"
+                Write-Host "2`: Enter a different name"
+                Write-Host ""
+                [int]$userselection = Read-Host "Please select from this list (1-2)"
+                if ($userselection -eq 2) 
+                {
+                While ($true)  { if ($instancename -eq "") { [string]$instancename= Read-Host "Name of New VM you want to create using an image of $appname" } else { break } }
+                }
+                else {
+                    $instancename = $appname
+                    $retaininstancename = $true
+            }
             }
         }
 
