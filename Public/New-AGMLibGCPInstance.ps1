@@ -243,6 +243,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             {
                 $retaininstancename = $true
             }
+        
             $userselection = ""
             write-host ""
             Write-Host "NIC0 Internal IP?"
@@ -255,6 +256,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $retainvmipaddress = $true
             }
 
+        }
+        if ($functionchoice -eq 3)
+        {
 
             foreach ($vm in $vmgrab)
             {
