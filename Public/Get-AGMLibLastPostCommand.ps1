@@ -49,7 +49,7 @@ Function Get-AGMLibLastPostCommand([string]$username,[int]$limit,[switch][alias(
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

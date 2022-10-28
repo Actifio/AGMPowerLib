@@ -4,6 +4,7 @@ Started Change log file as per release 0.0.0.54
 
 ## AGMPowerLIB  (0.0.0.59)
 * Get-AGMLibPolicies - added options 
+* If version check fails, print actual error.  This should surface expired JWT 
 
 ## AGMPowerLIB  (0.0.0.57)
 * New-AGMLibGCPInstance 

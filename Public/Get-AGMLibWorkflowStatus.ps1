@@ -50,7 +50,7 @@ Function Get-AGMLibWorkflowStatus ([string]$workflowid,[string]$appid,[switch][a
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
     

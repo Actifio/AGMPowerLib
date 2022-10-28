@@ -46,7 +46,7 @@ Function Get-AGMLibLatestImage([string]$id,[string]$appid,[string]$jobclass)
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
     

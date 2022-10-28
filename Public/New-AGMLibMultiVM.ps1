@@ -68,7 +68,7 @@ Function New-AGMLibMultiVM ([array]$imagelist,$vcenterid,[array]$esxhostlist,[ar
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

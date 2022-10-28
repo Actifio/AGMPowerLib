@@ -82,7 +82,7 @@ Function New-AGMLibMSSQLMulti ([string]$sourcefile,[string]$runfile,[switch]$tex
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
     

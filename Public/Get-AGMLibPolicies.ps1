@@ -43,7 +43,7 @@ Function Get-AGMLibPolicies([string]$appid,[string]$sltid,[switch]$advancedpolic
     $sessiontest = Get-AGMVersion
     if (($sessiontest.errormessage) -or (!($sessiontest)))
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

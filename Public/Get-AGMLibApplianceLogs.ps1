@@ -47,7 +47,7 @@ Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logty
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
     if ($id)
