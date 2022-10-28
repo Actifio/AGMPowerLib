@@ -24,6 +24,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
 **[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
+**[User Story: Displaying Backup Plan Policies}](#user-story-displaying-backup-plan-policies)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
@@ -1946,6 +1947,24 @@ skuusageGiB    : 4.051
 ```
 If the SKU description is not listed then please open an Issue in GitHub and share the listed apptype.
 
+## User Story: Displaying Backup Plan Policies
+
+If you wish to display general information about the policies in your backup plan templates then use this command:
+```
+Get-AGMLibPolicies
+```
+If you wish to know which policies are using enforced retention use this command:
+```
+Get-AGMLibPolicies -enforcedretention
+```
+If you wish to know where your compute engine instance snapshots are going use this command:
+```
+Get-AGMLibPolicies -snapshotlocation
+```
+If you wish to display all advanced policy options use this command:
+```
+Get-AGMLibPolicies -advancedpolicysettings
+```
 ## User Story: Importing and Exporting AGM Policy Templates
 
 In this user story we are going to export our Policy Templates (also called Service Level Templates or SLTs) from AGM in case we want to import them into a different AGM.

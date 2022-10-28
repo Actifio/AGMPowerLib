@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function Get-AGMLibPolicies([string]$appid,[string]$sltid) 
+Function Get-AGMLibPolicies([string]$appid,[string]$sltid,[switch]$advancedpolicysettings,[switch]$snapshotlocation,[switch]$enforcedretention) 
 {
     <#
     .SYNOPSIS
@@ -41,12 +41,11 @@ Function Get-AGMLibPolicies([string]$appid,[string]$sltid)
         return
     }
     $sessiontest = Get-AGMVersion
-    if ($sessiontest.errormessage)
+    if (($sessiontest.errormessage) -or (!($sessiontest)))
     {
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
-
 
     if ($sltid)
     {
@@ -118,8 +117,55 @@ Function Get-AGMLibPolicies([string]$appid,[string]$sltid)
                 $et = [timespan]::fromseconds($policy.endtime)
                 $policy.endtime = $et.ToString("hh\:mm")
             }
+            if (($advancedpolicysettings) -or ($enforcedretention) -or ($snapshotlocationvalue))
+            {
+                $tablegrab = Get-AGMSLTpolicy -id $slt.id -policyid $policy.id -settableoption
+                if (($tablegrab.name) -and ($enforcedretention))
+                {  
+                    $enforcedretentionvalue = ($tablegrab | where-object { $_.name -eq "immutabilitydays" }).value
+                    if (!($enforcedretentionvalue)) { $enforcedretentionvalue = "0"}
+                    $policy | Add-Member -NotePropertyName enforcedretentiondays -NotePropertyValue $enforcedretentionvalue
+                }
+               if (($tablegrab.name) -and ($snapshotlocation))
+                {  
+                    $snapshotlocationvalue = ($tablegrab | where-object { $_.name -eq "snapshotlocationvalue" }).value
+                    if (!($snapshotlocationvalue)) { $snapshotlocationvalue = "Based on the source disk location"}
+                    if ($operation -eq "snapshot")
+                    {
+                        $policy | Add-Member -NotePropertyName snapshotlocation -NotePropertyValue $snapshotlocationvalue
+                    }
+                }
+                if (($tablegrab.name) -and ($advancedpolicysettings))
+                {
+                    foreach ($tableentry in $tablegrab)
+                    {
+                        $policy | Add-Member -NotePropertyName $tableentry.name -NotePropertyValue $tableentry.value
+                    }
+                }
+            }
             $policy | Add-Member -NotePropertyName appcount -NotePropertyValue $appcount
+    
         }
-        $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority
+        if (($enforcedretention) -and ($snapshotlocation))
+        {
+            $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority,snapshotlocation,enforcedretentiondays
+        }
+        elseif ($enforcedretention) 
+        {
+            $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority,enforcedretentiondays
+        }
+        elseif ($snapshotlocation)
+        {
+            $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority,snapshotlocation
+        }
+        elseif ($advancedpolicysettings)
+        {
+            $policygrab | Select-Object -ExcludeProperty "@type",id,href,exclusioninterval,exclusiontype,op,verification,retentionm,repeatinterval,reptype,rpom,scheduletype,slection,slt,remoteretention,iscontinuous,selection,sourcevault,targetvault
+        } 
+        else
+        {
+            $policygrab | select-object sltid,sltname,policyid,name,operation,retention,starttime,endtime,rpo,appcount,priority
+        }
+        
     }  
 }
