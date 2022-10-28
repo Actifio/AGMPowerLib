@@ -24,7 +24,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
 **[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
-**[User Story: Displaying Backup Plan Policies}](#user-story-displaying-backup-plan-policies)**<br>
+**[User Story: Displaying Backup Plan Policies](#user-story-displaying-backup-plan-policies)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
