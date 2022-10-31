@@ -123,7 +123,7 @@ Function Get-AGMLibPolicies([string]$appid,[string]$sltid,[switch]$advancedpolic
                 if (($tablegrab.name) -and ($enforcedretention))
                 {  
                     $enforcedretentionvalue = ($tablegrab | where-object { $_.name -eq "immutabilitydays" }).value
-                    if (!($enforcedretentionvalue)) { $enforcedretentionvalue = "0"}
+                    if ($enforcedretentionvalue -eq "") { $enforcedretentionvalue = "0"}
                     $policy | Add-Member -NotePropertyName enforcedretentiondays -NotePropertyValue $enforcedretentionvalue
                 }
                if (($tablegrab.name) -and ($snapshotlocation))
