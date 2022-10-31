@@ -78,7 +78,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

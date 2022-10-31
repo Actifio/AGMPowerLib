@@ -84,7 +84,7 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

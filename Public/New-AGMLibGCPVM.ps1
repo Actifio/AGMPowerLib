@@ -108,7 +108,7 @@ Function New-AGMLibGCPVM ([string]$appid,[string]$mountapplianceid,
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

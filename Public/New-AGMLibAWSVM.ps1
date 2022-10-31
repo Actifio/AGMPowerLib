@@ -110,7 +110,7 @@ Function New-AGMLibAWSVM ([string]$appid,[string]$appname,[string]$mountapplianc
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 

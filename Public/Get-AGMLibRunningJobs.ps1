@@ -47,7 +47,7 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[string]$jobclass,[i
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
 
