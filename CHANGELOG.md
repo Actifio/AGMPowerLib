@@ -1,6 +1,8 @@
 # Change log
 
 Started Change log file as per release 0.0.0.54
+## AGMPowerLIB  (0.0.0.59)
+* 
 
 ## AGMPowerLIB  (0.0.0.58)
 * Get-AGMLibPolicies - added options 
