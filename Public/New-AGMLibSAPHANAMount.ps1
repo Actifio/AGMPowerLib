@@ -358,7 +358,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
                  
                  if ($imagelist1.id.count -eq 1)
                  {   
-                    $imagegrab = Get-AGMImage -id $($imagelist).id
+                    $imagegrab = Get-AGMImage -id $($imagelist1).id
                     $imagename = $imagegrab.backupname                
                     $consistencydate = $imagegrab.consistencydate
                     $endpit = $imagegrab.endpit
@@ -468,7 +468,7 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     
         if ( (!($targethostname)) -and (!($targethostid)))
         {
-            $hostgrab = Get-AGMHost -filtervalue "ostype_special=LINUX&sourcecluster=$mountapplianceid" | sort-object name
+            $hostgrab = Get-AGMHost -filtervalue "sourcecluster=$mountapplianceid" | sort-object name
             if ($hostgrab -eq "" )
             {
                 Get-AGMErrorMessage -messagetoprint "Cannot find any Linux hosts"
