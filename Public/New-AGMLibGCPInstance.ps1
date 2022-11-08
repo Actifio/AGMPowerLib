@@ -521,7 +521,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         }
         else
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+            if ($diagmode) { $recoverygrab }
+            if ($recoverygrab.errormessage) 
+            {
+                #Get-AGMErrorMessage -messagetoprint $recoverygrab.errormessage
+                $recoverygrab.errormessage
+            }
+            else {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+            }
             return
         }
 

@@ -5,6 +5,7 @@ Started Change log file as per release 0.0.0.54
 * Added Restore-AGMLibSAPHANA
 * Minor fixes to Mount-AGMLibSAPHANA including CSV output and add  New-AGMLibSAPHANAMultiMount
 * Minor fixes to New-AGMLibGCPInstance 
+* New-AGMLibImage will now look for DirectOnvault job
 
 ## AGMPowerLIB  (0.0.0.58)
 * Get-AGMLibPolicies - added options 

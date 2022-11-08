@@ -6,27 +6,28 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[Prerequisites](#prerequisites)**<br>
 **[Install or upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
-**[User Story: Database Mounts](#user-story-database-mounts)**<br>
-**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
-**[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
-**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
-**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
-**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
-**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
-**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
-**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
-**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
-**[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
-**[User Story: SAP HANA Database Multi Mount](#user-story-sap-hana-database-multi-mount)**<br>
+**[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
 **[User Story: Auto adding GCE Instances and protecting them with tags](#user-story-auto-adding-gce-instances-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
-**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
-**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
-**[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
-**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
+**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
+**[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: Displaying Backup Plan Policies](#user-story-displaying-backup-plan-policies)**<br>
+**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
+**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
+**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
+**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
+**[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
+**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
+**[User Story: Running on-demand jobs based on application ID](#user-story-running-on-demand-jobs-based-on-application-id)**<br>
+**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
+**[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: SAP HANA Database Multi Mount](#user-story-sap-hana-database-multi-mount)**<br>
+**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
+**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
 
@@ -661,6 +662,36 @@ During guided mode you will notice that for functions that expect authentication
 * New-AGMLibSystemStateToVM - This uses stored credentials on the appliance.
 * New-AGMLibVM - This uses stored credentials on the appliance.
 
+
+
+## User Story: Running on-demand jobs based on application ID
+
+When we manually a new backup image, this is called running an on-demand job.   We can do this with the ```New-AGMLibImage``` command.
+Learn the application ID of the application in question with:  ```Get-AGMApplication```  You may want to use filters. 
+This command is a good example of a useful filter:
+```
+Get-AGMApplication -filtervalue managed=true -sort appname:asc | select id,appname,apptype
+```
+
+In this example we know the application ID so we request a new image.   A snapshot job will automatically run.   If a snapshot policy cannot be found, a direct to onvault job will be attempted.
+```
+$appid = 425466
+New-AGMLibImage $appid
+```
+We may want to start a particular policy so we can use the app ID to learn relevant policies:
+```
+$appid = 425466
+Get-AGMLibPolicies -appid $appid
+```
+We then use the policy ID we learned.  We also added a label:
+```
+$policyid = 425080
+New-AGMLibImage -appid $appid -policyid $policyid -label "Dev image after upgrade"
+```
+If the application is a database we can use ```-backuptype log``` or ```-backuptype db``` like this:
+```
+New-AGMLibImage  -appid 2133445 -backuptype log
+```
 
 ## User Story: Running on-demand jobs based on policy ID
 
