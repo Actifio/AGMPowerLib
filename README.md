@@ -1260,13 +1260,14 @@ You can run ```New-AGMLibSAPHANAMount``` in guided mode and take the option to g
 appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid
 835132,"act","144091747698","Image_0160795","749871","act","actbackup","/mount","label1","2022-11-07 17:00:39","nfs","false","108758","706611"
 ```
-The following fields are mandatory
+The following fields are mandatory:
 * ```appname```   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
 * ```mountapplianceid```  this is the id of the appliance that will run the mount.
 * ```targethostid``` this is the ID of the host we are mounting to.   You can learn this with ```Get-AGMHost```
 * ```dbsid```  this is the new DB SID we are creating 
 * ```userstorekey```  this is the stored credential the agent will use to authorize its host side activities
 * ```mountpointperimage```  this is the mount point where the mount will be placed
+
 The following fields are optional:
 * ```appid```  If the appnames are all unique, we don't need appid.  If you are working on an imported image, the source appid may be useless
 * ```label```  the label is handy as it lets us leave comments about this mount, but its not mandatory
