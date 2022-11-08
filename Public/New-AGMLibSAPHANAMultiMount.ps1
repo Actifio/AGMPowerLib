@@ -96,7 +96,7 @@ Function New-AGMLibSAPHANAMultiMount ([string]$instancelist,[switch]$textoutput,
         if ($AGMToken)
         {
             $recoverylist | ForEach-Object -parallel {
-                $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage +'"'
+                $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage 
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
                 if ($_.imagename) { $mountcommand = $mountcommand + ' -imagename "' +$_.imagename +'"' } 
@@ -116,7 +116,7 @@ Function New-AGMLibSAPHANAMultiMount ([string]$instancelist,[switch]$textoutput,
         else 
         {
             $recoverylist | ForEach-Object -parallel {
-                $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage +'"'
+                $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
                 if ($_.imagename) { $mountcommand = $mountcommand + ' -imagename "' +$_.imagename +'"' } 
@@ -139,7 +139,7 @@ Function New-AGMLibSAPHANAMultiMount ([string]$instancelist,[switch]$textoutput,
         foreach ($app in $recoverylist)
         {
         
-            $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage +'"'
+            $mountcommand = 'New-AGMLibSAPHANAMount -mountapplianceid ' +$_.mountapplianceid +' -targethostid ' +$_.targethostid +' -dbsid ' +$_.dbsid +' -userstorekey ' +$_.userstorekey +' -mountpointperimage ' +$_.mountpointperimage
             if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
             if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
             if ($_.imagename) { $mountcommand = $mountcommand + ' -imagename "' +$_.imagename +'"' } 
