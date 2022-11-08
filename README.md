@@ -1255,14 +1255,14 @@ If you run ```New-AGMLibSAPHANAMount``` in guided mode, you can take the option 
 
 ## User Story: SAP HANA Database Multi Mount
 
-You can run ```New-AGMLibSAPHANAMount``` in guided mode and take the option to generate a CSV file.     You can then edit it to mount multiple new SAP HANA instances at once.   As sample file would look like this:
+You can run ```New-AGMLibSAPHANAMount``` in guided mode and take the option to generate a CSV file.     You can then edit it to mount multiple new SAP HANA instances at once.   A sample file would look like this:
 ```
 appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid
 835132,"act","144091747698","Image_0160795","749871","act","actbackup","/mount","label1","2022-11-07 17:00:39","nfs","false","108758","706611"
 ```
 The following fields are mandatory
-* appname:   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
-* mountapplianceid:   this is the id of the appliance that will run the mount.
+* ```appname```   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
+* ```mountapplianceid```  this is the id of the appliance that will run the mount.
 * targethostid:  this is the ID of the host we are mounting to.   You can learn this with ```Get-AGMHost```
 * dbsid:  this is the new DB SID we are creating 
 * userstorekey:  this is the stored credential the agent will use to authorize its host side activities
