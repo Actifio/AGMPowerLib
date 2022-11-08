@@ -1262,20 +1262,20 @@ appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpo
 ```
 The following fields are mandatory:
 * ```appname```   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
-* ```mountapplianceid```  this is the id of the appliance that will run the mount.
+* ```mountapplianceid```  this is the id of the appliance that will run the mount.  You can learn this with ```Get-AGMAppliance```
 * ```targethostid``` this is the ID of the host we are mounting to.   You can learn this with ```Get-AGMHost```
 * ```dbsid```  this is the new DB SID we are creating 
 * ```userstorekey```  this is the stored credential the agent will use to authorize its host side activities
 * ```mountpointperimage```  this is the mount point where the mount will be placed
 
 The following fields are optional:
-* ```appid```  If the appnames are all unique, we don't need appid.  If you are working on an imported image, the source appid may be useless
-* ```label```  the label is handy as it lets us leave comments about this mount, but its not mandatory
+* ```appid```  If the appnames are all unique, we don't need appid.  If you are working on an imported image, the source appid may not be useful.  Learn this with ```Get-AGMApplication```
+* ```label```  the label is handy as it lets us leave comments about this mount, but it is not mandatory
 * ```recoverypoint```  the recoverypoint is only useful if there are logs to roll forward.  You don't have to specify it.   For a mount we don't roll forward logs
-* ```mountmode``` VMware only
-* ```mapdiskstoallesxhosts```  VMware only
-* ```sltid```  template ID if re-protection is requested
-* ```slpid```  profile ID if re-protection is requested
+* ```mountmode``` VMware only (are we using NFS, vRDM or pRDM)
+* ```mapdiskstoallesxhosts```  VMware only (are we mapping to all ESXi hosts)
+* ```sltid```  template ID if re-protection is requested. Learn this with ```Get-AGMSLT```
+* ```slpid```  profile ID if re-protection is requested. Learn this with ```Get-AGMSLP```
 
 ## User Story: Auto adding GCE Instances and protecting them with tags
 
