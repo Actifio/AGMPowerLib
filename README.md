@@ -666,13 +666,12 @@ During guided mode you will notice that for functions that expect authentication
 
 ## User Story: Running on-demand jobs based on application ID
 
-When we manually a new backup image, this is called running an on-demand job.   We can do this with the ```New-AGMLibImage``` command.
-Learn the application ID of the application in question with:  ```Get-AGMApplication```  You may want to use filters. 
-This command is a good example of a useful filter:
+When we want to manually create a new backup image, this is called running an on-demand job.   We can do this with the ```New-AGMLibImage``` command.
+You can learn the application ID of the application in question with:  ```Get-AGMApplication```  You may want to use filters. 
+This is a good example of a filter:
 ```
 Get-AGMApplication -filtervalue managed=true -sort appname:asc | select id,appname,apptype
 ```
-
 In this example we know the application ID so we request a new image.   A snapshot job will automatically run.   If a snapshot policy cannot be found, a direct to onvault job will be attempted.
 ```
 $appid = 425466
