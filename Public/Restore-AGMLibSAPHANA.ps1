@@ -602,8 +602,10 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
             $imageid = $imagegrab1.id
             $imagename = $imagegrab1.backupname
             $targethostid = $imagegrab1.host.id
+            
             $dbsid = ($imagegrab1.provisioningoptions | where-object {($_.key -eq "dbsid")}).value
             if (!($userstorekey)) { $userstorekey = ($imagegrab1.provisioningoptions | where-object {($_.key -eq "DBUSER")}).value }
+            if ($imagegrab1.endpit) { $recoverypoint = $imagegrab1.endpit }
         } 
         else 
         {

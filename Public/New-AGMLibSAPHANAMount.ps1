@@ -704,13 +704,21 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
-        Write-Host "3`: Exit without running the command"
+        Write-Host "3`: Show the CSV to run this command with New-AGMLibSAPHANAMultiMount"
+        Write-Host "4`: Exit without running the command"
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
             $jsonprint = "yes"
         }
         if ($userchoice -eq 3)
+        {
+            write-host "appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid"
+            write-host -nonewline "$appid,`"$appname`",`"$mountapplianceid`",`"$imagename`",`"$targethostid`",`"$dbsid`",`"$userstorekey`",`"$mountpointperimage`",`"$label`",`"$recoverypoint`",`"$mountmode`",`"$mapdiskstoallesxhosts`",`"$sltid`",`"$slpid`""
+            write-host ""
+            return
+        }
+        if ($userchoice -eq 4)
         {
             return
         }
