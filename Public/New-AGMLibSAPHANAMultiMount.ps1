@@ -25,7 +25,9 @@ Function New-AGMLibSAPHANAMultiMount ([string]$instancelist,[switch]$textoutput,
     This will load the contents of the file recoverylist.csv and use it to run multiple New-AGMLibSAPHANAMount jobs
 
     .DESCRIPTION
-    This routine needs a well formatted CSV file.    Here is an example of such a file:
+    This routine needs a well formatted CSV file.   
+    You can create a sample file by running New-AGMLibSAPHANAMount and using the option at the end to generate CSV output.
+    Here is an example of such a file:
 
     appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid
     835132,"act","144091747698","Image_0160795","749871","act","actbackup","/mount","label1","2022-11-07 17:00:39","nfs","false","108758","706611"

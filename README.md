@@ -17,6 +17,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
 **[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
 **[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: SAP HANA Database Multi Mount](#user-story-sap-hana-database-multi-mount)**<br>
 **[User Story: Auto adding GCE Instances and protecting them with tags](#user-story-auto-adding-gce-instances-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
 **[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
@@ -1239,7 +1240,7 @@ currentimagestate  : ImageNotFound
 
 In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where 'act' is the name of the HANA database.
 ```
-PS /Users/jeffoconnor> Get-AGMLibApplicationID act |ft
+PS /> Get-AGMLibApplicationID act |ft
 
 id     friendlytype hostname   hostid appname appliancename applianceip applianceid  appliancetype managed
 --     ------------ --------   ------ ------- ------------- ----------- -----------  ------------- -------
@@ -1248,8 +1249,34 @@ id     friendlytype hostname   hostid appname appliancename applianceip applianc
 So now we know the id of the Database inside our HANA instance, we just need to specify the HANA user store key (userstorekey) that has rights to recover the database on the target host (targethostname), a new database SID (dbsid) to use, and lastly to specify a target host filesystem mount point (mountpointperimage) for the HANA instance to run from. We then run our mount command like this:
 
 ```
-PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
+PS /> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
+If you run ```New-AGMLibSAPHANAMount``` in guided mode, you can take the option to generate a CSV file.   This can be used to run New-AGMLibSAPHANAMultiMount
+
+## User Story: SAP HANA Database Multi Mount
+
+You can run ```New-AGMLibSAPHANAMount``` in guided mode and take the option to generate a CSV file.     You can then edit it to mount multiple new SAP HANA instances at once.   As sample file would look like this:
+```
+appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid
+835132,"act","144091747698","Image_0160795","749871","act","actbackup","/mount","label1","2022-11-07 17:00:39","nfs","false","108758","706611"
+```
+The following fields are mandatory
+* appname:   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
+* mountapplianceid:   this is the id of the appliance that will run the mount.
+* targethostid:  this is the ID of the host we are mounting to.   You can learn this with ```Get-AGMHost```
+* dbsid:  this is the new DB SID we are creating 
+* userstorekey:  this is the stored credential the agent will use to authorize its host side activities
+* mountpointperimage:  this is the mount point where the mount will be placed
+The following fields are optional:
+* appid:  If the appnames are all unique, we don't need appid.  If you are working on an imported image, the source appid may be useless
+* label:  the label is handy as it lets us leave comments about this mount, but its not mandatory
+* recoverypoint:  the recoverypoint is only useful if there are logs to roll forward.  You don't have to specify it.   For a mount we don't roll forward logs
+* mountmode: VMware only
+* mapdiskstoallesxhosts:  VMware only
+* sltid:  template ID if re-protection is requested
+* slpid:  profile ID if re-protection is requested
+
+
 
 ## User Story: Auto adding GCE Instances and protecting them with tags
 
