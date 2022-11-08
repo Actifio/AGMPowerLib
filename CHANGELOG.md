@@ -2,8 +2,9 @@
 
 Started Change log file as per release 0.0.0.54
 ## AGMPowerLIB  (0.0.0.59)
-* Added Restore-AGMLibSAPHANA
-* Minor fixes to Mount-AGMLibSAPHANA including CSV output and add  New-AGMLibSAPHANAMultiMount
+* Added Restore-AGMLibSAPHANA to run restores on SAP HANA
+* New-AGMLibSAPHANAMultiMount to do multi mount for SAP HANA
+* Added CSV output to Mount-AGMLibSAPHANA to feed New-AGMLibSAPHANAMultiMount
 * Minor fixes to New-AGMLibGCPInstance 
 * New-AGMLibImage will now look for DirectOnvault job
 
