@@ -744,8 +744,6 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         Write-host "Post-AGMAPIData -endpoint /backup/$imageid/restore -body `'$compressedjson`'"
         return
     }
-    $json
-    return
 
     if ($preflight)
     {
