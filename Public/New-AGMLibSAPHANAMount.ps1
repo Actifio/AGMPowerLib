@@ -849,31 +849,31 @@ Function New-AGMLibSAPHANAMount ([string]$appid,[string]$targethostid,[string]$m
     $provisioningoptions = @()
     if ($consistencygroupname)
     {
-        $provisioningoptions = $provisioningoptions +@{
+        $provisioningoptions = $provisioningoptions +[ordered]@{
                 name = 'ConsistencyGroupName'
                 value = $consistencygroupname
             }
     }
-    $provisioningoptions = $provisioningoptions +@{
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'dbsid'
         value = $dbsid
     }
-    $provisioningoptions = $provisioningoptions +@{
+    $provisioningoptions = $provisioningoptions +[ordered]@{
         name = 'DBUSER'
         value = $userstorekey
     }
     
     if ($sltid)
     {
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'reprotect'
             value = "true"
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slt'
             value = $sltid
         }
-        $provisioningoptions= $provisioningoptions +@{
+        $provisioningoptions= $provisioningoptions +[ordered]@{
             name = 'slp'
             value = $slpid
         }
