@@ -724,9 +724,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         }
         
         $body = $body + [ordered]@{
-            restoreoptions = $restoreoptions;
-            restoreobjectmappings = $restoreobjectmappings;
-            systemstateoptions = $systemstateoptions;
+            restoreoptions = $restoreoptions
         }
     }
     if ($recoverytime)
