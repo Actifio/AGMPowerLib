@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$dbsid,[string]$userstorekey,[string]$jsonprint,[switch][alias("g")]$guided,[switch]$preflight,[switch]$replacesource) 
+Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mountapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$recoverypoint,[string]$label,[string]$dbsid,[string]$userstorekey,[string]$jsonprint,[switch][alias("g")]$guided,[switch]$preflight,[switch]$replacesource,[switch]$copyhdbstorekey) 
 {
     <#
     .SYNOPSIS
@@ -451,24 +451,30 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         if ( (!($targethostname)) -and (!($targethostid)))
         {
             # target host
-            write-host ""
-            $userselection = ""
-            Write-Host "Target host selection"
-            Write-Host "1`: Restore back to the source host (default)"
-            Write-Host "2`: Restore to a new target"
-            Write-Host ""
-            While ($true) 
+            if ($AGMToken)
             {
-                [int]$targetselection = Read-Host "Please select from this list (1-2)"
-                if ($targetselection -eq "") { $targetselection = 1 }
-                if ($targetselection -lt 1 -or $targetselection -gt 2)
+                write-host ""
+                $userselection = ""
+                Write-Host "Target host selection"
+                Write-Host "1`: Restore back to the source host (default)"
+                Write-Host "2`: Restore to a new target"
+                Write-Host ""
+                While ($true) 
                 {
-                    Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
-                } 
-                else
-                {
-                    break
+                    [int]$targetselection = Read-Host "Please select from this list (1-2)"
+                    if ($targetselection -eq "") { $targetselection = 1 }
+                    if ($targetselection -lt 1 -or $targetselection -gt 2)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-2]"
+                    } 
+                    else
+                    {
+                        break
+                    }
                 }
+            }
+            else {
+                $targetselection = 1
             }
             if ($targetselection -eq 1)
             {
@@ -526,7 +532,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
 
                  # target host
                 write-host ""
-                $userselection = ""
+                $replacehostselection = ""
                 Write-Host "REPLACE ORIGINAL APPLICATION IDENTITY"
                 Write-Host "1`: No (default)"
                 Write-Host "2`: Yes"
@@ -547,30 +553,47 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         {
             $userstorekey = $sourcedbuser
         } 
+        if (!($AGMToken))
+        {
+            write-host ""
+            $userselection = ""
+            Write-Host "Copy HDB User Store Key to target Host"
+            Write-Host "1`: No (default)"
+            Write-Host "2`: Yes"
+            Write-Host ""
+            [int]$replacehostselection = Read-Host "Please select from this list (1-2)"
+
+            if ($replacehostselection -eq "") { $replacehostselection = 1 }
+            if ($replacehostselection -eq 1) { $copyhdbstorekey = $false }
+            if ($replacehostselection -eq 2) { $copyhdbstorekey = $true }
+        }
 
         Write-host ""
 
     
         # we are done
        Clear-Host  
-        Write-Host "Guided selection is complete. The values entered resulted in the following two commands."
-        Write-host "You should run the pre-flight first (first command) to validate restore will run without error before running the actual restore (second command)."
-        Write-Host ""
-       
-        Write-Host -nonewline "Restore-AGMLibSAPHANA -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -userstorekey `"$userstorekey`""
-        if ($label)
+        Write-Host "Guided selection is complete. The values entered resulted in the following commands."
+        if ($AGMToken)
         {
-            Write-Host -nonewline " -label `"$label`""
+            Write-host "You should run the pre-flight first (first command) to validate restore will run without error before running the actual restore (second command)."
+            Write-Host ""
+        
+            Write-Host -nonewline "Restore-AGMLibSAPHANA -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid -userstorekey `"$userstorekey`""
+            if ($label)
+            {
+                Write-Host -nonewline " -label `"$label`""
+            }
+            if ($recoverypoint)
+            {
+                Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
+            }
+            if ($replacesource -eq $true)
+            {
+                Write-Host -nonewline " -replacesource"
+            }
+            Write-Host -nonewline " -preflight"
         }
-        if ($recoverypoint)
-        {
-            Write-Host -nonewline " -recoverypoint `"$recoverypoint`""
-        }
-        if ($replacesource -eq $true)
-        {
-            Write-Host -nonewline " -replacesource"
-        }
-        Write-Host -nonewline " -preflight"
         Write-Host ""
         Write-Host -nonewline "Restore-AGMLibSAPHANA -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid  -userstorekey `"$userstorekey`""
         if ($label)
@@ -584,6 +607,10 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         if ($replacesource -eq $true)
         {
             Write-Host -nonewline " -replacesource"
+        }
+        if ($copyhdbstorekey -eq $true)
+        {
+            Write-Host -nonewline " -copyhdbstorekey"
         }
         Write-Host ""
         Read-Host "Please enter to exit"
@@ -659,16 +686,35 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
     
     $body = [ordered]@{}
     if ($label) { $body = $body + [ordered]@{ label = $label; }}
-    if ($replacesource -eq $true) { $body = $body + [ordered]@{ replacesource = $true; } } else { $body = $body + [ordered]@{ replacesource = $false; } }
-    $body = $body + [ordered]@{
-        host = @{id=$targethostid};
-        hostclusterid = $mountapplianceid;
-        provisioningoptions = $provisioningoptions;
+    if ($AGMToken)
+    {
+        if ($replacesource -eq $true) { $body = $body + [ordered]@{ replacesource = $true; } } else { $body = $body + [ordered]@{ replacesource = $false; } }
+        $body = $body + [ordered]@{
+            host = @{id=$targethostid};
+            hostclusterid = $mountapplianceid;
+            provisioningoptions = $provisioningoptions;
+        }
     }
-   
+    else {
+        $restoreoptions = @()
+        $restoreoptions = $restoreoptions +[ordered]@{
+            name = 'copyhdbstorekey'
+            value = $copyhdbstorekey
+        }
+        $restoreoptions = $restoreoptions +[ordered]@{
+            name = 'restoreuserstorekey'
+            value = $userstorekey
+        }
+        
+        $body = $body + [ordered]@{
+            restoreoptions = $restoreoptions;
+            restoreobjectmappings = $restoreobjectmappings;
+            systemstateoptions = $systemstateoptions;
+        }
+    }
     if ($recoverytime)
     {
-        $body = $body + @{ recoverytime = [string]$recoverytime }
+        $body = $body +[ordered]@{ recoverytime = [string]$recoverytime }
     }
     
 
@@ -683,6 +729,8 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         Write-host "Post-AGMAPIData -endpoint /backup/$imageid/restore -body `'$compressedjson`'"
         return
     }
+    $json
+    return
 
     if ($preflight)
     {
