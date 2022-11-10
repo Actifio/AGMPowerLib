@@ -480,7 +480,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
                 {
                     [string]$userstorekey = Read-Host "SAP DB User Store Key"
                     {
-                        if (!($userstorkey)) { [string]$userstorekey = Read-Host "SAP DB User Store Key" }
+                        if (!($userstorekey)) { [string]$userstorekey = Read-Host "SAP DB User Store Key" }
                     } 
                     else
                     {
