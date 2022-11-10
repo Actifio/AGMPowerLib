@@ -474,6 +474,19 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
                 }
             }
             else {
+                # we need to ask for SAB DB User Store-key
+                write-host ""
+                While ($true) 
+                {
+                    {
+                        [string]$userstorekey = Read-Host "SAP DB User Store Key"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                # we can only restore to source host
                 $targetselection = 1
             }
             if ($targetselection -eq 1)
