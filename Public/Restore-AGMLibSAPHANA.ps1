@@ -703,7 +703,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
     if ($label) { $body = $body + [ordered]@{ label = $label; }}
     if ($AGMToken)
     {
-        if ($replacesource -eq $true) { $body = $body + [ordered]@{ replacesource = $true; } } else { $body = $body + [ordered]@{ replacesource = $false; } }
+        if ($replacesource -eq $true) { $body = $body + [ordered]@{ replacesource = 'true'; } } else { $body = $body + [ordered]@{ replacesource = 'false'; } }
         $body = $body + [ordered]@{
             host = @{id=$targethostid};
             hostclusterid = $mountapplianceid;
