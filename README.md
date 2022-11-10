@@ -692,6 +692,44 @@ If the application is a database we can use ```-backuptype log``` or ```-backupt
 New-AGMLibImage  -appid 2133445 -backuptype log
 ```
 
+### Tracking jobs
+
+The command to start an on-demand job does not return a jobname, meaning you need to search for the newly created job.
+One solution to do this is to start each job with a unique label. If you use a label then we can find the job like this:
+```
+PS /> New-AGMLibImage -appid 409016 -label "tinyrun1"
+Running this command: New-AGMLibImage  -appid 409016 -policyid 425081 -label tinyrun1
+```
+Now we search for a job with that label:
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185433 running          7 2022-11-11 09:18:44
+```
+But the label has to be unique or you can end up in situation like this where I run a second job with the previously used label:
+PS /Users/avw/Documents> New-AGMLibImage -appid 409016 -label "tinyrun1"
+Running this command: New-AGMLibImage  -appid 409016 -policyid 425081 -label tinyrun1
+
+First I find the old job (because the new job has not started yet):
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185433 succeeded          2022-11-11 09:18:44
+```
+Now I find the old job and the new job:
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185358 running          7 2022-11-11 09:11:37
+Job_0185433 succeeded          2022-11-11 09:18:44
+```
+
 ## User Story: Running on-demand jobs based on policy ID
 
 One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
