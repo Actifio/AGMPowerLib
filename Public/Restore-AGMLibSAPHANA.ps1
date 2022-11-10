@@ -479,8 +479,9 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
                 While ($true) 
                 {
                     [string]$userstorekey = Read-Host "SAP DB User Store Key"
+                    if (!($userstorekey))
                     {
-                        if (!($userstorekey)) { [string]$userstorekey = Read-Host "SAP DB User Store Key" }
+                        write-host "User key field cannot be blank" 
                     } 
                     else
                     {
