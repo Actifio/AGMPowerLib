@@ -656,7 +656,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
         }
     }
 
-    if ($targethostid -eq "")
+    if (($targethostid -eq "") -and ($AGMToken))
     {
         Get-AGMErrorMessage -messagetoprint "Cannot proceed without a targethostid or targethostname"
         return
