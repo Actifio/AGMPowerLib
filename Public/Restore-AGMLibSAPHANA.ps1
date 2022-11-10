@@ -472,6 +472,8 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
                         break
                     }
                 }
+                write-host ""
+                $userstorekey = read-host "SAP HANA Target user store key or press enter to use $sourcedbuser"
             }
             else {
                 # we need to ask for SAB DB User Store-key
@@ -562,8 +564,6 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
     
 
         write-host ""
-
-        $userstorekey = read-host "SAP HANA Target user store key or press enter to use $sourcedbuser"
         if ($userstorekey -eq "")
         {
             $userstorekey = $sourcedbuser
@@ -610,7 +610,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
             Write-Host -nonewline " -preflight"
         }
         Write-Host ""
-        Write-Host -nonewline "Restore-AGMLibSAPHANA -appid $appid -mountapplianceid $mountapplianceid -imagename $imagename -targethostid $targethostid  -userstorekey `"$userstorekey`""
+        Write-Host -nonewline "Restore-AGMLibSAPHANA -appid $appid  -imagename $imagename -userstorekey `"$userstorekey`""
         if ($label)
         {
             Write-Host -nonewline " -label `"$label`""
