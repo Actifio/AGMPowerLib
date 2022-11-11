@@ -41,7 +41,7 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
     3)  Learn the Appid and Cluster ID for the appliance that will restore the image and then use -appid and -mountapplianceid 
     This will use the latest snapshot, StreamSnap or OnVault image on that appliance.  AGM does not need the Cluster ID
 
-    * Restore host options (Google Cloud Backup an DR only)
+    * Restore host options (Google Cloud Backup and DR only)
     -mountapplianceid  The appliance where the restore will be run.
     -targethostname   The target host specified by name (targethostid can also be used)  
     -targethostid   The target host specified by id (targethostname can also be used) 
