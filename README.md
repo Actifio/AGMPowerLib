@@ -6,26 +6,28 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[Prerequisites](#prerequisites)**<br>
 **[Install or upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
-**[User Story: Database Mounts](#user-story-database-mounts)**<br>
-**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
-**[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
-**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
-**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
-**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
-**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
-**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
-**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
-**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
-**[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
 **[User Story: Auto adding GCE Instances and protecting them with tags](#user-story-auto-adding-gce-instances-and-protecting-them-with-tags)**<br>
 **[User Story: Creating GCE Instance from PD Snapshots](#user-story-creating-gce-instance-from-pd-snapshots)**<br>
-**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
 **[User Story: Creating GCE Instance from VMware Snapshots](#user-story-creating-gce-instance-from-vmware-snapshots)**<br>
-**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
-**[User Story: Appliance parameter management and slot limits](#user-story-appliance-parameter-management-and-slot-limits)**<br>
-**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
+**[User Story: Creating new VMs](#user-story-creating-new-vms)**<br>
+**[User Story: Database Mounts](#user-story-database-mounts)**<br>
 **[User Story: Displaying Backup Plan Policies](#user-story-displaying-backup-plan-policies)**<br>
+**[User Story: Displaying Backup SKU Usage](#user-story-displaying-backup-sku-usage)**<br>
+**[User Story: File System multi-mount for Ransomware analysis](#user-story-file-system-multi-mount-for-ransomware-analysis)**<br>
+**[User Story: GCE Disaster Recovery using GCE Instance PD Snapshots](#user-story-gce-disaster-recovery-using-gce-instance-pd-snapshots)**<br>
+**[User Story: GCE Disaster Recovery using VMware VM Snapshots](#user-story-gce-disaster-recovery-using-vmware-vm-snapshots)**<br>
 **[User Story: Importing and Exporting AGM Policy Templates](#user-story-importing-and-exporting-agm-policy-templates)**<br>
+**[User Story: Microsoft SQL Mount and Migrate](#user-story-microsoft-sql-mount-and-migrate)**<br>
+**[User Story: Microsoft SQL Multi Mount and Migrate](#user-story-microsoft-sql-multi-mount-and-migrate)**<br>
+**[User Story: Protecting and re-winding child-apps](#user-story-protecting-and-re-winding-child-apps)**<br>
+**[User Story: Running a workflow](#user-story-running-a-workflow)**<br>
+**[User Story: Running on-demand jobs based on application ID](#user-story-running-on-demand-jobs-based-on-application-id)**<br>
+**[User Story: Running on-demand jobs based on policy ID](#user-story-running-on-demand-jobs-based-on-policy-id)**<br>
+**[User Story: SAP HANA Database Mount](#user-story-sap-hana-database-mount)**<br>
+**[User Story: SAP HANA Database Multi Mount](#user-story-sap-hana-database-multi-mount)**<br>
+**[User Story: SQL Instance Test and Dev Image usage](#user-story-sql-instance-test-and-dev-image-usage)**<br>
+**[User Story: VMware multi-mount](#user-story-vmware-multi-mount)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
 
@@ -661,6 +663,74 @@ During guided mode you will notice that for functions that expect authentication
 * New-AGMLibVM - This uses stored credentials on the appliance.
 
 
+
+## User Story: Running on-demand jobs based on application ID
+
+When we want to manually create a new backup image, this is called running an on-demand job.   We can do this with the ```New-AGMLibImage``` command.
+You can learn the application ID of the application in question with:  ```Get-AGMApplication```  You may want to use filters. 
+This is a good example of a filter:
+```
+Get-AGMApplication -filtervalue managed=true -sort appname:asc | select id,appname,apptype
+```
+In this example we know the application ID so we request a new image.   A snapshot job will automatically run.   If a snapshot policy cannot be found, a direct to onvault job will be attempted.
+```
+$appid = 425466
+New-AGMLibImage $appid
+```
+We may want to start a particular policy so we can use the app ID to learn relevant policies:
+```
+$appid = 425466
+Get-AGMLibPolicies -appid $appid
+```
+We then use the policy ID we learned.  We also added a label:
+```
+$policyid = 425080
+New-AGMLibImage -appid $appid -policyid $policyid -label "Dev image after upgrade"
+```
+If the application is a database we can use ```-backuptype log``` or ```-backuptype db``` like this:
+```
+New-AGMLibImage  -appid 2133445 -backuptype log
+```
+
+### Tracking jobs
+
+The command to start an on-demand job does not return a jobname, meaning you need to search for the newly created job.
+One solution to do this is to start each job with a unique label. If you use a label then we can find the job easily.  First start the job with a label like this:
+```
+PS /> New-AGMLibImage -appid 409016 -label "tinyrun1"
+Running this command: New-AGMLibImage  -appid 409016 -policyid 425081 -label tinyrun1
+```
+Now we search for a job with that label:
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185433 running          7 2022-11-11 09:18:44
+```
+But the label has to be unique or you can end up in situation like this where we run a second job with the previously used label:
+```
+PS /Users/avw/Documents> New-AGMLibImage -appid 409016 -label "tinyrun1"
+Running this command: New-AGMLibImage  -appid 409016 -policyid 425081 -label tinyrun1
+```
+First we find the old job (because the new job has not started yet):
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185433 succeeded          2022-11-11 09:18:44
+```
+Now we find the old job and the new job:
+```
+PS /> Get-AGMJobStatus -filtervalue "label=tinyrun1" | select jobname,status,progress,startdate
+
+jobname     status    progress startdate
+-------     ------    -------- ---------
+Job_0185358 running          7 2022-11-11 09:11:37
+Job_0185433 succeeded          2022-11-11 09:18:44
+```
+
 ## User Story: Running on-demand jobs based on policy ID
 
 One way to create a semi air-gapped solution is to restrict access to the OnVault pool by using limited time windows that are user controlled.
@@ -1237,9 +1307,9 @@ currentimagestate  : ImageNotFound
 ```
 ## User Story: SAP HANA Database Mount
 
-In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where 'act' is the name of the HANA database.
+In this 'story' a user wants to mount a HANA database from the latest snapshot of a HANA Instance (HDB) to a host. Most aspects of the story are the same as above, however they need some more information to run their mount command. They learn the App ID of the HANA database where ```act``` is the name of the HANA database.
 ```
-PS /Users/jeffoconnor> Get-AGMLibApplicationID act |ft
+PS /> Get-AGMLibApplicationID act |ft
 
 id     friendlytype hostname   hostid appname appliancename applianceip applianceid  appliancetype managed
 --     ------------ --------   ------ ------- ------------- ----------- -----------  ------------- -------
@@ -1248,8 +1318,33 @@ id     friendlytype hostname   hostid appname appliancename applianceip applianc
 So now we know the id of the Database inside our HANA instance, we just need to specify the HANA user store key (userstorekey) that has rights to recover the database on the target host (targethostname), a new database SID (dbsid) to use, and lastly to specify a target host filesystem mount point (mountpointperimage) for the HANA instance to run from. We then run our mount command like this:
 
 ```
-PS /Users/jeffoconnor> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
+PS /> New-AGMLibSAPHANAMount -appid 577110 -targethostname coe-hana-2 -dbsid "TGT" -userstorekey "ACTBACKUP" -mountpointperimage "/tgt" -label "Test HANA database"
 ```
+If you run ```New-AGMLibSAPHANAMount``` in guided mode, you can take the option to generate a CSV file.   This can be used to run New-AGMLibSAPHANAMultiMount
+
+## User Story: SAP HANA Database Multi Mount
+
+You can run ```New-AGMLibSAPHANAMount``` in guided mode and take the option to generate a CSV file.     You can then edit it to mount multiple new SAP HANA instances at once.   A sample file would look like this:
+```
+appid,appname,mountapplianceid,imagename,targethostid,dbsid,userstorekey,mountpointperimage,label,recoverypoint,mountmode,mapdiskstoallesxhosts,sltid,slpid
+835132,"act","144091747698","Image_0160795","749871","act","actbackup","/mount","label1","2022-11-07 17:00:39","nfs","false","108758","706611"
+```
+The following fields are mandatory:
+* ```appname```   the appname field is used to ensure you know which instances you are looking at.   Of course if all your SAP HANA instances are called  ```act``` this still might not help.
+* ```mountapplianceid```  this is the id of the appliance that will run the mount.  You can learn this with ```Get-AGMAppliance```
+* ```targethostid``` this is the ID of the host we are mounting to.   You can learn this with ```Get-AGMHost```
+* ```dbsid```  this is the new DB SID we are creating 
+* ```userstorekey```  this is the stored credential the agent will use to authorize its host side activities
+* ```mountpointperimage```  this is the mount point where the mount will be placed
+
+The following fields are optional:
+* ```appid```  If the appnames are all unique, we don't need appid.  If you are working on an imported image, the source appid may not be useful.  Learn this with ```Get-AGMApplication```
+* ```label```  the label is handy as it lets us leave comments about this mount, but it is not mandatory
+* ```recoverypoint```  the recoverypoint is only useful if there are logs to roll forward.  You don't have to specify it.   For a mount we don't roll forward logs
+* ```mountmode``` VMware only (are we using NFS, vRDM or pRDM)
+* ```mapdiskstoallesxhosts```  VMware only (are we mapping to all ESXi hosts)
+* ```sltid```  template ID if re-protection is requested. Learn this with ```Get-AGMSLT```
+* ```slpid```  profile ID if re-protection is requested. Learn this with ```Get-AGMSLP```
 
 ## User Story: Auto adding GCE Instances and protecting them with tags
 

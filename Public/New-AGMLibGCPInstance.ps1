@@ -521,7 +521,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         }
         else
         {
-            Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+            if ($diagmode) { $recoverygrab }
+            if ($recoverygrab.errormessage) 
+            {
+                #Get-AGMErrorMessage -messagetoprint $recoverygrab.errormessage
+                $recoverygrab.errormessage
+            }
+            else {
+                Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
+            }
             return
         }
 
@@ -584,7 +592,9 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
                     }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
+                    if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                    if ($diagmode) { $recoverygrab }
                     if (!($recoverygrab.fields))
                     {
                         Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
@@ -689,6 +699,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $newjson = $recoverygrab | convertto-json -depth 10 -compress
                         if ($diagmode) { $newjson }
                         $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                        if ($diagmode) { $recoverygrab }
                         if ($recoverygrab.fields)
                         {
                             $machinetypelist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "machinetype" }).choices | sort-object name
@@ -750,7 +761,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $row.selected = $false
                     }
                     ((($recoverygrab.fields | where-object {$_.name -eq "cloudcredentials"}).children | where-object {$_.name -eq "zone"}).choices | where-object {$_.name -eq $zone}) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-                                        if (!($recoverygrab.formtype))
+                    if (!($recoverygrab.formtype))
                     {
                         $recoverygrab.PSObject.Properties.Remove('@type')
                         $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
@@ -977,10 +988,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 }
           
                 (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic0network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
-
+                if (!($recoverygrab.formtype))
+                {
+                    $recoverygrab.PSObject.Properties.Remove('@type')
+                    $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                }
                 $newjson = $recoverygrab | convertto-json -depth 10 -compress
                 if ($diagmode) { $newjson }
                 $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                if ($diagmode) { $recoverygrab }
                 if (!($recoverygrab.fields))
                 {
                     Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"
@@ -1112,9 +1128,15 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                         $row.selected = $false
                     }
                     (((($recoverygrab.fields | where-object { $_.name -eq "networksettings" }).children).children | where-object { $_.name -eq "vpc" }).choices | where-object { $_.displayName -eq $selectednic1network }) | Add-Member -MemberType NoteProperty -Name selected -Value $true -Force
+                    if (!($recoverygrab.formtype))
+                    {
+                        $recoverygrab.PSObject.Properties.Remove('@type')
+                        $recoverygrab | Add-Member -MemberType NoteProperty -Name formtype -Value "existingmount"
+                    }
                     $newjson = $recoverygrab | convertto-json -depth 10 -compress
                     if ($diagmode) { $newjson }
                     $recoverygrab = Put-AGMAPIData -endpoint /backup/$imageid/mount -body $newjson 
+                    if ($diagmode) { $recoverygrab }
                     if (!($recoverygrab.fields))
                     {
                         Get-AGMErrorMessage -messagetoprint "Failed to fetch instance recovery data for imageid $imageid.  Please run connect-agm setting the -agmtimeout value larger than then the default of 60 seconds"

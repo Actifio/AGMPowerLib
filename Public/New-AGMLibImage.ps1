@@ -134,7 +134,13 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$backuptype,[
             $policyname = $($policygrab | Where-Object {$_.op -eq "snap"} | Select-Object -last 1).name
             if (!($policyid))
             {
-                Get-AGMErrorMessage -messagetoprint "Failed to learn Snap Policy ID for SLT ID $sltid"
+                $policyid = $($policygrab | Where-Object {$_.op -eq "DirectOnVault"} | Select-Object -last 1).id
+                $policyname = $($policygrab | Where-Object {$_.op -eq "DirectOnVault"} | Select-Object -last 1).name
+            }
+
+            if (!($policyid))
+            {
+                Get-AGMErrorMessage -messagetoprint "Failed to learn any Policy ID for SLT ID $sltid"
                 return
             }
         }
