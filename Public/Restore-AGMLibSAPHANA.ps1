@@ -17,15 +17,19 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
 {
     <#
     .SYNOPSIS
-    Restores a SAP HANA Database Image
+    Restores a SAP HANA Database Image. Note that this command has different syntax requirements when issued to an AGM versus a Management Console.
 
     .EXAMPLE
     Restore-AGMLibSAPHANA 
-    You will be prompted through a guided menu
+    You will be prompted through a guided menu.  
 
     .EXAMPLE
     Restore-AGMLibSAPHANA -appid 577110 -mountapplianceid 141767697828 -targethostid 483699 -dbsid "TGT" -userstorekey "ACTBACKUP"
-    Restores an SAP HANA Database with specified SID 
+    Restores an SAP HANA Database with specified SID when using Google Cloud Backup and DR
+
+    .EXAMPLE
+    Restore-AGMLibSAPHANA -appid 577110 -userstorekey "ACTBACKUP"
+    Restores an SAP HANA Database when sent to Actifio Global Manager
 
     .DESCRIPTION
     A function to restore a SAP HANA database
@@ -35,23 +39,18 @@ Function Restore-AGMLibSAPHANA ([string]$appid,[string]$targethostid,[string]$mo
     1)  Run this command in guided mode to learn the available images and select one
     2)  Learn the imagename and specify that as part of the command with -imagename
     3)  Learn the Appid and Cluster ID for the appliance that will restore the image and then use -appid and -mountapplianceid 
-    This will use the latest snapshot, StreamSnap or OnVault image on that appliance
+    This will use the latest snapshot, StreamSnap or OnVault image on that appliance.  AGM does not need the Cluster ID
 
-    Note default values don't need to specified.  
-
-    * label
-    -label   Label for restore, recommended
-
-    * Restore host options:
-    -targethostname   The target host specified by name.  Ideally use the next option
-    -targethostid   The target host specified by id
+    * Restore host options (Google Cloud Backup an DR only)
+    -mountapplianceid  The appliance where the restore will be run.
+    -targethostname   The target host specified by name (targethostid can also be used)  
+    -targethostid   The target host specified by id (targethostname can also be used) 
 
     *  required settings
-    -userstorekey xxxx   name of the HANA database user store key on the target server where a new SAP HANA Instance will get created.
+    -userstorekey xxxx   name of the HANA database user store key on the target server where a new SAP HANA Instance will get restored
 
-    
     * Other options
-
+     -label   Label for restore, recommended
     -recoverypoint  The point in time to roll forward to, in ISO8601 format like 2020-09-02 19:00:02
 
     #>
