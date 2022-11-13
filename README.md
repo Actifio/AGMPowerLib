@@ -154,10 +154,10 @@ The following functions have guided wizards to help you create commands.   Simpl
 
 The following examples were all moved from the Readme to the Usage Examples page but are here in case you bookmarked them:
 
-#### [SQL Test and Dev Image usage](AGMPowerCLI/blob/main/UsageExamples.md#sql-server-mount)
-#### [SQL DB mount of an Orphan image](UsageExamples.md#sql-server-mount)
-#### [SQL Test and Dev Image usage with point in time recovery](UsageExamples.md#sql-server-mount-with-point-in-time-recovery)
-#### [User Story: SQL Instance Test and Dev Image usage](UsageExamples.md#sql-server-instance-mount)
+#### [SQL Test and Dev Image usage](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#sql-server-mount)
+#### [SQL DB mount of an Orphan image](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#sql-server-mount)
+#### [SQL Test and Dev Image usage with point in time recovery](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#sql-server-mount-with-point-in-time-recovery)
+#### [User Story: SQL Instance Test and Dev Image usage](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#sql-server-instance-mount)
 
 
 #### [User Story: Protecting and re-winding child apps]
