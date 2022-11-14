@@ -171,7 +171,7 @@ The following examples were all moved from the Readme to the Usage Examples page
 #### [User Story: GCE Disaster Recovery using VMware VM Snapshots](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-multi-conversion-from-vmware-vm)
 #### [User Story: Appliance parameter management and slot limits](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#appliance-parameter-and-slot-management)
 #### [User Story: Displaying Backup SKU Usage](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#displaying-backup-sku-usage)
-#### [User Story: Displaying Backup Plan Policies](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#displaying-backup-plan-policies)
+#### [User Story: Displaying Backup Plan Policies](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#backup-plan-policy-usage)
 #### [User Story: Importing and Exporting AGM Policy Templates](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#importing-and-exporting-policy-templates)
 
 ## Contributing
