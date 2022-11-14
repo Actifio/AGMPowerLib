@@ -150,10 +150,10 @@ Usage examples are in a separate document that you will find  [here](https://git
 
 The following examples were all moved from the Readme to the Usage Examples page but are here in case you bookmarked them:
 
-#### [User Story: Appliance parameter management and slot limits](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#appliance-parameter-and-slot-management)
-#### [User Story: Auto adding GCE Instances and protecting them with tags](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-onboarding-automation)
-#### [User Story: Creating GCE Instance from PD Snapshots](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-mount)
-#### [User Story: Creating GCE Instance from VMware Snapshots](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-conversion-from-vmware-vm)
+**[User Story: Appliance parameter management and slot limits](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#appliance-parameter-and-slot-management)**</br>
+**[User Story: Auto adding GCE Instances and protecting them with tags](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-onboarding-automation)**</br>
+##### [User Story: Creating GCE Instance from PD Snapshots](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-mount)
+##### [User Story: Creating GCE Instance from VMware Snapshots](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#compute-engine-instance-conversion-from-vmware-vm)
 #### [User Story: Displaying Backup SKU Usage](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#backup-sku-usage)
 #### [User Story: Displaying Backup Plan Policies](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#backup-plan-policy-usage)
 #### [User Story: File System multi-mount for Ransomware analysis](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md#multi-Mount-for-ransomware-analysis)
