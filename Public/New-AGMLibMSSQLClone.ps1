@@ -351,7 +351,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             }
             $slamatchgrab = Get-AGMSLA -id $slaid
             $slaappname = $slamatchgrab.application.appname
-            $slaapptype = $slamatchgrab.application.apptype
+            $slaapptype = $slamatchgrab.application.friendlytype
             $slaappid = $slamatchgrab.application.id
 
             if ($slaappid -ne $appid)
@@ -359,11 +359,11 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                 write-host ""
                 Write-Host "The application you have selected is managed as part of a $slaapptype called $slaappname  Would you like to go to the Access page for the $slaapptype instead?"
                 Write-host ""
-                Write-Host "1`: No (default)"
-                Write-Host "2`: Yes"
+                Write-Host "1`: Yes (default)"
+                Write-Host "2`: No"
                 Write-Host ""
                 [int]$groupswitch = Read-Host "Please select from this list (1-2)"
-                if ($groupswitch -eq 2)
+                if ($groupswitch -ne 2)
                 {
                     $appname = $slaappname
                     $appid = $slaappid
