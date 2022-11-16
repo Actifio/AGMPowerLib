@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$label,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait) 
+Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[switch]$renamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch]$usesourcelocation) 
 {
     <#
     .SYNOPSIS
@@ -39,6 +39,29 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -sqlinstance "WIN-TARGET\SQLEXPRESS" -dbnamelist "AdventureWorks2019,CRM" -consistencygroupname "cg1clone"
     Clone the latest snapshot of a SQL Instance, cloneing two databases but not changing the target DB names (dbnamelist, not dbrenamelist).   Because two DBs are cloneed a consistencygroup name is also needed. 
 
+    .EXAMPLE
+    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090  -files  -restorelist "SQL_smalldb.mdf,D:\Data,d:\avtest1;SQL_smalldb_log.ldf,E:\Logs,e:\avtest1"
+
+    Starts a clone 
+    Files will be renamed to match the new database name.
+    Because "-files" was specified, the -restorelist must contain the file name, the source location and the targetlocation.
+    Each file is separated by a semicolon,  the three fields for each file are comma separated.
+    In this example, the file SQL_smalldb.mdf found in D:\Data will be cloned to d:\avtest1
+    In this example, the file SQL_smalldb_log found in E:\Logs will be cloned to e:\avtest1
+    The order of the fields must be "filename,sourcefolder,targetfolder" so for two files "filename1,source1,target1;filename2,source2,target2"
+
+    .EXAMPLE    
+    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -volumes -restorelist "D:\,K:\;E:\,M:\"
+
+    Starts a clone
+    Files will be renamed to match the new database name.
+    Because "-volumes" was specified, the -restorelist must contain the source drive letter and the target drive letter.
+    Each drive is separated by a semicolon,  the two fields for each drive are comma separated.
+    In this example the D:\ files will be cloned to the K:\
+    In this example the E:\ files will be cloned to the M:\
+    The order of the fields must be "sourcedrive,targetdrive" so for two drives "sourcedrive1,targetdrive1;sourcedrive2,targetdrive2"
+
+
     .DESCRIPTION
     A function to clone MS SQL Image
 
@@ -50,9 +73,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     This will use the latest snapshot, StreamSnap or OnVault image on that appliance
 
     Note default values don't need to specified. So for instance these are both unnecessary:  -recoverdb true -userlogins false
-
-    * label
-    -label   Label for clone, recommended
 
     * clone host options:
     -sqlinstance  The SQL instance on the host we are cloning into
@@ -181,6 +201,8 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             $restorableobjects = $imagegrab.restorableobjects
             $cloneapplianceid = $imagegrab.cluster.clusterid
             $imagejobclass = $imagegrab.jobclass    
+            $vollist = $imagegrab.restorableobjects.volumeinfo.logicalname | sort-object -unique
+            $filelist = $imagegrab.restorableobjects.fileinfo | sort-object filepath,filename
         }
     }
 
@@ -203,6 +225,8 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             $restorableobjects = $imagegrab.restorableobjects
             $cloneapplianceid = $imagegrab.cluster.clusterid
             $imagejobclass = $imagegrab.jobclass   
+            $vollist = $imagegrab.restorableobjects.volumeinfo.logicalname | sort-object -unique
+            $filelist = $imagegrab.restorableobjects.fileinfo | sort-object filepath,filename
         }
     }
     # if user asked for latest recovery point, and there are logs,  we roll forward all the way
@@ -343,16 +367,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         else {
             $hostgrab = Get-AGMHost -id $hostcheck.id
             $targethostid = $hostgrab.id
-#            $vmtype = $hostgrab.vmtype
-#            $transport = $hostgrab.transport
-#            $diskpref = $hostgrab.diskpref
-#            $vcenterid = $hostgrab.vcenterhost.id
-            #if the VM doesn't have a transport, then the vCenter must have one
- #           if ( ($vmtype -eq "vmware") -and (!($transport)) )
- #           {
- #               $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
- #               $transport = $vcgrab.transport
- #           }
         }
     }
 
@@ -366,25 +380,11 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         }
         $targethostid = $targethostid
         $targethostname=$hostgrab.hostname
-#        $vmtype = $hostgrab.vmtype
-#        $transport = $hostgrab.transport
-#        $diskpref = $hostgrab.diskpref
-#        $vcenterid = $hostgrab.vcenterhost.id
-#        if ( ($vmtype -eq "vmware") -and (!($transport)) )
-#        {
-#            $vcgrab = Get-AGMHost -filtervalue id=$vcenterid 
-#            $transport = $vcgrab.transport
-#        }
     }
     
     # this if for guided menu
     if ($guided)
     {
-       if (!($label))
-       {
-           Clear-Host
-           [string]$label = Read-host "Label"
-       }
         
         if (!($imagename))
         {  
@@ -426,7 +426,8 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                     $imagejobclass = $imagegrab.jobclass
                     $cloneapplianceid = $imagegrab.cluster.clusterid
                     $cloneappliancename = $imagegrab.cluster.name
-                    #write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $cloneappliancename"
+                    $vollist = $imagegrab.restorableobjects.volumeinfo.logicalname | sort-object -unique
+                    $filelist = $imagegrab.restorableobjects.fileinfo | sort-object filepath,filename
                 } 
             }   
             
@@ -452,6 +453,8 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                     $imagejobclass = $imagegrab.jobclass
                     $cloneapplianceid = $imagegrab.cluster.clusterid
                     $cloneappliancename = $imagegrab.cluster.name
+                    $vollist = $imagegrab.restorableobjects.volumeinfo.logicalname | sort-object -unique
+                    $filelist = $imagegrab.restorableobjects.fileinfo | sort-object filepath,filename
                     write-host "Found one $imagejobclass image $imagename, consistency date $consistencydate on $cloneappliancename"
                 } 
                 else
@@ -495,24 +498,12 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                     $cloneapplianceid = $imagegrab.cluster.clusterid
                     $cloneappliancename = $imagegrab.cluster.name
                     $imagejobclass = $imagegrab.jobclass   
+                    $vollist = $imagegrab.restorableobjects.volumeinfo.logicalname | sort-object -unique
+                    $filelist = $imagegrab.restorableobjects.fileinfo | sort-object filepath,filename
                 }
             }
         }
-#        if ($imagejobclass -eq "OnVault")
-#        {
-#            write-host ""
-#            Write-Host "Performance and Consumption Options"
-#            Write-Host "1`: Storage Optimized (performance depends on network, least storage consumption)"
-#            Write-Host "2`: Balanced (more performance, more storage consumption)(default)"
-#            Write-Host "3`: Performance Optimized (higher performance, highest storage consumption)"
-#            Write-Host "4`: Maximum Performance (delay before clone, highest performance, highest storage consumption)"
-#            Write-Host ""
-#            [int]$perfselection = Read-Host "Please select from this list (1-4)"
-#            if ($perfselection -eq "1") { $perfoption = "StorageOptimized" }
-#            if (($perfselection -eq "2") -or ($perfselection -eq "")) { $perfoption = "Balanced" }
-#            if ($perfselection -eq "3") { $perfoption = "PerformanceOptimized" }
-#            if ($perfselection -eq "4") { $perfoption = "MaximumPerformance" }
-#        }
+
         
         # now we check the log date
         if ($endpit)
@@ -691,67 +682,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             $sqlinstance =  $instancelist[($instanceselection - 1)].appname
             Clear-Host
         }
-#        # reprotection
-#        Write-Host "Reprotection"
-#        Write-Host "1`: Don't manage new application (default)"
-#        Write-Host "2`: Manage new application"
-#        Write-Host ""
-#        [int]$userselection = Read-Host "Please select from this list (1-2)"
-#        if ($userselection -eq "") { $userselection = 1 }
-#        if ($userselection -eq 2) 
-#        {   
-#            # slt selection
-#            Clear-Host
-#            Write-Host "SLT list"
-#            $objectgrab = Get-AGMSLT | sort-object name
-#            $i = 1
-#            foreach
-#            ($object in $objectgrab)
-#                { Write-Host -Object "$i`:  $($object.name) ($($object.id))"
-#                $i++
-#            }
-#            While ($true) 
-#            {
-#                Write-host ""
-#                $listmax = $objectgrab.Length
-#                [int]$objectselection = Read-Host "Please select from this list (1-$listmax)"
-#                if ($objectselection -lt 1 -or $objectselection -gt $listmax)
-#                {
-#                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax]"
-#                } 
-#                else
-#                {
-#                    break
-#                }
-#            }
-#            $sltid =  $objectgrab[($objectselection - 1)].id
 
-            #slp selection
-#            Clear-Host
-#            Write-Host "SLP list"
-#            $objectgrab = Get-AGMSLP -filtervalue clusterid=$cloneapplianceid | sort-object name
-#            $i = 1
-#            foreach
-#            ($object in $objectgrab)
-#                { Write-Host -Object "$i`:  $($object.name) ($($object.id))"
-#                $i++
-#            }
-#            While ($true) 
-#            {
-#                Write-host ""
-#                $listmax = $objectgrab.Length
-#                [int]$objectselection = Read-Host "Please select from this list (1-$listmax)"
-#                if ($objectselection -lt 1 -or $objectselection -gt $listmax)
-#                {
-#                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$listmax]"
-#                } 
-#                else
-#                {
-#                    break
-#                }
-#            }
-#            $slpid =  $objectgrab[($objectselection - 1)].id
-#        }
 
 
         # now we look for restoreable objects
@@ -815,6 +746,17 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             }
            
         }
+        # rename files
+        write-host ""
+        Write-Host "File rename"
+        Write-Host "1`: Rename files to match database name(default)"
+        Write-Host "2`: Don't rename files to match database name"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-2)"
+        if ($userselection -eq "") { $userselection = 1 }
+        if ($userselection -eq 1) {  $renamedatabasefiles = $true  }
+        if ($userselection -eq 2) {  $renamedatabasefiles = $false }
+
         # recover DB
         Clear-Host
         Write-Host "Recover database"
@@ -875,46 +817,56 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         if ($userselection -eq 2) {  $overwrite = "stale"  }
         if ($userselection -eq 3) {  $overwrite = "yes"  }
 
-#        # if this is a VMTarget
-#        if ($vmtype -eq "vmware")
-#        {
-#            if (($diskpref -eq "BLOCK") -and ($transport -ne "GUESTVMISCSI"))
-#            {
-#                Clear-Host
-#                Write-Host "Clone mode" 
-#                if ($transport -eq "NFS")
-#                {
-#                    $defaultmode = 3
-#                    Write-Host "1`: vrdm"
-#                    Write-Host "2`: prdm"
-#                    Write-Host "3`: nfs(default)"
-#                }
-#                else 
-#                {
-#                    $defaultmode = 1
-#                    Write-Host "1`: vrdm(default)"
-#                    Write-Host "2`: prdm"
-#                    Write-Host "3`: nfs"
-#                }
-#                Write-Host ""
-#                [int]$userselection = Read-Host "Please select from this list (1-3)"
-#                if ($userselection -eq "") { $userselection = $defaultmode }
-#                if ($userselection -eq 1) {  $mountmode = "vrdm"  }
-#                if ($userselection -eq 2) {  $mountmode = "prdm"  }
-#                if ($userselection -eq 3) {  $mountmode = "nfs"  }
-#        
-#                # map to all ESX host 
-#                Clear-Host
-#                Write-Host "Map to all ESX Hosts"
-#                Write-Host "1`: Do not map to all ESX Hosts(default)"
-#                Write-Host "2`: Map to all ESX Hosts"
-#                Write-Host ""
-#                [int]$userselection = Read-Host "Please select from this list (1-2)"
-#                if ($userselection -eq "") { $userselection = 1 }
-#                if ($userselection -eq 1) {  $mapdiskstoallesxhosts = "false"  }
-#                if ($userselection -eq 2) {  $mapdiskstoallesxhosts = "true"  }
-#            }
- #       }
+        $userselection = 
+        Write-Host ""
+        Write-Host "Select file destination for migrated files"
+        Write-Host "1`: Copy files to the same drive/path as they were on the source (default)"
+        Write-Host "2`: Choose new file locations at the volume level"
+        Write-Host "3`: Choose new locations at the file level"
+        Write-Host ""
+        [int]$userselection = Read-Host "Please select from this list (1-3)"
+        if ($userselection -eq "") { $userselection = 1 }
+        if ($userselection -eq 1) {  $usesourcelocation = $TRUE }
+        if ($userselection -eq 2) 
+        {
+            Write-host "`n For each volume please specify a new volume"
+            $restorelist = ""
+            
+            write-host ""
+            foreach ($vol in $vollist)
+            {
+                $targetlocation = ""
+                $targetlocation = read-host "Source: $($vol)   Target"
+                if ($targetlocation -eq "")
+                { 
+                    $targetlocation = $vol
+                }
+                $restorelist = $restorelist + ";" + $vol + "," + $targetlocation 
+            }
+            $restorelist = $restorelist.Substring(1)
+            $volumes = $TRUE
+        }
+        if ($userselection -eq 3) 
+        {
+            $restorelist = ""
+            Write-host "`n For each file please specify a new location:"
+            
+            write-host ""
+            foreach ($file in $filelist)
+            {
+                $targetlocation = ""
+                $targetlocation = read-host "File: $($file.filename)   Source: $($file.filepath)   Target Path"
+                if ($targetlocation -eq "")
+                { 
+                    $targetlocation = $file.filepath
+                }
+                $restorelist = $restorelist + ";" + $file.filename + "," + $file.filepath + "," + $targetlocation 
+            }
+            $restorelist = $restorelist.Substring(1)
+            $files = $TRUE
+        }
+
+
         #volume info section
         $logicalnamelist = $restorableobjects.volumeinfo | select-object logicalname,capacity,uniqueid | sort-object logicalname | Get-Unique -asstring
         Clear-Host  
@@ -932,31 +884,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         {
             Write-Host "This image has more than one drive. You can enter a Clone Location, or press enter to set Clone points per drive. "
             Write-Host ""
-#            $mountpointperimage = ""
-#            $mountpointperimage = Read-Host "Clone Location (optional)"
-#            if ($mountpointperimage -eq "")
-#            {
-#                Clear-Host
-#                $mountpointspervol = ""
-#                $mountpointspervol1 = ""
-#                Write-Host "Set clone Locations per drive, or press enter to allow the Connector to determine this."
-#                foreach ($logicalname in $logicalnamelist)
-#                { 
-#                    $capacity = [math]::Round($logicalname.capacity / 1073741824,1)
-#                    $diskname = $logicalname.logicalname
-#                    $uniqueid = $logicalname.uniqueid
-#                    $mountpointgrab = ""
-#                    [string]$mountpointgrab = Read-Host "$diskname   $capacity GiB"
-#                    if ($mountpointgrab -ne "")
-#                    {
-#                        $mountpointspervol1 = $mountpointspervol1 + "," + "$uniqueid" + "=" + "$mountpointgrab"
-#                    }
-#                    if ($mountpointspervol1 -ne "")
-#                    {
-#                        $mountpointspervol = $mountpointspervol1.substring(1)
-#                    }
-#                }
-#            }
         }
 
         # we are done
@@ -968,6 +895,9 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         if ($rposelection -eq 2 )
         {
             Write-Host -nonewline "-imagename `"$imagename`""
+        }
+        if ($renamedatabasefiles -eq $true) {
+            Write-Host -nonewline " -renamedatabasefiles"
         }
         if ($recoverypoint)
         {
@@ -1005,42 +935,27 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         {
             Write-Host -nonewline " -userlogins `"$userlogins`""
         }
-        if ($label)
-        {
-            Write-Host -nonewline " -label `"$label`""
-        }
         if ($username)
         {
             Write-Host -nonewline " -username $username -base64password `"$base64password`""
         }
-#        if ($mountmode)
-#        {
-#            Write-Host -nonewline " -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts"
-#        }
-#        if ($mountpointperimage)
-#        {
-#            Write-Host -nonewline " -mountpointperimage `"$mountpointperimage`""
-#        }
-#        if ($mountpointspervol)
-#        {
-#            Write-Host -nonewline " -mountpointspervol `"$mountpointspervol`""
-#        }
-#        if ($sltid)
-#        {
-#            Write-Host -nonewline " -sltid $sltid -slpid $slpid"
-#        }
-#        if ($dbnameprefix)
-#        {
-#            Write-Host -nonewline " -dbnameprefix `"$dbnameprefix`""
-#        }
-#        if ($dbnamesuffix)
-#        {
-#            Write-Host -nonewline " -dbnamesuffix `"$dbnamesuffix`""
-#        }     
-#        if ($perfoption)
-#        {
-#            Write-Host -nonewline " -perfoption `"$perfoption`""
-#        }  
+        if ($volumes)
+        {
+            Write-Host -nonewline " -volumes"
+        }
+        if ($files)
+        {
+            Write-Host -nonewline " -files"
+        }
+        if ($usesourcelocation)
+        {
+            Write-Host -nonewline " -usesourcelocation"
+        }
+        if ($restorelist)
+        {
+            Write-Host -nonewline " -restorelist `"$restorelist`""
+        }
+
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Print CSV output"
@@ -1048,82 +963,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-#            write-host ""
-#            Write-Host "Are you planning to migrate the database after clone"
-#            Write-Host "1`: No (default)"
-#            Write-Host "2`: Yes"
-#            Write-Host ""
-#            $userselection = ""
-#            [int]$userselection = Read-Host "Please select from this list (1-2)"
-#            if ($userselection -eq "") { $migrate = "" }
-#            if ($userselection -eq 1) {  $migrate = ""  }
-#            if ($userselection -eq 2) {  $migrate = "yes"  }
-#            if ($migrate -eq "yes")
-#            {
-#                Write-Host ""
-#                While ($true) 
-#                {
-#                    [int]$frequency = Read-Host "Frequency between 1-24 hours (hit enter for default of 24)"
-#                    if ($frequency -eq "") { $frequency = 24 }
-#                    if ($frequency -lt 1 -or $frequency -gt 24)
-#                    {
-#                        Write-Host -Object "Invalid selection. Please enter a number in range [1-24] or press enter for default of 24"
-#                    } 
-#                    else
-#                    {
-#                        break
-#                    }
-#                }
-########---filestuff
-#                Write-Host ""
-#                Write-Host "Rename files to match new database name"
-#                Write-Host "1`: Yes (default)"
-#                Write-Host "2`: No"
-#                Write-Host ""
-#                $userselection = ""
-#                [int]$userselection = Read-Host "Please select from this list (1-2)"
-#                if ($userselection -eq "") { $dontrenamedatabasefiles = "" }
-#                if ($userselection -eq 1) {  $dontrenamedatabasefiles = ""  }
-#                if ($userselection -eq 2) {  $dontrenamedatabasefiles = "yes"  }
-#                Write-Host ""
-#                While ($true) 
-#                {
-#                    [int]$copythreadcount = Read-Host "Copy thread count between 1-20 (hit enter for default of 4)"
-#                    if ($copythreadcount -eq "") { $copythreadcount = 4 }
-#                    if ($copythreadcount -lt 1 -or $copythreadcount -gt 20)
-#                    {
-#                        Write-Host -Object "Invalid selection. Please enter a number in range [1-20] or press enter for default of 4"
-#                    } 
-#                    else
-#                    {
-#                        break
-#                    }
-#                }
-#                Write-Host ""
-#                Write-Host "Select File Destination For Migrated Files"
-#                Write-Host "1`: Copy files to the same drive/path as they were on the source server (default)"
-#                Write-Host "2`: Choose new file locations at the volume level"
-#                Write-Host "3`: Choose new locations at the file level."
-#                Write-Host ""
-#                $userselection = ""
-#                [int]$userselection = Read-Host "Please select from this list (1-3)"
-#                if ($userselection -eq 2) 
-#                {  
-#                    $volumes = "yes"  
-#                    write-host "Format for volume restore list is to comma separate each source,target drive and semicolon separate each drive pair, example:  D:\,K:\;E:\,M:\"
-#                    write-host "This migrates D: to K:   and also migrates E: to M:"
-#                    write-host ""
-#                    $restorelist = Read-Host "Please enter a list of source/target drives"
-#                }
-#                if ($userselection -eq 3) 
-#                {  
-#                    $files = "yes"  
-#                    write-host "Format for File restore list is to comma separate each file,sourcedir,targetdir  and semicolon separate each trio, example: filename1,source1,target1;filename2,source2,target2"
-#                    write-host "This migrates filename1 currently in source1 folder to target1 folder and also migrate filename2 currently in source2 folder to target2 folder"
-#                    write-host ""
-#                    $restorelist = Read-Host "Please enter a list of file,sourcedir,targetdirs"
-#                }
-#            }
+
             if ($rposelection -eq 1)
             {
                 $printimagename = ""
@@ -1134,10 +974,15 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                 $printimageid = $imageid
             }
 
-            write-host "appid,appname,imagename,imageid,cloneapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,label,dbname,consistencygroupname,dbnamelist,dbrenamelist,recoverdb,userlogins,username,password,base64password,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist"
-            write-host -nonewline "`"$appid`",`"$appname`",`"$printimagename`",`"$printimageid`",`"$cloneapplianceid`",`"$targethostid`",`"$targethostname`",`"$sqlinstance`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$label`",`"$dbname`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbrenamelist`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`","
+            write-host "appid,appname,imagename,imageid,cloneapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,dbname,consistencygroupname,dbnamelist,dbrenamelist,recoverdb,userlogins,username,password,base64password,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,renamedatabasefiles,volumes,files,usesourcelocation,restorelist"
+            write-host -nonewline "`"$appid`",`"$appname`",`"$printimagename`",`"$printimageid`",`"$cloneapplianceid`",`"$targethostid`",`"$targethostname`",`"$sqlinstance`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$dbname`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbrenamelist`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`","
             if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
             write-host -nonewline "`"$perfoption`",`"$migrate`",$copythreadcount,$frequency,`"$dontrenamedatabasefiles`",`"$volumes`",`"$files`",`"$restorelist`""
+            if ($renamedatabasefiles -eq $true)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
+            if ($volumes)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
+            if ($files)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
+            if ($usesourcelocation)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
+            write-host -nonewline "`"$restorelist`""
             write-host ""
             return   
         }
@@ -1171,16 +1016,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         }
     }
 
-#    if ( ($sltid) -and (!($slpid)) )
-#    {
-#        Get-AGMErrorMessage -messagetoprint "An sltid $sltid was specified without an slpid with -slpid yyyy.   Please specify both"
-#        return
-#    }
-#    if ( (!($sltid)) -and ($slpid) )
-#    {
-#        Get-AGMErrorMessage -messagetoprint "An slpid $slpid was specified without an sltid using -sltid xxxx.    Please specify both"
-#        return
-#    }
 
     if (($discovery -eq $true) -and ($targethostid) -and ($cloneapplianceid))
     {
@@ -1236,11 +1071,12 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         $overwrite = "no"
     }
 
-    
-    if (!($label))
-    {
-        $label = ""
+
+    if (!($restorelist))
+    { 
+        $usesourcelocation = $TRUE
     }
+
 
     if ($password)
     {
@@ -1286,76 +1122,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     }
 
 
-#    if ($mountmode -eq "vrdm")
-#    {
-#        $physicalrdm = 0
-#        $rdmmode = "independentvirtual"
-#    }
-#    if ($mountmode -eq "prdm")
-#    {
-#        $physicalrdm = 1
-#        $rdmmode = "physical"
-#    }
-#    if ($mountmode -eq "nfs")
-#    {
-#        $physicalrdm = 2
-#        $rdmmode = "nfs"
-#    }
-
-
-
-
-#    if ($mapdiskstoallesxhosts)
-#    {
-#        if (($mapdiskstoallesxhosts -ne "true") -and  ($mapdiskstoallesxhosts -ne "false"))
-#        {
-#            Get-AGMErrorMessage -messagetoprint "The value of Map to all ESX hosts of $mapdiskstoallesxhosts is not valid.  Must be true or false"
-#            return
-#        }
-#        $restoreoptions = @(
-#            @{
-#                name = 'mapdiskstoallesxhosts'
-#                value = "$mapdiskstoallesxhosts"
-#            }
-#        )
-#    }
-
-#    if ($mountpointperimage)
-#    {
-#        if ($restoreoptions)
-#        {
-#            $imagemountpoint = @{
-#                name = 'mountpointperimage'
-#                value = "$mountpointperimage"
-#            }
-#            $restoreoptions = $restoreoptions + $imagemountpoint
-#        }
-#        else 
-#        {
-#            $restoreoptions = @(
-#            @{
-#                name = 'mountpointperimage'
-#                value = "$mountpointperimage"
-#            }
-#        )
-#        }
-#    }
-
-#    if ($mountpointspervol)
-#    {
-#        $restoreobjectmappings = @(
-#            foreach ($mapping in $mountpointspervol.Split(","))
-#            {
-#                $firstword = $mapping.Split("=") | Select-object -First 1
-#                $secondword = $mapping.Split("=") | Select-object -skip 1
-#                [pscustomobject]@{
-#                    restoreobject = $firstword
-#                    mountpoint = $secondword}
-#            } 
-#        )
-#    }
-
-
     
     if (($dbname) -or ($dbrenamelist.Split(",").count -eq 2) )
     {
@@ -1389,22 +1155,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                 value = $overwrite
             }
         )
-        # reprotect
-#        if ($sltid)
-#        {
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'reprotect'
-#                value = "true"
-#            }
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'slt'
-#                value = $sltid
-#            }
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'slp'
-#                value = $slpid
-#            }
-#        }
+ 
         #authentication
         if ($username)
         {
@@ -1419,7 +1170,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         }
 
         $body = [ordered]@{}
-        if ($label) { $body = $body + [ordered]@{ label = $label; }}
         $body = $body + [ordered]@{
             image = $imagename;
             host = @{id=$targethostid}
@@ -1427,10 +1177,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             appaware = "true";
             migratevm = "false";
         }
-#        if ($restoreoptions)
-#        {
-#            $body = $body + [ordered]@{ restoreoptions = $restoreoptions }
-#        }
+
         if ($selectedobjects)
         {
             $body = $body + [ordered]@{ selectedobjects = $selectedobjects }
@@ -1439,16 +1186,36 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         {
             $body = $body + [ordered]@{ recoverytime = [string]$recoverytime }
         }
-#        if ($mountmode)
-#        {
-#            $body = $body + [ordered]@{ physicalrdm = $physicalrdm }
-#            $body = $body + [ordered]@{ rdmmode = $rdmmode }
-#        }
+
         if ($restoreobjectmappings)
         {
             $body = $body + @{ restoreobjectmappings = $restoreobjectmappings }
         }
-#        if (($perfoption) -and ($imagejobclass -eq "OnVault")) { $body = $body +@{ rehydrationmode = $perfoption } }
+        if ($usesourcelocation)
+        {
+            $body += @{  restorelocation = @{ type = "usesourcelocation" } }
+        }
+        if ($volumes)
+        {
+            foreach ($volume in $restorelist.split(";"))
+            {
+                $mapping += @( [ordered]@{ name = $volume.split(",")[0] ; source = $volume.split(",")[0] ; target = $volume.split(",")[1] } ) 
+            }
+            $restorelocation += @{type = "volumes"} 
+            $restorelocation += @{mapping = $mapping}
+            $body += @{ restorelocation = $restorelocation }
+        }
+        if ($files)
+        {
+            foreach ($file in $restorelist.split(";"))
+            {
+                $mapping += @( [ordered]@{ name = $file.split(",")[0] ; source = $file.split(",")[1] ; target = $file.split(",")[2] } ) 
+            }
+            $restorelocation += @{ type = "files" }
+            $restorelocation += @{ mapping = $mapping } 
+            $body += @{ restorelocation = $restorelocation }
+        }
+
     }
     else
     {
@@ -1472,20 +1239,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                     value = $consistencygroupname
                 }
         }
-#        if ($dbnameprefix -ne "")
-#        {
-#            $provisioningoptions= $provisioningoptions + @{
-#                name = 'dbnameprefix'
-#                value = $dbnameprefix
-#            }
-#        }
-#        if ($dbnamesuffix -ne "")
-#        {
-#            $provisioningoptions= $provisioningoptions + @{
-#                name = 'dbnamesuffix'
-#                value = $dbnamesuffix
-#            }
-#        }
+
         if ($dbrenamelist)
         {
             foreach ($dbsplit in $dbrenamelist.Split(";"))
@@ -1524,28 +1278,21 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             name = 'overwritedatabase'
             value = $overwrite
         }
-#        if ($sltid)
-#        {
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'reprotect'
-#                value = "true"
-#            }
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'slt'
-#                value = $sltid
-#            }
-#            $provisioningoptions= $provisioningoptions +@{
-#                name = 'slp'
-#                value = $slpid
-#            }
-#        }
+        if ($renamedatabasefiles -eq $true)
+        {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'true'
+            }
+        } else {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'false'
+            }
+        }
+
         $body = [ordered]@{}
-        if ($label) { $body = $body + [ordered]@{ label = $label; }}
-#        if ($mountmode)
-#        {
-#            $body = $body + [ordered]@{ physicalrdm = $physicalrdm }
-#            $body = $body + [ordered]@{ rdmmode = $rdmmode }
-#        }
+
         $body = $body + [ordered]@{
             image = $imagename;
             host = @{id=$targethostid};
@@ -1554,10 +1301,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             appaware = "true";
             migratevm = "false";
         }
-#        if ($restoreoptions)
-#        {
-#            $body = $body + [ordered]@{ restoreoptions = $restoreoptions }
-#        }
+
         if ($recoverytime)
         {
             $body = $body + [ordered]@{ recoverytime = [string]$recoverytime }
@@ -1566,7 +1310,30 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         {
             $body = $body + [ordered]@{ restoreobjectmappings = $restoreobjectmappings }
         }
-#        if (($perfoption) -and ($imagejobclass -eq "OnVault")) { $body = $body +@{ rehydrationmode = $perfoption } }
+        if ($usesourcelocation)
+        {
+            $body += @{  restorelocation = @{ type = "usesourcelocation" } }
+        }
+        if ($volumes)
+        {
+            foreach ($volume in $restorelist.split(";"))
+            {
+                $mapping += @( [ordered]@{ name = $volume.split(",")[0] ; source = $volume.split(",")[0] ; target = $volume.split(",")[1] } ) 
+            }
+            $restorelocation += @{type = "volumes"} 
+            $restorelocation += @{mapping = $mapping}
+            $body += @{ restorelocation = $restorelocation }
+        }
+        if ($files)
+        {
+            foreach ($file in $restorelist.split(";"))
+            {
+                $mapping += @( [ordered]@{ name = $file.split(",")[0] ; source = $file.split(",")[1] ; target = $file.split(",")[2] } ) 
+            }
+            $restorelocation += @{ type = "files" }
+            $restorelocation += @{ mapping = $mapping } 
+            $body += @{ restorelocation = $restorelocation }
+        }
     }
 
     

@@ -2,6 +2,7 @@
 
 Started Change log file as per release 0.0.0.54
 ## AGMPowerLIB (0.0.0.60)
+* Add New-AGMLibMSSQLClone
 * Stop Get-AGMLibActiveImage getting NAS errors on unmount
 * Improve error messages from Get-AGMLibApplianceLogs
 * Improve help examples in some commands
