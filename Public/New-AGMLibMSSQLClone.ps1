@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[switch]$renamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch]$usesourcelocation) 
+Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[switch]$renamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch]$usesourcelocation,[switch]$jsonprint) 
 {
     <#
     .SYNOPSIS
@@ -1073,7 +1073,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     }
 
 
-    
+    # we are here if we have a single DB to wrork with
     if (($dbname) -or ($dbrenamelist.Split(",").count -eq 2) )
     {
         if ($dbrenamelist)
@@ -1106,6 +1106,18 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                 value = $overwrite
             }
         )
+        if ($renamedatabasefiles -eq $true)
+        {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'true'
+            }
+        } else {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'false'
+            }
+        }
  
         #authentication
         if ($username)
@@ -1166,18 +1178,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             $restorelocation += @{ mapping = $mapping } 
             $body += @{ restorelocation = $restorelocation }
         }
-        if ($renamedatabasefiles -eq $true)
-        {
-            $provisioningoptions= $provisioningoptions +@{
-                name = 'renamedatabasefiles'
-                value = 'true'
-            }
-        } else {
-            $provisioningoptions= $provisioningoptions +@{
-                name = 'renamedatabasefiles'
-                value = 'false'
-            }
-        }
+
 
     }
     else
@@ -1297,7 +1298,7 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         $wait = $true
     }
 
-    if ($jsonprint -eq "yes")
+    if ($jsonprint -eq $true)
     {
         $compressedjson = $body | ConvertTo-Json -compress -depth 10
         Write-host "This is the final command:"
