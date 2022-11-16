@@ -25,10 +25,10 @@ Function New-AGMLibContainerMount ([string]$appid,[string]$appname,[string]$allo
     Runs a guided menu to mount an image to a container
 
     .EXAMPLE
-    New-AGMLibVMExisting -imageid 54380607 -volumes "dasvol:/dev/hanavg/log;/tmp/cmounts/test1;/custmnt2,dasvol:/dev/hanavg/data;/tmp/cmounts/test2;/ss" -allowedips "1.1.1.1,10.10.10.10"
+    New-AGMLibContainerMount -imageid 54380607 -volumes "dasvol:/dev/hanavg/log;/tmp/cmounts/test1;/custmnt2,dasvol:/dev/hanavg/data;/tmp/cmounts/test2;/ss" -allowedips "1.1.1.1,10.10.10.10"
 
     Mounts Image ID 54380607
-    The -volumes list each moint point in the image.  Each mount point is comma separated
+    The -volumes list each mount point in the image.  Each mount point is comma separated
     For each each mountpoint we need three values, that are semi-colon separated
     In this example, there are two mount points, the first one is /dev/hanavg/log.
     It is given an appliance mountpoint of /test1 and an NFS export path of /custmnt2

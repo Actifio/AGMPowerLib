@@ -21,7 +21,7 @@ Function Get-AGMLibLastPostCommand([string]$username,[int]$limit,[switch][alias(
 
     .EXAMPLE
     Get-AGMLibLastPostCommand
-    You will be prompted for a JobName
+    You will be prompted for a username
 
     .EXAMPLE
     Get-AGMLibLastPostCommand av

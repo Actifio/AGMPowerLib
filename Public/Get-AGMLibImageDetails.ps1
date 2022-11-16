@@ -20,11 +20,11 @@ Function Get-AGMLibImageDetails ([string]$appid)
     Displays the images for a specified app
 
     .EXAMPLE
-    Get-AGMDBMImageDetails
+    Get-AGMLibImageDetails
     You will be prompted for App ID
 
     .EXAMPLE
-    Get-AGMDBMImageDetails 2133445
+    Get-AGMLibImageDetails 2133445
     Display images for AppID 2133445
 
 
