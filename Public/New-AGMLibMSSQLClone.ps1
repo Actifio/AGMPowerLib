@@ -309,50 +309,105 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             Get-AGMErrorMessage -messagetoprint "Failed to find any $apptype apps"
             return
         }
-        $i = 1
-        Clear-Host
-        Write-host "Application selection menu"
-        Write-host ""
-        foreach ($app in $applist)
-        { 
-            $applistname = $app.appname
-            $appliance = $app.cluster.name 
-            if ($userselection -eq 1)
-            {
+        if ($userselection -eq 1)
+        {
+            $i = 1
+            Clear-Host
+            Write-host "Application selection menu"
+            Write-host ""
+            foreach ($app in $applist)
+            { 
+                $applistname = $app.appname
+                $appliance = $app.cluster.name 
                 $pathname = $app.pathname
                 Write-Host -Object "$i`: $pathname`\$applistname ($appliance)"
+                $i++
             }
-            else {
-                Write-Host -Object "$i`: $applistname ($appliance)"
-            }
-            
-            $i++
-        }
-        While ($true) 
-        {
-            Write-host ""
-            $listmax = $applist.appname.count
-            [int]$appselection = Read-Host "Please select an App (1-$listmax)"
-            if ($appselection -lt 1 -or $appselection -gt $listmax)
+            While ($true) 
             {
-                Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
-            } 
-            else
-            {
-                break
+                Write-host ""
+                $listmax = $applist.appname.count
+                [int]$appselection = Read-Host "Please select an App (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
             }
-        }
-        if ($applist.id.count -eq 1)
-        {
-            $appname = $applist.appname
-            $appid = $applist.id
+            if ($applist.id.count -eq 1)
+            {
+                $appname = $applist.appname
+                $appid = $applist.id
+                $slaid = $applist.sla.id
+            }
+            else 
+            {
+                $appname = $applist.appname[($appselection - 1)]
+                $appid = $applist.id[($appselection - 1)]
+                $slaid = $applist.sla.id[($appselection - 1)]
+            }
+            $slamatchgrab = Get-AGMSLA -id $slaid
+            $slaappname = $slamatchgrab.application.appname
+            $slaapptype = $slamatchgrab.application.apptype
+            $slaappid = $slamatchgrab.application.id
+
+            if ($slaappid -ne $appid)
+            {
+                write-host ""
+                Write-Host "The application you have selected is managed as part of a $slaapptype called $slaappname  Would you like to go to the Access page for the $slaapptype instead?"
+                Write-host ""
+                Write-Host "1`: No (default)"
+                Write-Host "2`: Yes"
+                Write-Host ""
+                [int]$groupswitch = Read-Host "Please select from this list (1-2)"
+                if ($groupswitch -eq 2)
+                {
+                    $appname = $slaappname
+                    $appid = $slaappid
+                }
+            }
         }
         else 
-        {
-            $appname = $applist.appname[($appselection - 1)]
-            $appid = $applist.id[($appselection - 1)]
+        {    
+            $i = 1
+            Clear-Host
+            Write-host "Group selection menu"
+            Write-host ""
+            foreach ($app in $applist)
+            { 
+                $applistname = $app.appname
+                $appliance = $app.cluster.name
+                Write-Host -Object "$i`: $applistname ($appliance)"
+                $i++
+            }
+            While ($true) 
+            {
+                Write-host ""
+                $listmax = $applist.appname.count
+                [int]$appselection = Read-Host "Please select an App (1-$listmax)"
+                if ($appselection -lt 1 -or $appselection -gt $listmax)
+                {
+                    Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                } 
+                else
+                {
+                    break
+                }
+            }
+            if ($applist.id.count -eq 1)
+            {
+                $appname = $applist.appname
+                $appid = $applist.id
+            }
+            else 
+            {
+                $appname = $applist.appname[($appselection - 1)]
+                $appid = $applist.id[($appselection - 1)]
+            }
         }
-
     }
 
     if ( ($targethostname) -and (!($targethostid)) )
