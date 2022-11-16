@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$consistencygroupname,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[switch]$renamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch]$usesourcelocation) 
+Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$cloneapplianceid,[string]$imagename,[string]$imageid,[string]$targethostname,[string]$appname,[string]$sqlinstance,[string]$dbname,[string]$recoverypoint,[string]$recoverymodel,[string]$overwrite,[string]$dbnamelist,[string]$dbrenamelist,[string]$recoverdb,[string]$userlogins,[string]$username,[string]$password,[string]$base64password,[switch][alias("d")]$discovery,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[switch]$renamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch]$usesourcelocation) 
 {
     <#
     .SYNOPSIS
@@ -32,12 +32,12 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     Clones the latest snapshot of a SQL Instance, cloning the CRM database but renaming it to CRM1 to specified host using specified appliance.
 
     .EXAMPLE
-    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -sqlinstance "WIN-TARGET\SQLEXPRESS" -dbrenamelist "AdventureWorks2019,test1;CRM,test2" -consistencygroupname "cg1clone"
-    Clone the latest snapshot of a SQL Instance, cloning two databases but changing the target DB names. Because two DBs are cloneed a consistencygroup name is also needed.
-    
+    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -sqlinstance "WIN-TARGET\SQLEXPRESS" -dbrenamelist "AdventureWorks2019,test1;CRM,test2"
+    Clone the latest snapshot of a SQL Instance, cloning two databases but changing the target DB names.
+
     .EXAMPLE
-    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -sqlinstance "WIN-TARGET\SQLEXPRESS" -dbnamelist "AdventureWorks2019,CRM" -consistencygroupname "cg1clone"
-    Clone the latest snapshot of a SQL Instance, cloneing two databases but not changing the target DB names (dbnamelist, not dbrenamelist).   Because two DBs are cloneed a consistencygroup name is also needed. 
+    New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090 -sqlinstance "WIN-TARGET\SQLEXPRESS" -dbnamelist "AdventureWorks2019,CRM" 
+    Clone the latest snapshot of a SQL Instance, cloneing two databases but not changing the target DB names (dbnamelist, not dbrenamelist).  
 
     .EXAMPLE
     New-AGMLibMSSQLClone -appid 50318 -cloneapplianceid 143112195179 -targethostid 51090  -files  -restorelist "SQL_smalldb.mdf,D:\Data,d:\avtest1;SQL_smalldb_log.ldf,E:\Logs,e:\avtest1"
@@ -83,7 +83,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
     -dbname  If cloning only one DB use this option.  This is the name of the new database that will be created.
     -dbnamelist  If cloning more than one DB, use this comma separated.  It is better to use -dbrenamelist 
     -dbrenamelist  Semicolon separated list of comma separated source db and target db.  So if we have two source DBs, prod1 and prod2 and we clone them as dev1 and dev2 then:   prod1,dev1;prod2,dev2
-    -consistencygroupname  If cloneing more than one DB then you will need to specify a CG name.  This is used on the Appliance side to group the new apps, the cloned host wont see this name
     -dbnamesuffix option to add a suffix.  Use this with -dbnamelist
     -dbnameprefix option to add a prefix.  Use this with -dbnamelist
     
@@ -728,24 +727,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
                 }
             }
         }
-        if ($dbrenamelist.Split(";").count -gt 1)
-        {
-            # consistency group is mandatory
-            Clear-Host
-            While ($true) 
-            {
-                $consistencygroupname = Read-Host "Name of Consistency Group"
-                if ($consistencygroupname -eq "")
-                {
-                    Write-Host -Object "The CG Name cannot be blank"
-                } 
-                else
-                {
-                    break
-                }
-            }
-           
-        }
         # rename files
         write-host ""
         Write-Host "File rename"
@@ -915,10 +896,6 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
         {
             Write-Host -nonewline " -dbrenamelist `"$dbrenamelist`""
         } 
-        if ($consistencygroupname)
-        {
-            Write-Host -nonewline " -consistencygroupname `"$consistencygroupname`""
-        } 
         if ($recoverymodel)
         {
             Write-Host -nonewline " -recoverymodel `"$recoverymodel`""
@@ -958,35 +935,9 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
 
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
-        Write-Host "2`: Print CSV output"
-        Write-Host "3`: Exit without running the command"
-        $userchoice = Read-Host "Please select from this list (1-3)"
+        Write-Host "2`: Exit without running the command"
+        $userchoice = Read-Host "Please select from this list (1-2)"
         if ($userchoice -eq 2)
-        {
-
-            if ($rposelection -eq 1)
-            {
-                $printimagename = ""
-                $printimageid = ""
-            }
-            else {
-                $printimagename = $imagename
-                $printimageid = $imageid
-            }
-
-            write-host "appid,appname,imagename,imageid,cloneapplianceid,targethostid,targethostname,sqlinstance,recoverypoint,recoverymodel,overwrite,dbname,consistencygroupname,dbnamelist,dbrenamelist,recoverdb,userlogins,username,password,base64password,discovery,perfoption,migrate,copythreadcount,frequency,dontrenamedatabasefiles,volumes,files,restorelist,renamedatabasefiles,volumes,files,usesourcelocation,restorelist"
-            write-host -nonewline "`"$appid`",`"$appname`",`"$printimagename`",`"$printimageid`",`"$cloneapplianceid`",`"$targethostid`",`"$targethostname`",`"$sqlinstance`",`"$recoverypoint`",`"$recoverymodel`",`"$overwrite`",`"$dbname`",`"$consistencygroupname`",`"$dbnamelist`",`"$dbrenamelist`",`"$recoverdb`",`"$userlogins`",`"$username`",`"$password`",`"$base64password`","
-            if ($discovery) {  write-host -nonewline  `"$discovery`" } else { write-host -nonewline  "," }
-            write-host -nonewline "`"$perfoption`",`"$migrate`",$copythreadcount,$frequency,`"$dontrenamedatabasefiles`",`"$volumes`",`"$files`",`"$restorelist`""
-            if ($renamedatabasefiles -eq $true)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
-            if ($volumes)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
-            if ($files)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
-            if ($usesourcelocation)  {  write-host -nonewline ",`"true`"" } else  {  write-host -nonewline "," }
-            write-host -nonewline "`"$restorelist`""
-            write-host ""
-            return   
-        }
-        if ($userchoice -eq 3)
         {
             return
         }
@@ -1215,6 +1166,18 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             $restorelocation += @{ mapping = $mapping } 
             $body += @{ restorelocation = $restorelocation }
         }
+        if ($renamedatabasefiles -eq $true)
+        {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'true'
+            }
+        } else {
+            $provisioningoptions= $provisioningoptions +@{
+                name = 'renamedatabasefiles'
+                value = 'false'
+            }
+        }
 
     }
     else
@@ -1224,21 +1187,10 @@ Function New-AGMLibMSSQLClone ([string]$appid,[string]$targethostid,[string]$clo
             Get-AGMErrorMessage -messagetoprint "Neither dbnamelist or dbrenamelist was specified. Please specify or dbrenamelist to identify which DBs to clone"
             return
         }
-        if (!($consistencygroupname)) 
-        {
-            Get-AGMErrorMessage -messagetoprint "A consistencygroup was not specified"
-            return
-        }
+
 
         $provisioningoptions = @()
-        if ($consistencygroupname)
-        {
-            $provisioningoptions = $provisioningoptions +
-                [ordered]@{
-                    name = 'ConsistencyGroupName'
-                    value = $consistencygroupname
-                }
-        }
+
 
         if ($dbrenamelist)
         {
