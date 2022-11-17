@@ -31,7 +31,7 @@ Function Get-AGMLibRunningJobs  ([switch][alias("e")]$every,[string]$jobclass,[i
     .DESCRIPTION
     A function to find running jobs
     By default it will only show running jobs
-    -every will show eery job
+    -every will show every job
     -sltname will filter on template name
     -jobclass will filter on jobclass.   Multiple jobclasses can be entered comma separated
     -monitor will run the function continuously checking every 10 seconds

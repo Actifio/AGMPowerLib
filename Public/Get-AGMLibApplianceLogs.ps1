@@ -100,6 +100,7 @@ Function Get-AGMLibApplianceLogs([string]$applianceid,[string]$id,[string]$logty
     $timeout = $AGMTIMEOUT
     if (!($logtypes))
     {
+        write-host "Missing -logtype, for example: -logtype `"psrv,udppm`""
         write-host "Valid log types are as follows.  Use exact syntax command separated"
         Write-host "
         appliance

@@ -29,20 +29,20 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
 
     .EXAMPLE
     Remove-AGMLibMount -imagename Image_2133445 -d
-    Unmounts Image_2133445 and deletes it from Actifio and from the cloud if a mount is a GCP VM created from Persistent Disk Snapshot
+    Unmounts Image_2133445 and deletes it from Appliance and from the cloud if a mount is a Compute Engine Instance created from Persistent Disk Snapshot
 
     .EXAMPLE
     Remove-AGMLibMount -imagename Image_2133445 -p
     For Google Cloud Persistent Disk (PD) mounts
-    Unmounts Image_2133445 and deletes it on Actifio Side but preserves it on Google side.
+    Unmounts Image_2133445 and deletes it on Appliance Side but preserves it on Google side.
 
     .DESCRIPTION
     A function to unmount images
 
-    -delete (-d)      Is used to unmount and delete an image.  If not specified then an unmount is done, but the image is retained on the Actifio Side
+    -delete (-d)      Is used to unmount and delete an image.  If not specified then an unmount is done, but the image is retained on the Appliance Side
     -force (-f)       Removes the mount even if the host-side command to remove the mounted application fails.   This can leave artifacts on the Host and should be used with caution
-    -preservevm (-p)  This applies to GCE Instances created from PD Snapshot.   When used the Actifio Image of the mount is removed, but on the GCP side the new VM is retained.   
-    -gceinstanceforget  Forgets all mounted GCE Instance.  This is the same as running -preservevm against them
+    -preservevm (-p)  This applies to Compute Engine Instances created from Persistent Disk Snapshot.   When used the Appliance Image of the mount is removed, but on the GCP side the new VM is retained.   
+    -gceinstanceforget  Forgets all mounted Compute Engine Instance.  This is the same as running -preservevm against them
 
     #>
 

@@ -20,11 +20,11 @@ Function Get-AGMLibHostID ([string]$hostname)
     Displays the Host IDs for a nominated HostName.
 
     .EXAMPLE
-    Get-AGMDBMHostID
+    Get-AGMLibHostID
     You will be prompted for HostName
 
     .EXAMPLE
-    Get-AGMDBMHostID smalldb
+    Get-AGMLibHostID smalldb
     To search for the HostID of any hosts called smalldb
 
     .DESCRIPTION

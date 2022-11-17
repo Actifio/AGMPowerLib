@@ -52,7 +52,7 @@ Function Get-AGMLibActiveImage([string]$label,[string]$appid,[string]$jobclass,[
     $fv = "characteristic=1&characteristic=2&apptype!nas"
     if ($unmount)
     {
-        $fv = $fv + "characteristic=2"
+        $fv = "characteristic=2"
     }
     if ($jobclass)
     {

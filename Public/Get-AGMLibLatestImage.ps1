@@ -20,16 +20,16 @@ Function Get-AGMLibLatestImage([string]$id,[string]$appid,[string]$jobclass)
     Displays the most recent image for an application
 
     .EXAMPLE
-    Get-AGMLatestImage
+    Get-AGMLibLatestImage
     You will be prompted for application ID 
 
     .EXAMPLE
-    Get-AGMLatestImage -id 4771
+    Get-AGMLibLatestImage -id 4771
     Get the last snapshot created for the application with ID 4771
 
     .EXAMPLE
-    Get-AGMLatestImage -id 4771 -jobclass dedup
-    Get the last dedup created for the application with ID 4771
+    Get-AGMLibLatestImage -id 4771 -jobclass OnVault
+    Get the last OnVault created for the application with ID 4771
 
 
     .DESCRIPTION

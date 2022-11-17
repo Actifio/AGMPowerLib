@@ -13,7 +13,8 @@
 # limitations under the License.
 
 
-Function New-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[switch]$jsonprint,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch][alias("g")]$guided) 
+
+Function New-AGMLibMSSQLMigrate ([string]$imagename,[string]$imageid,[int]$copythreadcount,[int]$frequency,[switch]$jsonprint,[switch]$dontrenamedatabasefiles,[switch]$volumes,[switch]$files,[string]$restorelist,[switch][alias("g")]$guided,[switch]$usesourcelocation) 
 {
     <#
     .SYNOPSIS
