@@ -20,22 +20,22 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     Uses a pre-prepared CSV list of cloud credential IDs, appliance IDs, projects and zones to discover new GCE Instances
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -nobackup
+    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -nobackup
 
     Adds all new GCE Instances discovered in the nominated projects and zones as unmanaged applications
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup
+    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -backup
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a valid template name
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -boot
+    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -backup -boot
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects only the boot drive or any that have a valid template name
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -sourcefile credentials.csv -backup -usertag "corporatepolicy"
+    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -backup -usertag "corporatepolicy"
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named corporatepolicy and a valid template name
 
