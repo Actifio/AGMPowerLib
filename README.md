@@ -6,6 +6,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 **[Prerequisites](#prerequisites)**<br>
 **[Install or upgrade AGMPowerLib](#install-or-upgrade-agmpowerlib)**<br>
 **[Guided Wizards](#guided-wizards)**<br>
+**[Usage Examples](#usage-examples)**<br>
 **[User Stories](#user-stories)**<br>
 **[Contributing](#contributing)**<br>
 **[Disclaimer](#disclaimer)**<br>
@@ -144,9 +145,12 @@ PS C:\Windows\system32>
 
 You can uninstall the module silently by adding **-silentuninstall** or **-u**  to the Install command.  
 
+# Usage Examples
+
+Usage examples are in a separate document that you will find [here](UsageExamples.md) 
 
 ## User Stories 
-Usage examples are in a separate document that you will find  [here](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md)
+All User Stories were moved to [here](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md)
 
 The following examples were all moved from the Readme to the Usage Examples page but are here in case you bookmarked them:
 
