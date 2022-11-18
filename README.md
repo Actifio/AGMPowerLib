@@ -147,7 +147,7 @@ You can uninstall the module silently by adding **-silentuninstall** or **-u**  
 
 # Usage Examples
 
-Usage examples are in a separate document that you will find [here](UsageExamples.md) 
+Usage examples are in a separate document that you will find [here](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md)
 
 ## User Stories 
 All User Stories were moved to [here](https://github.com/Actifio/AGMPowerCLI/blob/main/UsageExamples.md)
