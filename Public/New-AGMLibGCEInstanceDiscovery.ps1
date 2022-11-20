@@ -148,7 +148,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     {
         if ((!($sltid)) -and (!($backupplanlabel)))
         {
-            Get-AGMErrorMessage -messagetoprint "When specifying -backup you must either supply a default template with -sltid or -sltname and/or specify a label that contains an sltname with -backupplanlabel"
+            Get-AGMErrorMessage -messagetoprint "When specifying -backup either supply a default template with -sltid or -sltname and/or specify a -backupplanlabel"
             return;
         }
     }
