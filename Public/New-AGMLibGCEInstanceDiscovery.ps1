@@ -144,9 +144,18 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         $sltid = $sltgrab.id
     }
 
+    if ($backup)
+    {
+        if ((!($sltid)) -and (!($backupplanlabel)))
+        {
+            Get-AGMErrorMessage -messagetoprint "When specifying -backup you must either supply a default template with -sltid or -sltname and/or specify a label that contains an sltname with -backupplanlabel"
+            return;
+        }
+    }
+
     if ((!($backup)) -and (!($nobackup)))
     {
-        Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not"
+        Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not protected"
         return;
     }
 
@@ -197,10 +206,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     if ($backup)
     {
-        if (!($usertag))
-        {
-            $usertag = "googlebackupplan"
-        }
+
         # learn all the SLTs
         $sltgrab = Get-AGMSLT
         foreach ($cred in $searchlist)
