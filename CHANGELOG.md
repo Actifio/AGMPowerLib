@@ -6,6 +6,7 @@ Started Change log file as per release 0.0.0.54
 * New-AGMLibGCEInstanceDiscovery
   * Allow user to use label to specify diskbackup rule.   Right now will support only bootonly
   * change -usertag to -backupplanlabel  while continuing to support only name
+* Import-AGMLibOnVault improved guided mode output 
 
 ## AGMPowerLIB (0.0.0.60)
 * Add New-AGMLibMSSQLClone

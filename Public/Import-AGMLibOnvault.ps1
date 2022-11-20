@@ -174,7 +174,10 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($diskpoolgrab.count -eq 1)
         {
             $diskpoolid = $diskpoolgrab.id
-            write-host "Only one OnVault diskpool was found.  We will use this one:"  $diskpoolgrab.name 
+            write-host "Only one OnVault diskpool was found.  We will use this one:"  
+            write-host ""
+            write-host $diskpoolgrab.name "(ID: $diskpoolid)"
+            write-host ""
         }
         else
         {
@@ -216,7 +219,10 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         {
             $applianceid = $appliancegrab.cluster.clusterid
             $appliancename = $appliancegrab.cluster.name
-            write-host "Only one Appliance was found.  We will use this one: $appliancename (ID: $applianceid)"
+            write-host "Only one Appliance was found.  We will use this one:"
+            write-host ""
+            write-host "$appliancename (ID: $applianceid)"
+            write-host ""
         }
         else
         {
