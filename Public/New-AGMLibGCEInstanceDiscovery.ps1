@@ -144,6 +144,12 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         $sltid = $sltgrab.id
     }
 
+    if ((!($backup)) -and (!($nobackup)))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not"
+        return;
+    }
+
 
     if ($nobackup)
     {
@@ -292,7 +298,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                         {
                                             $name = $tag.trim().split("=") | Select-object -First 1
                                             $value = $tag.trim().split("=") | Select-object -skip 1
-                                            $sltid = ""
                                             # if the tag name is googlebackupplan we can protect it
                                             if ($name | select-string $usertag)
                                             {
@@ -305,13 +310,17 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                 {
                                                     if ($sltgrab | where-object {$_.name -eq $value})
                                                     {
-                                                        $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
+                                                        $labelsltid = ($sltgrab | where-object {$_.name -eq $value}).id
                                                     }
-                                                    if (($sltid) -and ($slpid) -and ($appid))
+                                                    elseif ($sltid)
+                                                    {
+                                                        $labelsltid = $sltid
+                                                    }
+                                                    if (($labelsltid) -and ($slpid) -and ($appid))
                                                     {
                                                         $newslalist += [pscustomobject]@{
                                                             appid = $appid
-                                                            sltid = $sltid
+                                                            sltid = $labelsltid
                                                             slpid = $slpid
                                                         }
                                                         $newvmcommand.newgceinstancebackup += 1 
@@ -330,7 +339,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                         {
                                             $name = $tag.trim().split("=") | Select-object -First 1
                                             $value = $tag.trim().split("=") | Select-object -skip 1
-                                            $sltid = ""
                                             # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
                                             if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
                                             {
