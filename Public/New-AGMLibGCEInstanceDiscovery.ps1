@@ -80,7 +80,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     - unmanaged <-- If this is detected then the application will be added as unmanaged
 
     Label management has two values that can be set:
-     -backupplanlabel xxxx     If the instance has a label named xxxx then use its value as the template name.
+     -backupplanlabel xxxx     If the instance has a label named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
      -diskbackuplabel yyy      If the instance has a label of yyy and the value is bootonly then set bootonly backup on that instance.
 
     #>
@@ -260,7 +260,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                             $newappcommand = Invoke-Expression $addappcommand
                             if ($newappcommand.count -ge 1)
                             {
-                                # here we build $newslalist which we process afterwards.
+                                # here we build $newslalist which we process afterwards.   This step adds the VM...  we protect it in the next step
                                 $newslalist = @()
                                 foreach ($instance in $newappcommand.items)
                                 {
@@ -325,13 +325,13 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     {
                                         # remove the leadering  and trailing { and }
                                         $taglist = $taggrab.tag.substring(1,$taggrab.tag.Length-2).Split(",")
-                                        # now for the backup tag
+                                        # now look for the  diskbackuplabel 
                                         foreach ($tag in $taglist)
                                         {
                                             $name = $tag.trim().split("=") | Select-object -First 1
                                             $value = $tag.trim().split("=") | Select-object -skip 1
                                             $sltid = ""
-                                            # if the tag name is googlebackupplan we can protect it
+                                            # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
                                             if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
                                             {
                                                 $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
