@@ -132,7 +132,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
             return;
         }
     }
-    $esxgrab = Get-AGMHost -filtervalue "vcenterhostid=$srcid&isesxhost=true&originalhostid=0" 
+    $esxgrab = Get-AGMHost -filtervalue "vcenterhostid=$srcid&isesxhost=true&originalhostid=0&name~esxi" 
     if ($esxgrab.id.count -lt 1)
     {
         Get-AGMErrorMessage -messagetoprint "Could not find ESX hosts for vCenter with ID $vcenterid"

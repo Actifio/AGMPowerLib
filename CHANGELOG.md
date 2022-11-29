@@ -7,6 +7,7 @@ Started Change log file as per release 0.0.0.54
   * Allow user to use label to specify diskbackup rule.   Right now will support only bootonly
   * change -usertag to -backupplanlabel  while continuing to support only name
 * Import-AGMLibOnVault improved guided mode output 
+* New-AGMLibGCVEfailover - ignore HCX node if its discovered and only work with nodes whose name start with esxi
 
 ## AGMPowerLIB (0.0.0.60)
 * Add New-AGMLibMSSQLClone
