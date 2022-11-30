@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[string]$label,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault,[string]$perfoption) 
+Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]$vmname,[string]$imagename,[string]$datastore,[string]$mountmode,[string]$poweronvm,[string]$volumes,[string]$esxhostid,[string]$vcenterid,[string]$mapdiskstoallesxhosts,[string]$label,[switch][alias("g")]$guided,[switch][alias("m")]$monitor,[switch][alias("w")]$wait,[string]$onvault,[string]$perfoption,[switch]$restoremacaddr,[switch]$jsonprint) 
 {
     <#
     .SYNOPSIS
@@ -37,6 +37,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
     -appid         If you specify this, then don't specify appname, imagename or imageid.   We will find the most recent imaage and mount that as a new VM.
     -perfoption    You can specify either:  StorageOptimized, Balanced, PerformanceOptimized or MaximumPerformance
                    Note if you run this option when mounting a snapshot image, the mount will fail
+    -restoremacaddr This will assign the MAC Address from the source VM to the target VM.   Do this in DR situations where you need to preserve the MAC Address
 
     * Monitoring options:
 
@@ -424,16 +425,32 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         if ($userselection -eq 2) {  $mountmode = "vrdm"  }
         if ($userselection -eq 3) {  $mountmode = "prdm"  }
 
-        # map to all ESX host 
-        Clear-Host
-        Write-Host "Map to all ESX Hosts"
-        Write-Host "1`: Do not map to all ESX Hosts(default)"
-        Write-Host "2`: Map to all ESX Hosts"
-        Write-Host ""
-        [int]$userselection = Read-Host "Please select from this list (1-2)"
-        if ($userselection -eq "") { $userselection = 1 }
-        if ($userselection -eq 1) {  $mapdiskstoallesxhosts = "false"  }
-        if ($userselection -eq 2) {  $mapdiskstoallesxhosts = "true"  }
+        if ($mountmode -ne "nfs")
+        {
+            # map to all ESX host 
+            Clear-HostZZZZZZ
+            Write-Host "Map to all ESX Hosts"
+            Write-Host "1`: Do not map to all ESX Hosts(default)"
+            Write-Host "2`: Map to all ESX Hosts"
+            Write-Host ""
+            [int]$userselection = Read-Host "Please select from this list (1-2)"
+            if ($userselection -eq "") { $userselection = 1 }
+            if ($userselection -eq 1) {  $mapdiskstoallesxhosts = "false"  }
+            if ($userselection -eq 2) {  $mapdiskstoallesxhosts = "true"  }
+        }
+        else
+        {
+            $mapdiskstoallesxhosts = "false" 
+        }
+
+          # preserve mac addr
+          Clear-Host
+          Write-Host "Use same Mac Address as source VM"
+          Write-Host "1`: no (default)"
+          Write-Host "2`: yes"
+          Write-Host ""
+          [int]$macselection = Read-Host "Please select from this list (1-2)"
+          if ($macselection -eq 2) {  $restoremacaddr = $true  }
 
 
         # power on new VM
@@ -511,6 +528,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Write-Host -nonewline "New-AGMLibVM -imageid $imageid -vmname $vmname -datastore `"$datastore`" -vcenterid $vcenterid -esxhostid $esxhostid -mountmode $mountmode -mapdiskstoallesxhosts $mapdiskstoallesxhosts -poweronvm $poweronvm -volumes `'$uservolumelistfinal`'"
         if ($label) { Write-Host -nonewline " -label $label" }
         if ($perfoption) { Write-Host -nonewline " -perfoption $perfoption" }
+        if ($restoremacaddr) { Write-Host -nonewline " -restoremacaddr" }
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
         Write-Host "2`: Show the JSON used to run this command, but don't run it"
@@ -518,7 +536,7 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            $jsonprint = "yes"
+            $jsonprint = $true
         }
         if ($userchoice -eq 3)
         {
@@ -591,6 +609,10 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
         Get-AGMErrorMessage -messagetoprint "Please supply -datastore -esxhostid and -vcenterid or use -g to build the command"
         return
     }
+    if (!($restoremacaddr))
+    { $macaddressrestore = "false" } 
+    else
+    { $macaddressrestore = "true" }
 
     if (!($selectedobjects))
     {
@@ -598,9 +620,13 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             "@type" = "mountRest";
             label = $label
             restoreoptions = @(
-                @{
+                [ordered] @{
                     name = 'mapdiskstoallesxhosts'
                     value = "$mapdiskstoallesxhosts"
+                }
+                [ordered] @{
+                    name = 'restoremacaddr'
+                    value = $macaddressrestore
                 }
             )
             datastore = $datastore;
@@ -620,9 +646,13 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
             "@type" = "mountRest";
             label = $label
             restoreoptions = @(
-                @{
+                [ordered]@{
                     name = 'mapdiskstoallesxhosts'
                     value = "$mapdiskstoallesxhosts"
+                }
+                [ordered]@{
+                    name = 'restoremacaddr'
+                    value = $macaddressrestore
                 }
             )
             datastore = $datastore;
@@ -644,16 +674,16 @@ Function New-AGMLibVM ([string]$appid,[string]$appname,[string]$imageid,[string]
 
 
 
-    $json = $body | ConvertTo-Json
+    $json = $body | ConvertTo-Json -depth 10 
 
     if ($monitor)
     {
         $wait = $true
     }
 
-    if ($jsonprint -eq "yes")
+    if ($jsonprint -eq $true)
     {
-        $compressedjson = $body | ConvertTo-Json -compress
+        $compressedjson = $body | ConvertTo-Json -compress -depth 10
         Write-host "This is the final command:"
         Write-host ""
         Write-host "Post-AGMAPIData  -endpoint /backup/$imageid/mount -body `'$compressedjson`'"

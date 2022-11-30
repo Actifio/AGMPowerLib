@@ -2,6 +2,10 @@
 
 Started Change log file as per release 0.0.0.54
 
+## AGMPowerLIB (0.0.0.62)
+* New-AGMLibVM add support for restoremacaddr
+* New-AGMLibGCVEfailover add support for restoremacaddr
+
 ## AGMPowerLIB (0.0.0.61)
 * New-AGMLibGCEInstanceDiscovery
   * Allow user to use label to specify diskbackup rule.   Right now will support only bootonly

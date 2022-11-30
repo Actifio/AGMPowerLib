@@ -26,11 +26,11 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
     .DESCRIPTION
     This routine needs a well formatted CSV file.    Here is an example of such a file:
 
-    phase,sourcevmname,targetvmname,label,targetnetworkname,poweronvm,targetmacaddress,onvault,perfoption
-    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest,true,,true,StorageOptimized
-    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest,false,01:50:56:81:11:6b,true,StorageOptimized
-    2,Centos1,centos1-rec,phase2,avtest,true,,true,StorageOptimized
-    2,Centos2,centos2-red,phase2,avtest,false,,true,StorageOptimized
+    phase,sourcevmname,targetvmname,label,targetnetworkname,poweronvm,targetmacaddress,onvault,perfoption,restoremacaddr
+    1,WinSrv2019-2,WinSrv2019-2-rec,phase1,avtest,true,,true,StorageOptimized,true
+    1,WinSrv2019-3,WinSrv2019-3-rec,phase1,avtest,false,01:50:56:81:11:6b,true,StorageOptimized,false
+    2,Centos1,centos1-rec,phase2,avtest,true,,true,StorageOptimized,true
+    2,Centos2,centos2-red,phase2,avtest,false,,true,StorageOptimized,true
 
 
     #>
@@ -200,6 +200,7 @@ Function New-AGMLibGCVEfailover ([string]$filename,[int]$phase,[string]$vcenteri
             # if user asked for a MAC address, then we better keep power off the VM
             if ($app.targetmacaddress.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "false"' }
             elseif ($app.poweronvm.length -gt 0) { $mountcommand = $mountcommand + ' -poweronvm "' +$app.poweronvm +'"' } 
+            if ($app.restoremacaddr -eq "true") { $mountcommand = $mountcommand + ' -restoremacaddr' }
             write-host "Running $mountcommand"
             Invoke-Expression $mountcommand 
             # we add one to our ESX round robin.   If we hit the hostcount we have gone too far, so 3 hosts means index 0,1,2   so when we get to 3 then we go back to 0
