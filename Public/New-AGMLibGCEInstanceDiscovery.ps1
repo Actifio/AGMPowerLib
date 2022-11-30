@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$zone,[switch]$textoutput,[decimal]$limit) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit) 
 {
      <#
     .SYNOPSIS
@@ -35,14 +35,20 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     Adds all new GCE Instances discovered in the nominated projects and zones and protects only the boot drive or any that have a valid template name
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -backup -usertag "corporatepolicy"
+    New-AGMLibGCEInstanceDiscovery -discoveryfile credentials.csv -backup -backupplanlabel "corporatepolicy"
 
     Adds all new GCE Instances discovered in the nominated projects and zones and protects any that have a label named corporatepolicy and a valid template name
 
     .EXAMPLE
-    New-AGMLibGCEInstanceDiscovery -credentialid 259643 -applianceid 141805487622 -projectid avwservicelab1 -zone australia-southeast1-b -usertag backupplan -backup
+    New-AGMLibGCEInstanceDiscovery -credentialid 259643 -applianceid 141805487622 -projectid avwservicelab1 -zone australia-southeast1-b -backupplanlabel backupplan -backup
 
     Instead of using a discovery file the four required variables are specified by the user.
+
+    .EXAMPLE
+    New-AGMLibGCEInstanceDiscovery -credentialid 706606 -applianceid 144091747698 -project avwarglab1 -zone australia-southeast2-a -backupplanlabel backupplan -diskbackuplabel diskbackup -backup
+
+    In this example the user uses two labels on each Compute Engine instance to determine backup handling.  -backupplanlabel backupplan means if the instance has a label of backupplan then use its value as the template name.  While -diskbackuplabel diskbackup means if the instance has a label of diskbackup and the value is bootonly then set bootonly backup on that instance. 
+
 
     .DESCRIPTION
     This routine needs a well formatted CSV file that contains cloud credential ID
@@ -73,6 +79,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     - ignored  <-- If this is detected then the application will be added as ignored
     - unmanaged <-- If this is detected then the application will be added as unmanaged
 
+    Label management has two values that can be set:
+     -backupplanlabel xxxx     If the instance has a label named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
+     -diskbackuplabel yyy      If the instance has a label of yyy and the value is bootonly then set bootonly backup on that instance.
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -86,7 +96,12 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
         return
     }
+    # if user wants to say projectid rather than project, we let them
+    if ($projectid) { $project = $projectid}
+    # rename usertag support
+    if ($backupplanlabel) { $usertag = $backupplanlabel}
 
+    #if user would rather no use a CSV file, we need all the stats
     if (($credentialid) -and ($applianceid) -and ($project) -and ($zone))
     {
         $searchlist = @()
@@ -103,7 +118,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     else
     {
-        Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -discoveryfile xxxx.csv"
+        Get-AGMErrorMessage -messagetoprint "Please supply a source csv file correctly formatted as per the help for this function using: -discoveryfile xxxx.csv or supply applianceid,credentialid,project and zone"
         return;
     }
     if (!($limit)) { $limit = 5}
@@ -127,6 +142,21 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             return;
         }
         $sltid = $sltgrab.id
+    }
+
+    if ($backup)
+    {
+        if ((!($sltid)) -and (!($backupplanlabel)))
+        {
+            Get-AGMErrorMessage -messagetoprint "When specifying -backup either supply a default template with -sltid or -sltname and/or specify a -backupplanlabel"
+            return;
+        }
+    }
+
+    if ((!($backup)) -and (!($nobackup)))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not protected"
+        return;
     }
 
 
@@ -176,10 +206,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     }
     if ($backup)
     {
-        if (!($usertag))
-        {
-            $usertag = "googlebackupplan"
-        }
+
         # learn all the SLTs
         $sltgrab = Get-AGMSLT
         foreach ($cred in $searchlist)
@@ -245,7 +272,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                             $newappcommand = Invoke-Expression $addappcommand
                             if ($newappcommand.count -ge 1)
                             {
-                                # here we build $newslalist which we process afterwards.
+                                # here we build $newslalist which we process afterwards.   This step adds the VM...  we protect it in the next step
                                 $newslalist = @()
                                 foreach ($instance in $newappcommand.items)
                                 {
@@ -254,6 +281,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     $newapphostuniquename = $instance.host.sources.uniquename
                                     $taggrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
                                     $backupplancheck = $taggrab.tag | select-string $usertag
+                                    $diskbackuplabelcheck = $taggrab.tag | select-string $diskbackuplabel
                                     # if user supplied default sltid then use that
                                     if ((!($backupplancheck)) -and ($sltid))
                                     {
@@ -276,7 +304,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                         {
                                             $name = $tag.trim().split("=") | Select-object -First 1
                                             $value = $tag.trim().split("=") | Select-object -skip 1
-                                            $sltid = ""
                                             # if the tag name is googlebackupplan we can protect it
                                             if ($name | select-string $usertag)
                                             {
@@ -289,13 +316,17 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                 {
                                                     if ($sltgrab | where-object {$_.name -eq $value})
                                                     {
-                                                        $sltid = ($sltgrab | where-object {$_.name -eq $value}).id
+                                                        $labelsltid = ($sltgrab | where-object {$_.name -eq $value}).id
                                                     }
-                                                    if (($sltid) -and ($slpid) -and ($appid))
+                                                    elseif ($sltid)
+                                                    {
+                                                        $labelsltid = $sltid
+                                                    }
+                                                    if (($labelsltid) -and ($slpid) -and ($appid))
                                                     {
                                                         $newslalist += [pscustomobject]@{
                                                             appid = $appid
-                                                            sltid = $sltid
+                                                            sltid = $labelsltid
                                                             slpid = $slpid
                                                         }
                                                         $newvmcommand.newgceinstancebackup += 1 
@@ -304,17 +335,38 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             }
                                         }
                                     }
-                                }
-                                if ( $((get-host).Version.Major) -gt 5 )
-                                {
-                                    if ($bootonly)
+                                    # if the user is using a label as a hint as to whethe we do boot only per instance
+                                    if ($diskbackuplabelcheck)
                                     {
-                                        $jsonbody = '{"type":"boot"}'
-                                        $newslalist | ForEach-Object {
-                                            $appid = $_.appid
-                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
+                                        # remove the leadering  and trailing { and }
+                                        $taglist = $taggrab.tag.substring(1,$taggrab.tag.Length-2).Split(",")
+                                        # now look for the  diskbackuplabel 
+                                        foreach ($tag in $taglist)
+                                        {
+                                            $name = $tag.trim().split("=") | Select-object -First 1
+                                            $value = $tag.trim().split("=") | Select-object -skip 1
+                                            # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
+                                            if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
+                                            {
+                                                $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
+                                            }
                                         }
                                     }
+
+                                }
+                                # bootonly routine where user is specifying bootonly via label or for all VMs.   We do this per VM
+                                $newslalist | ForEach-Object {
+                                    $appid = $_.appid
+                                    $diskbackuprule = $_.diskbackup
+                                    if (($diskbackuprule -eq "bootonly") -or ($bootonly))
+                                    {
+                                        $jsonbody = '{"type":"boot"}'
+                                        Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
+                                    }
+                                }
+                                # now we protect the VMs 
+                                if ( $((get-host).Version.Major) -gt 5 )
+                                {
                                     if ($AGMToken)
                                     {
                                         $newslalist | ForEach-Object -parallel {
@@ -350,14 +402,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     
                                 }
                                 else {
-                                    if ($bootonly)
-                                    {
-                                        $jsonbody = '{"type":"boot"}'
-                                        $newslalist | ForEach-Object {
-                                            $appid = $_.appid
-                                            Put-AGMAPIData  -endpoint /application/$appid/memberrule -body $jsonbody
-                                        }
-                                    }
                                     $newslalist | ForEach-Object {
                                         $newsla = 'New-AGMSLA -appid ' +$_.appid +' -sltid ' +$_.sltid +' -slpid ' +$_.slpid
                                         if ($textoutput)
