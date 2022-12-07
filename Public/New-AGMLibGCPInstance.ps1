@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0hostproject,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1hostproject,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2hostproject,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3hostproject,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel,[switch]$diagmode) 
+Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid,[string]$imagename,[string]$srcid,[string]$projectname,[string]$zone,[string]$region,[string]$instancename,[string]$machinetype,[string]$disktype,[string]$serviceaccount,[string]$networktags,[string]$labels,[string]$nic0network,[string]$nic0hostproject,[string]$nic0subnet,[string]$nic0externalip,[string]$nic0internalip,[string]$nic1network,[string]$nic1hostproject,[string]$nic1subnet,[string]$nic1externalip,[string]$nic1internalip,[string]$nic2network,[string]$nic2hostproject,[string]$nic2subnet,[string]$nic2externalip,[string]$nic2internalip,[string]$nic3network,[string]$nic3hostproject,[string]$nic3subnet,[string]$nic3externalip,[string]$nic3internalip,[string]$poweronvm,[string]$retainlabel,[switch]$diagmode,[string]$soletenancy) 
 {
     <#
     .SYNOPSIS
@@ -50,6 +50,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     -region          This is the GCP location such as: australia-southeast1 (used only by Actifio Sky Appliance)
     -zone            This is the GCP Zone such as: australia-southeast1-c
     -instancename    This is the name of the new instance that will be created.   It needs to be unique in that project
+    -soletenancy     This is used to specify a sole tenancy target.   It needs to be in node affinity label format like:  compute.googleapis.com/node-group-name:IN:node-group-1
     -machinetype     This is the GCP instance machine type such as:  e2-micro
     -networktags     Comma separate as many tags as you have, for instance:   -networktags "http-server,https-server"   
     -labels          Labels are key value pairs.   Separate key and value with colons and each label with commas.   For example:   -labels "pet:cat,food:fish"
@@ -817,6 +818,47 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
             }
             }
         }
+        if (!($soletenancy))
+        {
+            if ($recoverygrab.fields)
+            {
+                $soletenancylist = (($recoverygrab.fields | where-object { $_.name -eq "instancesettings" }).children | where-object  { $_.name -eq "soletenancy" }).choices | sort-object name
+            }
+            if ($soletenancylist.name)
+            {
+                write-host ""
+                write-host "Sole Tenancy Selection"
+                write-host ""
+                $i = 1
+                foreach ($soletenant in $soletenancylist.displayName)
+                { 
+                    Write-Host -Object "$i`: $soletenant"
+                    $i++
+                }
+                While ($true) 
+                {
+                    Write-host ""
+                    $listmax = $soletenancylist.count
+                    [int]$tenantselection = Read-Host "Please select a Sole Tenant target (1-$listmax)"
+                    if ($tenantselection -lt 1 -or $tenantselection -gt $listmax)
+                    {
+                        Write-Host -Object "Invalid selection. Please enter a number in range [1-$($listmax)]"
+                    } 
+                    else
+                    {
+                        break
+                    }
+                }
+                if ($soletenancylist.name[($tenantselection - 1)] -ne "None")
+                {
+                    $soletenancy =  $soletenancylist.name[($tenantselection - 1)]   
+                }
+            }
+
+        }
+
+
+
 
         # machine type
         if (!($machinetype))
@@ -826,6 +868,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
                 $displayname  = ($machinetypelist| where-object { $_.selected -eq $true }).displayName
                 write-host ""
                 Write-Host "Machine type selection"
+                if ($soletenancy) { write-host "Ensure you only select machine types compatible with the selected Sole Tenant"}
                 Write-Host "1`: Use $displayname (default)"
                 Write-Host "2`: Select a different type"
                 Write-Host ""
@@ -1309,6 +1352,7 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         Write-Host -nonewline "New-AGMLibGCPInstance  -srcid $srcid -imageid $imageid -appid $appid -appname `"$appname`" -projectname `"$projectname`""
         Write-Host -nonewline " -zone `"$zone`" -instancename `"$instancename`" -machinetype `"$machinetype`"" 
          #remove any bonus material 
+         if ($soletenancy) { Write-Host -nonewline " -soletenancy `"$soletenancy`"" }
          if ($nic0network) { $nic0network = $nic0network.split(" ")[0] }
          if ($nic1network) { $nic1network = $nic1network.split(" ")[0] }
          if ($nic0subnet) { $nic0subnet = $nic0subnet.split(" ")[0] }
@@ -1341,8 +1385,8 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         $userchoice = Read-Host "Please select from this list (1-3)"
         if ($userchoice -eq 2)
         {
-            write-host "srcid,appid,appname,projectname,zone,instancename,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0hostproject,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1hostproject,nic1network,nic1subnet,nic1externalip,nic1internalip"
-            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
+            write-host "srcid,appid,appname,projectname,zone,instancename,soletenancy,machinetype,serviceaccount,networktags,poweronvm,labels,disktype,nic0hostproject,nic0network,nic0subnet,nic0externalip,nic0internalip,nic1hostproject,nic1network,nic1subnet,nic1externalip,nic1internalip"
+            write-host -nonewline "$srcid,$appid,`"$appname`",`"$projectname`",`"$zone`",`"$instancename`",`"$soletenancy`",`"$machinetype`",`"$serviceaccount`",`"$networktags`""
             write-host -nonewline ",$poweronvm,$labels,$disktype,$nic0hostproject,$nic0network,$nic0subnet,$nic0externalip,$nic0internalip,$nic1hostproject,$nic1network,$nic1subnet,$nic1externalip,$nic1internalip"
             write-host ""
             return
@@ -1647,6 +1691,10 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
     #instance name
     $json = $json + '{"displayName":"","name":"instancesettings","helpId":1265,"type":"group","description":"","required":true,"modified":true,"children":[{"displayName":"INSTANCE NAME","name":"instancename","helpId":1265,"type":"text","description":"","required":true,"currentValue":"' +$instancename +'","modified":true,"size":40,"_getDefault":"getDefaultInstanceName","invalid":"","_default":"instancename"},'
     # machine type
+    if ($soletenancy)
+    {
+        $json = $json + '{"displayName":"SOLE TENANCY","name":"soletenancy","helpId":"1265","type":"dropdown","description":"Sole-tenancy provides exclusive access to a physical Compute Engine server that is dedicated to hosting your projects VMs. Specify desired sole tenant node or node group depending on project and zone.","required":false,"modified":false,"dynamic":true,"choices":[{"displayName":"None","name":"None"},{"displayName":"node-group-1 (node group)","name":"' +$soletenancy +'","selected":true},{"displayName":"node-group-1-kgmb (node)","name":"compute.googleapis.com/node-name:IN:node-group-1-kgmb"}],"_getchoices":"getSoletenancy#handle,cloudcredential,project,zone","_dependent":["machinetype"],"groupBy":false},'
+    }
     $json = $json + '{"displayName":"MACHINE TYPE","name":"machinetype","helpId":1265,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"machinetype","name":"' +$machinetype +'","selected":true}],"_getchoices":"getMachineTypes#handle,cloudcredential,region,project,zone","_dependent":["networksettings"],"_default":"machinetype"},'
     # service account
     if ($serviceaccount)
@@ -1855,8 +1903,11 @@ Function New-AGMLibGCPInstance ([string]$appid,[string]$appname,[string]$imageid
         $json = $json + '{"displayName":"","name":"checkboxgroup","helpId":1265,"type":"group","description":"","modified":false,"children":[{"displayName":"Power On","name":"poweronvm","helpId":1265,"type":"checkbox","description":"","modified":true,"checked":true}],"groupType":"layout"}],'
     }
     # imagename
-    $json = $json + '"version":1,"formtype":"newmount","image":"' +$imagename +'","cloudtype":"GCP"}}'
-
+    $json = $json + '"formtype":"newmount","image":"' +$imagename +'","cloudtype":"GCP"}}'
+    if ($diagmode) 
+    { 
+        $json
+    }
     $newgcp = Post-AGMAPIData  -endpoint /backup/$imageid/mount -body $json
     if ($newgcp.fields)
     {
