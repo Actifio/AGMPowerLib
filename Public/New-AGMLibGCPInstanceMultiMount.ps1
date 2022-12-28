@@ -112,6 +112,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$_.nic0hostproject +'"' }
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
                 if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
                 if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
                 if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
@@ -148,6 +149,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$_.nic0hostproject +'"' }
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
+                if ($_.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
                 if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
                 if ($_.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$_.serviceaccount +'"'} 
                 if ($_.labels) { $mountcommand = $mountcommand + ' -labels "' +$_.labels +'"' } 
@@ -187,6 +189,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             if ($app.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$app.nic0hostproject +'"' }
             if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
             if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
+            if ($app.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
             if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
             if ($app.serviceaccount) { $mountcommand = $mountcommand + ' -serviceaccount "' +$app.serviceaccount +'"'} 
             if ($app.labels) { $mountcommand = $mountcommand + ' -labels "' +$app.labels +'"' } 

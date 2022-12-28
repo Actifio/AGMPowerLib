@@ -2,6 +2,9 @@
 
 Started Change log file as per release 0.0.0.54
 
+## AGMPowerLIB (0.0.0.63)
+* New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount - Support sole tenancy 
+
 ## AGMPowerLIB (0.0.0.62)
 * New-AGMLibVM add support for restoremacaddr
 * New-AGMLibGCVEfailover add support for restoremacaddr
