@@ -198,7 +198,7 @@ function Remove-AGMLibMount([string]$label,[string]$imagename,[string]$imageid,[
             {
                 write-host ""
                 Write-host "Preserve VM setting (this only applies to GCE mounts in Google Cloud)"
-                Write-Host "1`: Delete the VM on both the GCP side and the Actifio Side (default)"
+                Write-Host "1`: Delete the VM on both the GCP side and the Backup Appliance Side (default)"
                 Write-Host "2`: Preserve the VM on the GCP side"
                 [int]$userchoice = Read-Host "Please select from this list (1-2)"
                 if ($userchoice -eq 2) { $preservevm = $true }
