@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.63'
+ModuleVersion = '0.0.0.64'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -124,6 +124,7 @@ FunctionsToExport = @('Export-AGMLibSLT',
 'New-AGMLibGCPInstanceMultiMount',
 'New-AGMLibGCPVM',
 'New-AGMLibImage',
+'New-AGMLibLVMMount',
 'New-AGMLibMultiMount',
 'New-AGMLibMSSQLClone',
 'New-AGMLibMSSQLMount',
@@ -186,142 +187,7 @@ PrivateData = @{
         IconUri = 'https://i.imgur.com/QAaK5Po.jpg'
 
         # ReleaseNotes of this module
-        ReleaseNotes = '
-        ## [0.0.0.54] 2022-07-08
-
-        ## [0.0.0.53] 2022-06-27
-        Significantly improved useability of Import-AGMLibOnVault.   Added latest image section to New-AGMLibMSSQLMount
-
-        ## [0.0.0.52] 2022-6-17
-        Taught New-AGMLibGCVEfailover to handle single node ESX clusters
-
-        ## [0.0.0.51] 2022-06-17
-        Taught New-AGMLibGCPInstance how to handle empty image data responses and give more helpful guidance to the user.  Also warn user when zone doesnt have a network and dont show double network where we have two subnets in a region
-
-        ## [0.0.0.50] 2022-06-17
-        Improved New-AGMLibMSSQLMount guided section and added discovery option. Added New-AGMLibMSSQLMulti and New-AGMLibGCEInstanceDiscovery
-        Switched license to Apache 2.0
-        Taught New-AGMLibGCVEfailover to handle multiple vCenters
-
-        ## [0.0.0.49] 2022-05-16
-        Handle lower vs upper case DB names and also missing recovery point for New-AGMLibDb2Mount
-
-        ## [0.0.0.48] 2022-05-12
-        Add New-AGMLibDb2Mount.  Corrected selection logic error with several reports on PS5 where AGM had only a single appliance.   Added GCE forget function to Remove-AGMLibMount
-
-        ## [0.0.0.47] 2022-05-11
-        Add New-AGMLibPostgreSQLMount, New-AGMLibMySQLMount, New-AGMLibSAPHANAMount.  Corrected password issue with New-AGMLibOracleMount with PS5
-
-        ## [0.0.0.46] 2022-04-22
-        Add Import-AGMLibPDSnapshot,  Improved New-AGMLibGCEConversion and New-AGMLibGCPInstance
-
-        ## [0.0.0.45] 2022-04-14
-        Add more debug info to Import-AGMLibOnVault and increase timeout value to handle long pauses while fetching applications
-
-        ## [0.0.0.44] 2022-04-13
-        Remove spurious information from job details when runninng New-AGMLibGCEConversion and New-AGMLibGCPInstance, corrected issue with image count when 1 image is found in New-AGMLibGCEConversion
-
-        ## [0.0.0.43] 2022-04-13
-        Teach Get-AGMLibCredentialSrcID to show clusterid.  Teach New-AGMLibVM how to specify storage performance option and New-AGMLibGCVEfailover how to use that as well
-        Fixed disktype selection in  New-AGMLibGCPInstance  ALso removed option to use -credentialid, you have to use -srcid
-        Add New-AGMLibGCEConversion and New-AGMLibGCEConversionMulti, Set-AGMLibApplianceParameter,  Get-AGMLibApplianceParameter
-
-        ## [0.0.0.42] 2022-03-08
-        Fixed typo
-
-        ## [0.0.0.41] 2022-03-08
-        Teach New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount to allow for 4 NICs per GCE instance rather than 2
-        Teach New-AGMLibGCPInstance to prefer user set label to retained label and not force duplicate key error when the user defines a label key that already existed
-       
-        ## [0.0.0.40] 2022-01-07
-        New-AGMLibGCVEfailover was ignoring power settings  
-        New-AGMLibGCPVM needs to show unmanaged apps or imported images dont show up.  Guided mode now lets you choose managed, unmanaged or imported apps
-        New-AGMLibVMExisting, New-AGMLibSystemStateToVM will also stop insisting source app is managed.
-
-        ## [0.0.0.39] 2021-12-29
-        Teach New-AGMLibSystemStateToVM to work with imported apps, was previously restricting to only managed apps which meant imported apps never appeared in guided menu
-
-        ## [0.0.0.38] 2021-11-29
-        Teach Import and Export AGMLibSLT about GCS Buckets.   Improve Installer
-        Add New-AGMLibGCVEfailover   Added label to sample command in  New-AGMLibVM 
-
-        ## [0.0.0.37] 2021-11-05
-        Teach New-AGMLibVM to handle imported images and OnVault images without being prompted.  Switch default mount mode to nfs. Fixed bug where labels were not being assigned
-        Teach Get-AGMLibSLA to know about SLT name and SLP name
-
-        ## [0.0.0.36] 2021-09-16
-        Teach New-AGMLibGCPInstance to show existing labels with -retainlabel true
-
-        ## [0.0.0.35] 2021-09-13
-        Allow silent install
-
-        ## [0.0.0.34] 2021-09-13
-        Added appcount to Get-AGMLibPolicies
-
-        ## [0.0.0.33] 2021-09-08
-        Made pre-session check more demanding to ensure we always have a good session before starting a composite function
-        Improved RansomWare Recovery flow
-        Taught New-AGMLibVM  will work with OnVault
-        Taught New-AGMLibSystemStateToVM to handle stacked OnVault images
-        Added  New-AGMVMMultiMount
-        
-        ## [0.0.0.32] 2021-08-27
-        Added Export-AGMLibSLT, Import-AGMLibSLT, Import-AGMLibOnVault, Get-AGMLibHostList, Get-AGMLibCredentialSrcID
-        Improved Start-AGMLibRansomwareRecovery
-
-        ## [0.0.0.31] 2021-08-11
-        Added Remove-AGMLibMount   Improved Start-AGMLibRansomwareRecovery
-
-        ## [0.0.0.30] 2021-07-27
-        Improved New-AGMLibMultiMount help
-
-        ## [0.0.0.30] 2021-07-09
-        Added ostype and label field to Get-AGMLibImageRange.  Also added a lot more help info.
-        Give Hostname and appname when running Start-AGMLibPolicy
-        New-AGMLibMultiMount was ignoring hostid, corrected this.  
-        Added full guided mode for Start-AGMLibPolicy
-        Teach Start-AGMLibPolicy to work with logical groups
-        Taught New-AGMLibGCPInstance to handle disktype requests
-        Add Set-AGMLibSLA, Get-AGMLibSLA, Set-AGMLibImage, Start-AGMLibRansomwareRecovery
-        Changed Get-AGMLibPolicies and Get-AGMLibAppPolicies to use common operation terms rather than id
-
-        ## [0.0.0.29] 2021-06-20
-        Added Start-AGMLibPolicy, New-AGMLibGCPInstance, New-AGMLibMultiMount, New-AGMLibGCPInstanceMultiMount
-        Allow Get-AGMLibImageRange to work with SLT Name.  
-        Check for ostype in New-AGMLibSystemStateToVM as some vmware images may not have that value as reported in Issue 13
-        Fix install bug on Linux OS in line 80 of Install-AGMPowerLib.ps1
-
-        ## [0.0.0.28] 2020-11-12
-        Start-AGMLibWorkflow now uses correct host timezone when specifying ENDPIT and user and host timezones are different
-        New-AGMLibImage was not printing errors in monitor mode, fixed this.  Also changed the syntax from capturetype to backuptype as this is more obvious
-
-        ## [0.0.0.27] 2020-11-11
-        Improved monitor logic in reports that offer it
-        Get-AGMLibApplicationID will ignore orphan apps
-        Enhanced New-AGMLibImage by adding wait process and improving monitor process
-        Enhanced Get-AGMLibFollowJobStatus to handle queued (readiness) and initializing job statuses.
-        Enhanced Get-AGMLibRunningJobs with -q and -e options to track queued jobs and all dogs 
-
-        ## [0.0.0.26] 2020-11-01
-        Allow New-AGMLibMSSQLMount to remount a mount
-
-        ## [0.0.0.25] 2020-10-29
-        Improve the follow logic for monitor function in all functions that use it.   Improve maturity of New-AGMLibVMExisting
-
-        ## [0.0.0.24] 2020-10-28
-        Wait option was not working in all the functions that create new objects
-
-        ## [0.0.0.23] 2020-10-17
-        Added jobtag to Get-AGMLibWorkflowStatus
-
-        ## [0.0.0.22] 2020-10-17
-        AGMPowerCLI 0.0.0.17 added duration conversion, which clashed with functions already using Convert-AGMDuration to do this.   Corrected Get-AGMLibRunningJobs,Get-AGMLibFollowJobStatus.
-
-        ## [0.0.0.21] 2020-10-09
-        Revamped New-AGMLibMSSQLMigrate and Set-AGMLibMSSQLMigrate with improved menus and help.  Enhanced imagestate column in Get-AGMLibActiveImage. Added migrate user story
-
-        ## [0.0.0.20] 2020-09-20
-        Improved module description for PowerShell Gallery users'
+        ReleaseNotes = ''
 
         # Prerelease string of this module
         # Prerelease = ''

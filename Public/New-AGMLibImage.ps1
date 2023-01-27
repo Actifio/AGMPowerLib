@@ -99,8 +99,8 @@ Function New-AGMLibImage ([string]$appid,[string]$policyid,[string]$backuptype,[
     }
     if ($policyid)
     {
-        $policygrab = Get-AGMLibPolicies -appid $appid  | where-object { $_.id -eq $policyid }
-        if ($policygrab.op.count -ne 1)
+        $policygrab = Get-AGMLibPolicies -appid $appid  | where-object { $_.policyid -eq $policyid }
+        if ($policygrab.operation.count -ne 1)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find policy ID $policyid for App ID $appid.  Please check the Policy ID and AppID with Get-AGMLibApplicationID and Get-AGMLibPolicies"
             return
