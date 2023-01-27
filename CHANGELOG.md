@@ -1,6 +1,8 @@
 # Change log
 
-Started Change log file as per release 0.0.0.54
+## AGMPowerLIB (0.0.0.64)
+* New-AGMLibImage was using wrong syntax to check for policyID
+* Add New-AGMLibLVMMount
 
 ## AGMPowerLIB (0.0.0.63)
 * New-AGMLibGCPInstance and New-AGMLibGCPInstanceMultiMount - Support sole tenancy 
