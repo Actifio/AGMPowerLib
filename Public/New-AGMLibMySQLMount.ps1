@@ -134,6 +134,7 @@ Function New-AGMLibMySQLMount ([string]$appid,[string]$targethostid,[string]$mou
         }
     }
 
+    
     # if recovery point specified without imagename or ID
     if ( ($recoverypoint) -and (!($imagename)) -and (!($imageid)) -and ($appid) )
     {

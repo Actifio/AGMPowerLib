@@ -1,5 +1,8 @@
 # Change log
 
+## AGMPowerLIB (0.0.0.65)
+* Offer no-parallel option on New-AGMLibGCEInstanceDiscovery
+
 ## AGMPowerLIB (0.0.0.64)
 * New-AGMLibImage was using wrong syntax to check for policyID
 * Add New-AGMLibLVMMount

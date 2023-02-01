@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit,[switch]$noparallel) 
 {
      <#
     .SYNOPSIS
@@ -158,6 +158,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not protected"
         return;
     }
+    
 
 
     if ($nobackup)
@@ -280,8 +281,14 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     $newvmcommand.newgceinstances += 1 
                                     $newapphostuniquename = $instance.host.sources.uniquename
                                     $taggrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
-                                    $backupplancheck = $taggrab.tag | select-string $usertag
-                                    $diskbackuplabelcheck = $taggrab.tag | select-string $diskbackuplabel
+                                    if ($usertag)
+                                    {
+                                        $backupplancheck = $taggrab.tag | select-string $usertag
+                                    }
+                                    if ($diskbackuplabel)
+                                    {
+                                        $diskbackuplabelcheck = $taggrab.tag | select-string $diskbackuplabel
+                                    }
                                     # if user supplied default sltid then use that
                                     if ((!($backupplancheck)) -and ($sltid))
                                     {
@@ -365,7 +372,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     }
                                 }
                                 # now we protect the VMs 
-                                if ( $((get-host).Version.Major) -gt 5 )
+                                if ( ($((get-host).Version.Major) -gt 5 ) -and (!($noparallel)))
                                 {
                                     if ($AGMToken)
                                     {
