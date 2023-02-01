@@ -101,7 +101,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     # rename usertag support
     if ($backupplanlabel) { $usertag = $backupplanlabel}
 
-    #if user would rather no use a CSV file, we need all the stats
+    #if user would rather not use a CSV file, we need all the stats
     if (($credentialid) -and ($applianceid) -and ($project) -and ($zone))
     {
         $searchlist = @()
