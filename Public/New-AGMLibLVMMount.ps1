@@ -44,6 +44,9 @@ Function New-AGMLibLVMMount ([string]$appid,[string]$mountapplianceid,[string]$a
     -mountaction  specifymountlocation    Will mount using the source paths using a specified mount point that is supplied with -mountlocation
     -mountaction nomap                    Will mount without mapping the drives
 
+    These parameters are optional:
+    -label <labelvalue>    To assign a label to the mounted image (which is recommended)
+
     There are two monitoring options:
 
     -wait     This will wait up to 2 minutes for the job to start, checking every 15 seconds to show you the job name
@@ -272,7 +275,7 @@ Function New-AGMLibLVMMount ([string]$appid,[string]$mountapplianceid,[string]$a
         # mountedhost menu
         if (!($targethostid))
         {
-            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon" | sort-object vmtype,hostname
+            $hostgrab = Get-AGMHost -filtervalue "clusterid=$mountapplianceid&hosttype!VMCluster&hosttype!esxhost&hosttype!NetApp 7 Mode&hosttype!NetApp SVM&hosttype!ProxyNASBackupHost&hosttype!Isilon&hasagent=true" | sort-object vmtype,hostname
             if ($hostgrab.id.count -eq -0)
             {
                 Get-AGMErrorMessage -messagetoprint "Failed to find any hosts on $mountappliancename"
@@ -434,6 +437,10 @@ Function New-AGMLibLVMMount ([string]$appid,[string]$mountapplianceid,[string]$a
         if ($postscript)
         {
             Write-Host -nonewline " -postscript `"$postscript`""
+        }
+        if ($label)
+        {
+            Write-Host -nonewline " -label `"$label`""
         }
         Write-Host ""
         Write-Host "1`: Run the command now (default)"
