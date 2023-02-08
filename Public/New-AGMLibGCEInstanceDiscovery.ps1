@@ -279,7 +279,12 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                             {
                                 $ct = Get-Date
                                 write-host "$ct Addition of the VM got the following output:"
-                                $newappcommand
+                                if ($newappcommand.count) { $newappcommand.count }
+                                if ($newappcommand.items) { $newappcommand.items }
+                                else
+                                {
+                                    $newappcommand
+                                }
                                 write-host ""
                             }                         
                             if ($newappcommand.errormessage)
