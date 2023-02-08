@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit,[switch]$noparallel) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit,[switch]$noparallel,[switch]$verbose) 
 {
      <#
     .SYNOPSIS
@@ -93,9 +93,13 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
-        Get-AGMErrorMessage -messagetoprint "AGM session has expired. Please login again using Connect-AGM"
+        $sessiontest
         return
     }
+
+    # verbose =  textoutput
+    if ($verbose) { $textoutput = $true}
+
     # if user wants to say projectid rather than project, we let them
     if ($projectid) { $project = $projectid}
     # rename usertag support
@@ -271,6 +275,23 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                 write-host "$ct Running" $addappcommand
                             }
                             $newappcommand = Invoke-Expression $addappcommand
+                            if ($textoutput)
+                            {
+                                $ct = Get-Date
+                                write-host "$ct Addition of the VM got the following output:"
+                                if ($newappcommand.count) { $newappcommand.count }
+                                if ($newappcommand.items) { $newappcommand.items }
+                                else
+                                {
+                                    $newappcommand
+                                }
+                                write-host ""
+                            }                         
+                            if ($newappcommand.errormessage)
+                            {
+                                $newappcommand.errormessage
+                                $done = 1
+                            }
                             if ($newappcommand.count -ge 1)
                             {
                                 # here we build $newslalist which we process afterwards.   This step adds the VM...  we protect it in the next step
@@ -359,7 +380,6 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             }
                                         }
                                     }
-
                                 }
                                 # bootonly routine where user is specifying bootonly via label or for all VMs.   We do this per VM
                                 $newslalist | ForEach-Object {
