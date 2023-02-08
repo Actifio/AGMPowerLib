@@ -213,20 +213,70 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     {
 
         # learn all the SLTs
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Running Get-AGMSLT"
+        }
         $sltgrab = Get-AGMSLT
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Output:"
+            $sltgrab
+        }
         foreach ($cred in $searchlist)
         {
+            if ($textoutput)
+            {
+                $ct = Get-Date
+                write-host "$ct Processing this selection"
+                $cred
+            }
             # we need to learn the srcid
+            if ($textoutput)
+            {
+                $ct = Get-Date
+                write-host "$ct Running Get-AGMLibCredentialSrcID"
+            }
             $credgrab = (Get-AGMLibCredentialSrcID | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
+            if ($textoutput)
+            {
+                $ct = Get-Date
+                write-host "$ct Output:"
+                $credgrab
+            }
             if ($credgrab.srcid)
             {
                 $srcid = $credgrab.srcid
+                if ($textoutput)
+                {
+                    $ct = Get-Date
+                    write-host "$ct Running Get-AGMDiskpool"
+                }
                 $diskpoolgrab = Get-AGMDiskpool -filtervalue cloudcredentialid=$srcid
-                if ($diskpoolgrab)
+                if ($textoutput)
+                {
+                    $ct = Get-Date
+                    write-host "$ct Output:"
+                    $diskpoolgrab
+                }
+                if ($diskpoolgrab.name)
                 {
                     $poolname = $diskpoolgrab.name
+                    if ($textoutput)
+                    {
+                        $ct = Get-Date
+                        write-host "$ct Running Get-AGMSLP"
+                    }
                     $slpgrab = Get-AGMSLP -filtervalue "performancepool=$poolname&clusterid=$applianceid" -limit 1
-                    if ($slpgrab)
+                    if ($textoutput)
+                    {
+                        $ct = Get-Date
+                        write-host "$ct Output:"
+                        $slpgrab
+                    }
+                    if ($slpgrab.id)
                     {
                         $slpid = $slpgrab.id
                     }
