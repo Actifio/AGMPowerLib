@@ -1,4 +1,5 @@
 # Change log
+## AGMPowerLIB (0.0.0.66)
 
 ## AGMPowerLIB (0.0.0.65)
 * Offer no-parallel option on New-AGMLibGCEInstanceDiscovery
