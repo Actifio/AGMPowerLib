@@ -95,7 +95,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     if ($textoutput)
     {
         $ct = Get-Date
-        write-host "$ct starting function"
+        write-host "$ct Starting function"
     }
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
