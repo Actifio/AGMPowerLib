@@ -90,16 +90,19 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "Not logged in or session expired. Please login using Connect-AGM"
         return
     }
+    # verbose =  textoutput
+    if ($verbose) { $textoutput = $true}
+    if ($textoutput)
+    {
+        $ct = Get-Date
+        write-host "$ct starting function"
+    }
     $sessiontest = Get-AGMVersion
     if ($sessiontest.errormessage)
     {
         $sessiontest
         return
     }
-
-    # verbose =  textoutput
-    if ($verbose) { $textoutput = $true}
-
     # if user wants to say projectid rather than project, we let them
     if ($projectid) { $project = $projectid}
     # rename usertag support
