@@ -103,6 +103,11 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         $sessiontest
         return
     }
+    if ($textoutput)
+    {
+        $ct = Get-Date
+        write-host "$ct Session test passed"
+    }
     # if user wants to say projectid rather than project, we let them
     if ($projectid) { $project = $projectid}
     # rename usertag support
@@ -228,60 +233,63 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             write-host "$ct Output:"
             $sltgrab
         }
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Running Get-AGMSLP"
+        }
+        $slpgrab = Get-AGMSLP
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Output:"
+            $slpgrab
+        }
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Running Get-AGMLibCredentialSrcID"
+        }
+        $srccredgrab = Get-AGMLibCredentialSrcID
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Output:"
+            $credgrab
+        }
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Running Get-AGMDiskpool"
+        }
+        $diskpooldatagrab = Get-AGMDiskpool -filtervalue pooltype=cloud | Select-object name,@{N='srcid';E={$_.cloudcredential.sources.srcid}}
+        if ($textoutput)
+        {
+            $ct = Get-Date
+            write-host "$ct Output:"
+            $diskpooldatagrab
+        }
         foreach ($cred in $searchlist)
         {
             if ($textoutput)
             {
-                $ct = Get-Date
+                $ct = Get-Date 
                 write-host "$ct Processing this selection"
                 $cred
             }
             # we need to learn the srcid
-            if ($textoutput)
-            {
-                $ct = Get-Date
-                write-host "$ct Running Get-AGMLibCredentialSrcID"
-            }
-            $credgrab = (Get-AGMLibCredentialSrcID | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
-            if ($textoutput)
-            {
-                $ct = Get-Date
-                write-host "$ct Output:"
-                $credgrab
-            }
+            $credgrab = ($srccredgrab | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
             if ($credgrab.srcid)
             {
                 $srcid = $credgrab.srcid
-                if ($textoutput)
-                {
-                    $ct = Get-Date
-                    write-host "$ct Running Get-AGMDiskpool"
-                }
-                $diskpoolgrab = Get-AGMDiskpool -filtervalue cloudcredentialid=$srcid
-                if ($textoutput)
-                {
-                    $ct = Get-Date
-                    write-host "$ct Output:"
-                    $diskpoolgrab
-                }
+                $diskpoolgrab = $diskpooldatagrab | where-object {($_.srcid -eq $srcid)}
                 if ($diskpoolgrab.name)
                 {
                     $poolname = $diskpoolgrab.name
-                    if ($textoutput)
+                    $slplookup = ($slpgrab | where-object {($_.performancepool -eq $poolname) -and ($_.clusterid -eq $cred.applianceid)})
+                    if ($slplookup.id)
                     {
-                        $ct = Get-Date
-                        write-host "$ct Running Get-AGMSLP"
-                    }
-                    $slpgrab = Get-AGMSLP -filtervalue "performancepool=$poolname&clusterid=$applianceid" -limit 1
-                    if ($textoutput)
-                    {
-                        $ct = Get-Date
-                        write-host "$ct Output:"
-                        $slpgrab
-                    }
-                    if ($slpgrab.id)
-                    {
-                        $slpid = $slpgrab.id
+                        $slpid = $slplookup.id
                     }
                 }
             }
