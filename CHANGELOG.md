@@ -1,4 +1,7 @@
 # Change log
+## AGMPowerLIB (0.0.0.68)
+* Reduce number of commands run by  New-AGMLibGCEInstanceDiscovery
+
 ## AGMPowerLIB (0.0.0.67)
 * Improve New-AGMLibLVMMount:  only show hosts with agent and show label when producing sample command
 * Improve error reporting in New-AGMLibGCEInstanceDiscovery when using textoutput
