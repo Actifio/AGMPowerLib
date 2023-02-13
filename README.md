@@ -20,6 +20,13 @@ Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib
 
 ## Install or upgrade AGMPowerLib
 
+There are two ways to install AGMPowerCLI:
+
+* PowerShell Gallery
+* Github
+
+### Install using PowerShell Gallery
+
 Install from PowerShell Gallery is the simplest approach.
 
 If running PowerShell 5 on Windows first run this (some older Windows versions are set to use downlevel TLS which will result in confusing error messages):
@@ -56,7 +63,7 @@ $Latest = Get-InstalledModule AGMPowerLib; Get-InstalledModule AGMPowerLib -AllV
 
 Many corporate servers will not allow downloads from PowerShell gallery or even access to GitHub from Production Servers, so for these use one of the Git download methods below.
 
-#### Clone the Github repo
+### Clone the Github repo
 
 1.  Using a GIT client on your Windows or Linux or Mac OS host, clone the AGMPowerLIB GIT repo (see example clone command below)
 1.  Now start PWSH and change directory to the AGMPowerLib directory that should contain our module files.
