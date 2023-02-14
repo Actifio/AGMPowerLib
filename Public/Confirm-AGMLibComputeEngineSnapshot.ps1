@@ -61,7 +61,7 @@ Function Confirm-AGMLibComputeEngineSnapshot([string]$id)
     $apptype = $imagegrab.apptype
     if ($apptype -ne "GCPInstance")
     {
-        Get-AGMErrorMessage -messagetoprint "Apptype $apptype is not the correct apptype.  Expecting Compute Engine Instance apptype"
+        Get-AGMErrorMessage -messagetoprint "Apptype $apptype is not the correct apptype.  Expecting Compute Engine Instance apptype: GCPInstance"
         return
     }
     $snapshotlist = $imagegrab.restorableobjects.volumeinfo
