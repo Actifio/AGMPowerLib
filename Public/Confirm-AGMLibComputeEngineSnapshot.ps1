@@ -13,18 +13,18 @@
 # limitations under the License.
 
 
-Function Confirm-AGMLibComputeEngineSnapshot([string]$id) 
+Function Confirm-AGMLibComputeEngineImage([string]$id,[switch]$every,[string]$appid) 
 {
     <#
     .SYNOPSIS
     Confirms that the Compute Engine Snapshot created by a backup image still exists.
 
     .EXAMPLE
-    Confirm-AGMLibComputeEngineSnapshot -id 1234
-    Validates backup image ID 1234
+    Confirm-AGMLibComputeEngineImage -id 1234
+    Validates backup image ID 1234.   The status field is reported by Compute Engine    If the status does not show as READY you will need to investigate
 
     .DESCRIPTION
-    A function to validate images
+    A function to validate images.  Use this to confirm that an image shown in Backup and DR has all the relevant backing Compute Engine snapshots.
     To find eligible images use filters like:   Get-AGMImage -filtervalue apptype=GCPInstance
 
     #>
@@ -42,80 +42,103 @@ Function Confirm-AGMLibComputeEngineSnapshot([string]$id)
     }
     
     # we depend on Google Cloud module being present
+    try
+    {
+        Import-Module GoogleCloud -ErrorAction SilentlyContinue
+    }
+
+    catch
+    {
+        $retVal = $false
+    }
     $moduletest = get-module -name GoogleCloud 
     if (!($moduletest.Version))
     {
         Get-AGMErrorMessage -messagetoprint "GoogleCloud module was not found using Get-Module command"
         return
     }
-    if (!($id))
+    if ((!($id)) -and (!($every)) -and (!($appid)))
     {
         $id = Read-Host "Backup Image ID"
     }
-    $imagegrab = Get-AGMImage $id
-    if (!($imagegrab.id))
+    if ($id) { $imagelist = Get-AGMImage $id }
+    if ($every) { $imagelist = Get-AGMImage -filtervalue apptype=GCPInstance}
+    if ($appid) { $imagelist = Get-AGMImage -filtervalue appid=$appid }
+    if (!($imagelist.id))
     {
-        Get-AGMErrorMessage -messagetoprint "Failed to find image ID $id using command:   Get-AGMImage $id"
+        if ($every) { Get-AGMErrorMessage -messagetoprint "Failed to find any images using: Get-AGMImage -filtervalue apptype=GCPInstance" }
+        if ($id) { Get-AGMErrorMessage -messagetoprint "Failed to find any images using: Get-AGMImage $id" }
+        if ($appid) { Get-AGMErrorMessage -messagetoprint "Failed to find any images using:  Get-AGMImage -filtervalue appid=$appid" }
         return
     }
-    $apptype = $imagegrab.apptype
-    if ($apptype -ne "GCPInstance")
+    foreach ($image in $imagelist)
     {
-        Get-AGMErrorMessage -messagetoprint "Apptype $apptype is not the correct apptype.  Expecting Compute Engine Instance apptype: GCPInstance"
-        return
-    }
-    $snapshotlist = $imagegrab.restorableobjects.volumeinfo
-
-    if (!($snapshotlist.target))
-    {
-        Get-AGMErrorMessage -messagetoprint "Image does not contain volumeinfo that can be used to find Compute Engine Snapshot"
-        return
-    }
-    $projectgrab = $imagegrab.application.host.friendlypath
-    if ($projectgrab)
-    {
-        $projectid = $projectgrab.split(":")[3]
-    }
-
-    $AGMArray = @()
-    Foreach ($snap in $snapshotlist.target)
-    {
-        $snapshotname = $snap.split(":")[1]
-        Try
+        $imagegrab = Get-AGMImage $image.id
+        $apptype = $imagegrab.apptype
+        if ($apptype -ne "GCPInstance")
         {
-            $snapgrab = Get-GceSnapshot -Project $projectid -Name $snapshotname
+            Get-AGMErrorMessage -messagetoprint "Apptype $apptype is not the correct apptype.  Expecting Compute Engine Instance apptype: GCPInstance"
+            return
         }
-        Catch
+        $snapshotlist = $imagegrab.restorableobjects.volumeinfo
+
+        if (!($snapshotlist.target))
         {
-            $RestError = $_
+            Get-AGMErrorMessage -messagetoprint "Image does not contain volumeinfo that can be used to find Compute Engine Snapshot"
+            return
         }
-        if ($RestError)
+        $projectgrab = $imagegrab.application.host.friendlypath
+        if ($projectgrab)
         {
-            $cleaned = Test-AGMJSON $RestError
-            if ($cleaned.errormessage)
+            $projectid = $projectgrab.split(":")[3]
+        }
+
+        $AGMArray = @()
+        Foreach ($snap in $snapshotlist.target)
+        {
+            $snapshotname = $snap.split(":")[1]
+            Try
             {
-                #Get-AGMErrorMessage -messagetoprint $cleaned.errormessage
-                $AGMArray += [pscustomobject]@{
-                    id = $id
-                    snapshotname = $snapshotname
-                    status = $cleaned.errormessage
+                $snapgrab = Get-GceSnapshot -Project $projectid -Name $snapshotname
+            }
+            Catch
+            {
+                $RestError = $_
+            }
+            if ($RestError)
+            {
+                $cleaned = Test-AGMJSON $RestError
+                if ($cleaned.errormessage)
+                {
+                    #Get-AGMErrorMessage -messagetoprint $cleaned.errormessage
+                    $AGMArray += [pscustomobject]@{
+                        id = $imagegrab.id
+                        project = $projectid
+                        appliance = $imagegrab.clusterid
+                        imagename = $imagegrab.backupname
+                        snapshotname = $snapshotname
+                        status = $cleaned.errormessage
+                    }
+                }
+                else
+                {
+                    Get-AGMErrorMessage -messagetoprint $cleaned
+                    return
                 }
             }
-            else
+            else 
             {
-                Get-AGMErrorMessage -messagetoprint $cleaned
-                return
+                #$snapgrab
+                $AGMArray += [pscustomobject]@{
+                    id = $imagegrab.id
+                    project = $projectid
+                    appliance = $imagegrab.clusterid
+                    imagename = $imagegrab.backupname
+                    snapshotname = $snapshotname
+                    status = $snapgrab.Status
+                }
             }
         }
-        else 
-        {
-            #$snapgrab
-            $AGMArray += [pscustomobject]@{
-                id = $id
-                snapshotname = $snapshotname
-                status = $snapgrab.Status
-            }
-        }
+        $AGMArray
     }
-    $AGMArray
 }
