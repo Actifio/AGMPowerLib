@@ -17,7 +17,7 @@ Function Confirm-AGMLibComputeEngineImage([string]$id,[switch]$every,[string]$ap
 {
     <#
     .SYNOPSIS
-    Confirms that the Compute Engine Snapshot created by a backup image still exists.
+    Confirms that the Compute Engine Snapshot created by a backup image still exists using the GoogleCloud PowerShell module
 
     .EXAMPLE
     Confirm-AGMLibComputeEngineImage -id 1234
@@ -26,6 +26,8 @@ Function Confirm-AGMLibComputeEngineImage([string]$id,[switch]$every,[string]$ap
     .DESCRIPTION
     A function to validate images.  Use this to confirm that an image shown in Backup and DR has all the relevant backing Compute Engine snapshots.
     To find eligible images use filters like:   Get-AGMImage -filtervalue apptype=GCPInstance
+
+    Note that if the GoogleCloud PowerShell module is not installed this function cannot run.
 
     #>
 

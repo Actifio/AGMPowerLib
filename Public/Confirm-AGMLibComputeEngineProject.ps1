@@ -17,7 +17,7 @@ Function Confirm-AGMLibComputeEngineProject([string]$projectid)
 {
     <#
     .SYNOPSIS
-    Matches snapshots in compute engine to snapshots in Backup and DR 
+    Matches snapshots in compute engine to snapshots in Backup and DR using the GoogleCloud PowerShell module
 
     .EXAMPLE
     Confirm-AGMLibComputeEngineProject -projectid backuppproject1
@@ -25,7 +25,11 @@ Function Confirm-AGMLibComputeEngineProject([string]$projectid)
     If an image does not have an ID then no matching image was found by Backup and DR.  This means either the image is not being tracked by Backup and DR or is being tracked by a different instance of Backup and DR (a different Management Console and Backup Appliance) 
 
     .DESCRIPTION
-    A function to detect if there are snapshots in the specified project that are not being tracked by Backup and DR or by a different instance of Backup and DR.
+    A function to detect if there are snapshots in the specified project that are not being tracked by Backup and DR or by a different instance of Backup and DR. It effectively comapares the output of these two commands:
+    Get-GceSnapshot -project $projectid    > This shows all the snapshots known to Compute Engine in this project
+    Get-AGMImage -filtervalue apptype=GCPInstance  > This shows all the snapshots known to Backup and DR
+
+    Note that if the GoogleCloud PowerShell module is not installed this function cannot run.
 
     #>
 
