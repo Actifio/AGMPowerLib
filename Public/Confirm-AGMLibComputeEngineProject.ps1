@@ -22,7 +22,7 @@ Function Confirm-AGMLibComputeEngineProject([string]$projectid)
     .EXAMPLE
     Confirm-AGMLibComputeEngineProject -projectid backuppproject1
     Matches all snapshots found in Google Cloud project backuppproject1 to those reported by Compute Engine
-    If an image does not have an ID then no matching was found by Backup and DR 
+    If an image does not have an ID then no matching image was found by Backup and DR.  This means either the image is not being tracked by Backup and DR or is being tracked by a different instance of Backup and DR (a different Management Console and Backup Appliance) 
 
     .DESCRIPTION
     A function to detect if there are snapshots in the specified project that are not being tracked by Backup and DR or by a different instance of Backup and DR.
