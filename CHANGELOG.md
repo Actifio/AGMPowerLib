@@ -1,4 +1,7 @@
 # Change log
+## AGMPowerLIB (0.0.0.69)
+* Added Confirm-AGMLibComputeEngineProject and Confirm-AGMLibComputeEngineImage
+
 ## AGMPowerLIB (0.0.0.68)
 * Reduce number of commands run by  New-AGMLibGCEInstanceDiscovery
 
