@@ -21,7 +21,8 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
 [string]$instanceid,
 [string]$disktype,
 [string]$hostname,
-[string]$hostid) 
+[string]$hostid,
+[switch]$jsonprint)
 {
     <#
     .SYNOPSIS
@@ -64,7 +65,7 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
         Get-AGMErrorMessage -messagetoprint "Please supply either -hostid or -hostname or -instanceid"
         return
     }
-    if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory"}
+    if (!($imageid)) { Get-AGMErrorMessage -messagetoprint "Parameter -imageid is mandatory" ; return }
     # if user asks for a disktype, then validate it
     if ($disktype)
     {
@@ -162,5 +163,6 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     $json = $json +'],"version":1,"cloudtype":"GCP","formtype":"existingmount"}}'
 
     # run the mount.   Job name should be returned
+    if ($jsonprint) { $json }
     New-AGMMount -imageid $imageid -jsonbody $json
 }

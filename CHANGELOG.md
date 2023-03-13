@@ -1,4 +1,7 @@
 # Change log
+## AGMPowerLIB (0.0.0.70)
+* 
+
 ## AGMPowerLIB (0.0.0.69)
 * Added Confirm-AGMLibComputeEngineProject and Confirm-AGMLibComputeEngineImage
 
