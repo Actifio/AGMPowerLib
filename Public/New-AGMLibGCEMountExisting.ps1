@@ -44,6 +44,8 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     Get-AGMImage -filtervalue "apptype=GCPInstance&jobclass=snapshot&hostname=$hostname" | select appname,id,consistencydate
 
     project, region and zone are not mandatory and will be learned from the instance host 
+
+    Valid disktypes are:  pd-balanced, pd-extreme, pd-ssd, pd-standard and hyperdisk-extreme
     
     #>
 
@@ -69,31 +71,40 @@ Function New-AGMLibGCEMountExisting ([string]$imageid,
     # if user asks for a disktype, then validate it
     if ($disktype)
     {
-        if (($disktype -ne "pd-balanced") -and ($disktype -ne "pd-extreme") -and ($disktype -ne "pd-ssd") -and ($disktype -ne "pd-standard"))
+        if (($disktype -ne "pd-balanced") -and ($disktype -ne "pd-extreme") -and ($disktype -ne "pd-ssd") -and ($disktype -ne "pd-standard") -and ($disktype -ne "hyperdisk-extreme"))
         {
-            Get-AGMErrorMessage -messagetoprint "The Disk type requested using -disktype is not valid.   It needs to be one of pd-balanced, pd-extreme, pd-ssd or pd-standard"
+            Get-AGMErrorMessage -messagetoprint "The Disk type requested using -disktype is not valid.   It needs to be one of pd-balanced, pd-extreme, pd-ssd, pd-standard or hyperdisk-extreme"
             return
         }
     }
 
     # learn about the host based on either hostname, hostid or instanceid
-    if ($hostname) { $hostgrab = Get-AGMHost -filtervalue "vmtype=GCP&hostname=$hostname" }
-    if ($hostgrab.id.count -ne 1) 
-    {
-        Get-AGMErrorMessage -messagetoprint "Could not find host with hostname $hostname using:  get-agmhost -filtervalue hostname=$hostname"
-        return
+    if ($hostname) 
+    { 
+        $hostgrab = Get-AGMHost -filtervalue "vmtype=GCP&hostname=$hostname" 
+        if ($hostgrab.id.count -ne 1) 
+        {
+            Get-AGMErrorMessage -messagetoprint "Could not find host with hostname $hostname using:  get-agmhost -filtervalue hostname=$hostname"
+            return
+        }
     }
-    if ($hostid) { $hostgrab = Get-AGMHost -filtervalue id=$hostid }
-    if ($hostgrab.id.count -ne 1) 
-    {
-        Get-AGMErrorMessage -messagetoprint "Could not find host with host ID $hostid using:  get-agmhost -filtervalue id=$hostid"
-        return
+    if ($hostid) 
+    { 
+        $hostgrab = Get-AGMHost -filtervalue id=$hostid 
+        if ($hostgrab.id.count -ne 1) 
+        {
+            Get-AGMErrorMessage -messagetoprint "Could not find host with host ID $hostid using:  get-agmhost -filtervalue id=$hostid"
+            return
+        }
     }
-    if ($instanceid) { $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 }
-    if ($hostgrab.id.count -ne 1) 
-    {
-        Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
-        return
+    if ($instanceid) 
+    { 
+        $hostgrab = Get-AGMHost -filtervalue uniquename=$instanceid -limit 1 
+        if ($hostgrab.id.count -ne 1) 
+        {
+            Get-AGMErrorMessage -messagetoprint "Could not find host with instance ID $instanceid using:  get-agmhost -filtervalue uniquename=$instanceid"
+            return
+        }
     }
     
     # use what we learned about the host 
