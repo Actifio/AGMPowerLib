@@ -1,6 +1,6 @@
 # Change log
 ## AGMPowerLIB (0.0.0.70)
-* Add jsonprint diag tool to New-AGMLibGCEMountExisting
+* Add jsonprint diag tool to New-AGMLibGCEMountExisting and improved logic in that function
 
 ## AGMPowerLIB (0.0.0.69)
 * Added Confirm-AGMLibComputeEngineProject and Confirm-AGMLibComputeEngineImage
