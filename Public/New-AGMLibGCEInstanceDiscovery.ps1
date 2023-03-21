@@ -91,7 +91,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     -metadatabackupplan xxxx     If the instance has metadata key named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
     -metadatadiskbackup yyy      If the instance has metadata key named  yyy and the value is bootonly then set bootonly backup on that instance.
 
-    -gcloudsearch
+    Filter value search
+    You can add two different filters if you want to force the onboarding of ignored or unmanaged instances that have already been discovered and you now want to apply a backup plan template
+    -filter ignored      Will apply a backup plan to discovered instances that are marked as ignored
+    -filter unmanaged      Will apply a backup plan to discovered instances that are unmanaged
 
     #>
 
@@ -193,9 +196,10 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     if ($filter)
     {
-        if ($filter -ne "New" -and $filter -ne "Ignored" -and $filter -ne "Managed" -and $filter -ne "Unmanaged" )
+        # do not add filter on managed or you end up in endless loop.  This function cannot be used to change the SLA template of a managed instance
+        if ($filter -ne "New" -and $filter -ne "Ignored" -and $filter -ne "Unmanaged" )
         {
-            Get-AGMErrorMessage -messagetoprint "The Filter $filter is not valid.  Use either New, Ignored, Managed or Unmanaged"
+            Get-AGMErrorMessage -messagetoprint "The Filter $filter is not valid.  Use either New, Ignored or Unmanaged"
             return
         }
     }
@@ -220,12 +224,14 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             do 
             {
                 if ($gcloudsearch)
-                {
-                    $searchcommand = 'gcloud compute instances list --project ' +$cred.project +' --zones ' +$cred.zone +' --filter="(' +$labelfilter +$backupplanlabelsearch +$metadatakeysearch +')" --format="json(name,id,labels,metadata.items)" --limit 50 --verbosity error | ConvertFrom-Json'
+                { 
+                    # dont add filter search to this command or you could end up in endless loop, because unless you change the actifio-role you will keep finding the same VMs
+                    $searchcommand = 'gcloud compute instances list --project ' +$cred.project +' --zones ' +$cred.zone +' --filter="(-labels.actifio-role:*' +$backupplanlabelsearch +$metadatakeysearch +')" --format="json(name,id,labels,metadata.items)" --limit 50 --verbosity error | ConvertFrom-Json'
                 }
                 else
+                # dont add filter search to this command or you could end up in endless loop, because unless you change the actifio-role you will keep finding the same VMs
                 {
-                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit                    
                 }
                 if ($textoutput)
                 {
@@ -363,7 +369,14 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                     }
                     else 
                     {
-                        $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                        if ($filter)
+                        {
+                            $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit +' -filter '+$filter
+                        }
+                        else 
+                        {
+                            $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                        }
                     }
                     if ($textoutput)
                     {
