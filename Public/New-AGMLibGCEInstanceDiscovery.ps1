@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[switch]$textoutput,[decimal]$limit,[switch]$noparallel,[switch]$verbose) 
+Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobackup,[switch]$backup,[string]$usertag,[string]$backupplanlabel,[string]$diskbackuplabel,[string]$metadatabackupplan,[string]$metadatadiskbackup,[string]$credentialid,[string]$sltid,[string]$sltname,[switch]$bootonly,[string]$applianceid,[string]$project,[string]$projectid,[string]$zone,[string]$filter,[switch]$textoutput,[decimal]$limit,[switch]$noparallel,[switch]$verbose,[switch]$gcloudsearch) 
 {
      <#
     .SYNOPSIS
@@ -83,6 +83,16 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
      -backupplanlabel xxxx     If the instance has a label named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
      -diskbackuplabel yyy      If the instance has a label of yyy and the value is bootonly then set bootonly backup on that instance.
 
+    gcloudsearch parameter
+    The search and addition of new instances will by default be done by the appliance service account.  This means all discovered instances will be added to Backup and DR
+    If you instead specify -gcloudsearch then the powershell service account will be used to search for new instances.   The appliance service account will still be used to add them.   However only matching instances will be added.
+
+    Metatadata management has two values that can be set.  note that if you search for metadata then gcloudsearch switch is to true.  
+    -metadatabackupplan xxxx     If the instance has metadata key named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
+    -metadatadiskbackup yyy      If the instance has metadata key named  yyy and the value is bootonly then set bootonly backup on that instance.
+
+    -gcloudsearch
+
     #>
 
     if ( (!($AGMSESSIONID)) -or (!($AGMIP)) )
@@ -111,7 +121,11 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     # if user wants to say projectid rather than project, we let them
     if ($projectid) { $project = $projectid}
     # rename usertag support
-    if ($backupplanlabel) { $usertag = $backupplanlabel}
+    if ($usertag) { $backupplanlabel = $usertag}
+
+    # metadata searches need gcloud search enabled
+    if ($metadatabackupplan) { $gcloudsearch = $true}
+    if ($metadatadiskbackup) { $gcloudsearch = $true}
 
     #if user would rather not use a CSV file, we need all the stats
     if (($credentialid) -and ($applianceid) -and ($project) -and ($zone))
@@ -158,7 +172,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
 
     if ($backup)
     {
-        if ((!($sltid)) -and (!($backupplanlabel)))
+        if ((!($sltid)) -and (!($backupplanlabel)) -and (!($metadatabackupplan)))
         {
             Get-AGMErrorMessage -messagetoprint "When specifying -backup either supply a default template with -sltid or -sltname and/or specify a -backupplanlabel"
             return;
@@ -170,6 +184,31 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
         Get-AGMErrorMessage -messagetoprint "Please specify either -backup or -nobackup to determine whether discovered instances should be protected or not protected"
         return;
     }
+
+    if (($backupplanlabel) -and ($metadatabackupplan))
+    {
+        Get-AGMErrorMessage -messagetoprint "Please dont specify both backupplanlabel and metadatabackupplan.  The use of only one choice is supported"
+        return;
+    }
+
+    if ($filter)
+    {
+        if ($filter -ne "New" -and $filter -ne "Ignored" -and $filter -ne "Managed" -and $filter -ne "Unmanaged" )
+        {
+            Get-AGMErrorMessage -messagetoprint "The Filter $filter is not valid.  Use either New, Ignored, Managed or Unmanaged"
+            return
+        }
+    }
+    if ((!$filter)) { $labelfilter = "-labels.actifio-role:*" } else { $labelfilter = 'labels.actifio-role:' +$filter +'*'}
+
+    if ($backupplanlabel)
+    {
+        $backupplanlabelsearch = ' AND labels.' +$backupplanlabel +':*' 
+    }
+    if ($metadatabackupplan)
+    {
+        $metadatakeysearch = ' AND metadata.list(show="key"):' +$metadatabackupplan
+    }
     
 
 
@@ -180,23 +219,43 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             $done = 0
             do 
             {
-                $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                if ($gcloudsearch)
+                {
+                    $searchcommand = 'gcloud compute instances list --project ' +$cred.project +' --zones ' +$cred.zone +' --filter="(' +$labelfilter +$backupplanlabelsearch +$metadatakeysearch +')" --format="json(name,id,labels,metadata.items)" --limit 50 --verbosity error | ConvertFrom-Json'
+                }
+                else
+                {
+                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                }
                 if ($textoutput)
                 {
                     $ct = Get-Date
                     write-host "$ct Running" $searchcommand
                 }
                 $newvmcommand = Invoke-Expression $searchcommand
-                if ($newvmcommand.totalcount -gt 0)
+                if ($gcloudsearch)
+                {
+                    $totalcount = $newvmcommand.id.count
+                }
+                else {
+                    $totalcount = $newvmcommand.totalcount
+                }
+                if ($totalcount -gt 0)
                 {
                     $offset += 1
                     $instancelist = ""
-                    foreach ($instance in $newvmcommand.items.vm)
+                    if ($gcloudsearch)
                     {
-                        $instancelist = $instancelist + "," +$instance.instanceid  
+                        # gcloud returns the instanceids in the id column
+                        foreach ($instance in $newvmcommand.id) { $instancelist = $instancelist + "," +$instance }
                     }
-                    # remove leading comma
-                    $instancelist = $instancelist.substring(1)    
+                    else 
+                    {
+                        # platform returns the instance IDs in items.vms.instanceid
+                        foreach ($instance in $newvmcommand.items.vm) { $instancelist = $instancelist + "," +$instance.instanceid }
+                    }
+                    # remove leading comma in our instance list
+                    $instancelist = $instancelist.substring(1) 
                     $addcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid "' +$instancelist +'"'
                     if ($textoutput)
                     {
@@ -298,12 +357,19 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                 $done = 0
                 do 
                 {
-                    $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                    if ($gcloudsearch)
+                    {
+                        $searchcommand = 'gcloud compute instances list --project ' +$cred.project +' --zones ' +$cred.zone +' --filter="(' +$labelfilter +$backupplanlabelsearch +$metadatakeysearch +')" --format="json(name,id,labels,metadata.items)" --limit=50 --verbosity error | ConvertFrom-Json'
+                    }
+                    else 
+                    {
+                        $searchcommand = 'Get-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -limit ' +$limit
+                    }
                     if ($textoutput)
                     {
                         $ct = Get-Date
                         write-host "$ct Running" $searchcommand
-                    }
+                    }                    
                     $newvmcommand = Invoke-Expression $searchcommand
                     $newvmcommand | Add-Member -NotePropertyName credentialid -NotePropertyValue $cred.credentialid
                     $newvmcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
@@ -311,24 +377,33 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                     $newvmcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
                     $newvmcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue 0
                     $newvmcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue 0
-                    if ($newvmcommand.totalcount -gt 0)
+                    if ($gcloudsearch)
+                    {
+                        $totalcount = $newvmcommand.id.count
+                    }
+                    else {
+                        $totalcount = $newvmcommand.totalcount
+                    }
+                    if ($totalcount -gt 0)
                     {
                         $offset += 1
-                        # we need the instance data
-                        $matchinginstances = $newvmcommand.items.vm
                         $instancelist = ""
-                        foreach ($instance in $newvmcommand.items.vm)
+                        if ($gcloudsearch)
                         {
-                            $instancelist = $instancelist + "," +$instance.instanceid  
+                            # gcloud returns the instanceids in the id column
+                            foreach ($instance in $newvmcommand.id) { $instancelist = $instancelist + "," +$instance }
+                            $matchinginstances = $newvmcommand
                         }
-                        # remove leading comma
-                        if ($instancelist)
+                        else 
                         {
-                            $instancelist = $instancelist.substring(1) 
+                            # platform returns the instance IDs in items.vms.instanceid
+                            $matchinginstances = $newvmcommand.items.vm
+                            foreach ($instance in $newvmcommand.items.vm) { $instancelist = $instancelist + "," +$instance.instanceid }
                         }
+                        # remove leading comma in our instance list
+                        if ($instancelist) { $instancelist = $instancelist.substring(1) }
                         if ($instancelist -ne "")
                         {
-                       
                             $addappcommand = 'New-AGMCloudVM -credentialid ' +$cred.credentialid +' -clusterid ' +$cred.applianceid +' -project ' +$cred.project +' -zone ' +$cred.zone +' -instanceid "' +$instancelist +'"'
                             if ($textoutput)
                             {
@@ -362,14 +437,76 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     $appid = $instance.id
                                     $newvmcommand.newgceinstances += 1 
                                     $newapphostuniquename = $instance.host.sources.uniquename
-                                    $taggrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
-                                    if ($usertag)
+                                    if ($gcloudsearch)
                                     {
-                                        $backupplancheck = $taggrab.tag | select-string $usertag
+                                        $instancelabels = $matchinginstances | where-object {$_.id -eq $newapphostuniquename } | Select-Object labels
+                                        if ($textoutput)
+                                        {
+                                            $ct = Get-Date
+                                            write-host "Label check found: $instancelabels "
+                                        }
+                                        if ($metadatabackupplan)
+                                        {
+                                            $instancemetadata = $matchinginstances | where-object {$_.id -eq $newapphostuniquename } | Select-Object metadata
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct found metadata"
+                                                $instancemetadata
+                                            }
+                                            if ($instancemetadata)
+                                            {
+                                                $backupplancheck = ($instancemetadata.metadata.items | Where-Object {$_.key -eq $metadatabackupplan}).value
+                                                if ($textoutput)
+                                                {
+                                                    $ct = Get-Date
+                                                    write-host "$ct backupplan check found $backupplancheck in metadata"
+                                                }
+                                            }
+                                        }
+                                        if ($metadatadiskbackup)
+                                        {
+                                            $instancemetadata = $matchinginstances | where-object {$_.id -eq $newapphostuniquename } | Select-Object metadata
+                                            if ($instancemetadata)
+                                            {
+                                                $diskbackuplabelcheck = ($instancemetadata.metadata.items | Where-Object {$_.key -eq $metadatadiskbackup}).value
+                                                if ($textoutput)
+                                                {
+                                                    $ct = Get-Date
+                                                    write-host "$ct diskbackup check found $diskbackuplabelcheck in metadata"
+                                                }
+                                            }
+                                        }
+                                        if (($instancelabels) -and ($backupplanlabel))
+                                        {
+                                            $backupplancheck = $instancelabels.labels.$backupplanlabel
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct backupplan check found $backupplancheck in labels"
+                                            }
+                                        }
+                                        if (($instancelabels) -and ($diskbackuplabel))
+                                        {
+                                            $diskbackuplabelcheck = $instancelabels.labels.$diskbackuplabel
+                                            if ($textoutput)
+                                            {
+                                                $ct = Get-Date
+                                                write-host "$ct diskbackup check found $diskbackuplabelcheck in labels"
+                                            }
+                                        }
                                     }
-                                    if ($diskbackuplabel)
+                                    else
                                     {
-                                        $diskbackuplabelcheck = $taggrab.tag | select-string $diskbackuplabel
+                                        $labelgrab = $matchinginstances | where-object {$_.instanceid -eq $newapphostuniquename } | Select-Object tag
+                                        if ($backupplanlabel)
+                                        {
+                                            $backupplancheck = $labelgrab.tag | select-string $backupplanlabel
+                                        }
+                                        if ($diskbackuplabel)
+                                        {
+                                            $diskbackuplabelcheck = $labelgrab.tag | select-string $diskbackuplabel
+                                        }
                                     }
                                     # if user supplied default sltid then use that
                                     if ((!($backupplancheck)) -and ($sltid))
@@ -384,17 +521,17 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             $newvmcommand.newgceinstancebackup += 1 
                                         }
                                     }
-                                    if ($backupplancheck)
+                                    if (($backupplancheck) -and (!($gcloudsearch)))
                                     {
                                         # remove the leadering  and trailing { and }
-                                        $taglist = $taggrab.tag.substring(1,$taggrab.tag.Length-2).Split(",")
+                                        $labellist = $labelgrab.tag.substring(1,$labelgrab.tag.Length-2).Split(",")
                                         # now for the backup tag
-                                        foreach ($tag in $taglist)
+                                        foreach ($label in $labellist)
                                         {
-                                            $name = $tag.trim().split("=") | Select-object -First 1
-                                            $value = $tag.trim().split("=") | Select-object -skip 1
-                                            # if the tag name is googlebackupplan we can protect it
-                                            if ($name | select-string $usertag)
+                                            $name = $label.trim().split("=") | Select-object -First 1
+                                            $value = $label.trim().split("=") | Select-object -skip 1
+                                            # if the label name is googlebackupplan we can protect it
+                                            if ($name | select-string $backupplanlabel)
                                             {
                                                 if ($value -eq "ignored")
                                                 {
@@ -424,18 +561,56 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             }
                                         }
                                     }
+                                    if (($backupplancheck) -and ($gcloudsearch))
+                                    {
+                                        if ($backupplancheck -eq "ignored")
+                                        {
+                                            $jsonbody = '{"ignore":true}'
+                                            Put-AGMAPIData  -endpoint /application/$appid -body $jsonbody
+                                        }
+                                        elseif ($backupplancheck -ne "unmanaged")
+                                        {
+                                            if ($sltgrab | where-object {$_.name -eq $backupplancheck})
+                                            {
+                                                $labelsltid = ($sltgrab | where-object {$_.name -eq $backupplancheck}).id
+                                            }
+                                            elseif ($sltid)
+                                            {
+                                                $labelsltid = $sltid
+                                            }
+                                            if (($labelsltid) -and ($slpid) -and ($appid))
+                                            {
+                                                $newslalist += [pscustomobject]@{
+                                                    appid = $appid
+                                                    sltid = $labelsltid
+                                                    slpid = $slpid
+                                                }
+                                                $newvmcommand.newgceinstancebackup += 1 
+                                            }
+                                        }
+                                    }
                                     # if the user is using a label as a hint as to whethe we do boot only per instance
                                     if ($diskbackuplabelcheck)
                                     {
-                                        # remove the leadering  and trailing { and }
-                                        $taglist = $taggrab.tag.substring(1,$taggrab.tag.Length-2).Split(",")
-                                        # now look for the  diskbackuplabel 
-                                        foreach ($tag in $taglist)
+                                        if ($gcloudsearch) 
                                         {
-                                            $name = $tag.trim().split("=") | Select-object -First 1
-                                            $value = $tag.trim().split("=") | Select-object -skip 1
-                                            # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
-                                            if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
+                                            # remove the leadering  and trailing { and }
+                                            $labellist = $labelgrab.tag.substring(1,$labelgrab.tag.Length-2).Split(",")
+                                            # now look for the  diskbackuplabel 
+                                            foreach ($label in $labellist)
+                                            {
+                                                $name = $label.trim().split("=") | Select-object -First 1
+                                                $value = $label.trim().split("=") | Select-object -skip 1
+                                                # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
+                                                if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
+                                                {
+                                                    $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
+                                                }
+                                            }
+                                        }
+                                        else 
+                                        {
+                                            if ($diskbackuplabelcheck -eq "bootonly")
                                             {
                                                 $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
                                             }
