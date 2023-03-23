@@ -583,6 +583,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     }
                                     if (($backupplancheck) -and ($gcloudsearch))
                                     {
+                                        $labelsltid = ""
                                         if ($backupplancheck -eq "ignored")
                                         {
                                             $jsonbody = '{"ignore":true}'
