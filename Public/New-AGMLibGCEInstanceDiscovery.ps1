@@ -86,7 +86,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     gcloudsearch parameter
     The search and addition of new instances will by default be done by the appliance service account.  This also means all discovered instances will be added to Backup and DR
     If you instead specify -gcloudsearch then the powershell service account will be used to search for new instances while the appliance service account will still be used to add them.   However only matching instances will be added.
-    This also means the powershell service account also needs the Compute Viewer IAM role.
+    This also means the powershell service account also needs the Compute Viewer IAM role in any project where you want to search
 
     Metatadata management has two values that can be set.  note that if you search for metadata then gcloudsearch switch is to true.  
     -metadatabackupplan xxxx     If the instance has metadata key named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
