@@ -84,8 +84,9 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
      -diskbackuplabel yyy      If the instance has a label of yyy and the value is bootonly then set bootonly backup on that instance.
 
     gcloudsearch parameter
-    The search and addition of new instances will by default be done by the appliance service account.  This means all discovered instances will be added to Backup and DR
-    If you instead specify -gcloudsearch then the powershell service account will be used to search for new instances.   The appliance service account will still be used to add them.   However only matching instances will be added.
+    The search and addition of new instances will by default be done by the appliance service account.  This also means all discovered instances will be added to Backup and DR
+    If you instead specify -gcloudsearch then the powershell service account will be used to search for new instances while the appliance service account will still be used to add them.   However only matching instances will be added.
+    This also means the powershell service account also needs the Compute Viewer IAM role.
 
     Metatadata management has two values that can be set.  note that if you search for metadata then gcloudsearch switch is to true.  
     -metadatabackupplan xxxx     If the instance has metadata key named xxxx then use its value as the template name.   If the value is 'ignored' or 'unmanaged' then do that instead
@@ -95,6 +96,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
     You can add two different filters if you want to force the onboarding of ignored or unmanaged instances that have already been discovered and you now want to apply a backup plan template
     -filter ignored      Will apply a backup plan to discovered instances that are marked as ignored
     -filter unmanaged      Will apply a backup plan to discovered instances that are unmanaged
+    However the use of these filters may result in discovery looping endlessly if the onboarding state does not change.   So use filters with care.
 
     #>
 
@@ -388,8 +390,12 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                     $newvmcommand | Add-Member -NotePropertyName applianceid -NotePropertyValue $cred.applianceid
                     $newvmcommand | Add-Member -NotePropertyName project -NotePropertyValue $cred.project
                     $newvmcommand | Add-Member -NotePropertyName zone -NotePropertyValue $cred.zone
-                    $newvmcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue 0
-                    $newvmcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue 0
+
+                    $progressarray = [pscustomobject]@{
+                        newgceinstances = 0
+                        newgceinstancebackup = 0
+                    }
+
                     if ($gcloudsearch)
                     {
                         $totalcount = $newvmcommand.id.count
@@ -448,7 +454,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                 foreach ($instance in $newappcommand.items)
                                 {
                                     $appid = $instance.id
-                                    $newvmcommand.newgceinstances += 1 
+                                    $progressarray.newgceinstances += 1 
                                     $newapphostuniquename = $instance.host.sources.uniquename
                                     if ($gcloudsearch)
                                     {
@@ -531,7 +537,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                 sltid = $sltid
                                                 slpid = $slpid
                                             }
-                                            $newvmcommand.newgceinstancebackup += 1 
+                                            $progressarray.newgceinstancebackup += 1 
                                         }
                                     }
                                     if (($backupplancheck) -and (!($gcloudsearch)))
@@ -568,7 +574,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                             sltid = $labelsltid
                                                             slpid = $slpid
                                                         }
-                                                        $newvmcommand.newgceinstancebackup += 1 
+                                                        $progressarray.newgceinstancebackup += 1 
                                                     }
                                                 }
                                             }
@@ -598,7 +604,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                                     sltid = $labelsltid
                                                     slpid = $slpid
                                                 }
-                                                $newvmcommand.newgceinstancebackup += 1 
+                                                $progressarray.newgceinstancebackup += 1 
                                             }
                                         }
                                     }
@@ -607,26 +613,26 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                     {
                                         if ($gcloudsearch) 
                                         {
-                                            # remove the leadering  and trailing { and }
-                                            $labellist = $labelgrab.tag.substring(1,$labelgrab.tag.Length-2).Split(",")
-                                            # now look for the  diskbackuplabel 
-                                            foreach ($label in $labellist)
-                                            {
-                                                $name = $label.trim().split("=") | Select-object -First 1
-                                                $value = $label.trim().split("=") | Select-object -skip 1
-                                                # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
-                                                if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
-                                                {
-                                                    $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
-                                                }
-                                            }
-                                        }
-                                        else 
-                                        {
                                             if ($diskbackuplabelcheck -eq "bootonly")
                                             {
                                                 $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
                                             }
+                                        }
+                                        else 
+                                        {
+                                           # remove the leadering  and trailing { and }
+                                           $labellist = $labelgrab.tag.substring(1,$labelgrab.tag.Length-2).Split(",")
+                                           # now look for the  diskbackuplabel 
+                                           foreach ($label in $labellist)
+                                           {
+                                               $name = $label.trim().split("=") | Select-object -First 1
+                                               $value = $label.trim().split("=") | Select-object -skip 1
+                                               # if we find diskbackuplabel and its value is bootonly we use it.   In future we could add more logic here
+                                               if (($name | select-string $diskbackuplabel) -and ($value -eq "bootonly"))
+                                               {
+                                                   $newslalist | where-object { $_.appid -eq $appid } | Add-Member -MemberType NoteProperty -Name diskbackup -Value "bootonly"
+                                               }
+                                           }
                                         }
                                     }
                                 }
@@ -696,6 +702,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                         $done = 1
                     }
                     $newvmcommand 
+                    $progressarray
                 }  until ($done -eq 1)
                 if ($textoutput)
                 {
