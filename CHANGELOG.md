@@ -1,4 +1,7 @@
 # Change log
+## AGMPowerLIB (0.0.0.71)
+* Enhanced New-AGMLibGCEInstanceDiscovery with gcloud search function as well as filtering and metadata searches
+
 ## AGMPowerLIB (0.0.0.70)
 * Add jsonprint diag tool to New-AGMLibGCEMountExisting and improved logic in that function
 
