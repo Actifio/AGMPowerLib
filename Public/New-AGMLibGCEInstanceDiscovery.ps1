@@ -552,6 +552,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                                             # if the label name is googlebackupplan we can protect it
                                             if ($name | select-string $backupplanlabel)
                                             {
+                                                $labelsltid = ""
                                                 if ($value -eq "ignored")
                                                 {
                                                     $jsonbody = '{"ignore":true}'
