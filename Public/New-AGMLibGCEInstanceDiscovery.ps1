@@ -702,7 +702,16 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
                         $done = 1
                     }
                     $newvmcommand 
-                    $progressarray
+                    if ($gcloudsearch)
+                    {
+                        $newvmcommand
+                        $progressarray
+                    }
+                    else {
+                        $newvmcommand | Add-Member -NotePropertyName newgceinstances -NotePropertyValue $progressarray.newgceinstances
+                        $newvmcommand | Add-Member -NotePropertyName newgceinstancebackup -NotePropertyValue $progressarray.newgceinstancebackup
+                        $newvmcommand 
+                    }
                 }  until ($done -eq 1)
                 if ($textoutput)
                 {
