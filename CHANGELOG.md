@@ -1,4 +1,7 @@
 # Change log
+## AGMPowerLIB (0.0.0.72)
+* disktype was being ignored by New-AGMLibGCPInstanceMultiMount
+
 ## AGMPowerLIB (0.0.0.71)
 * Enhanced New-AGMLibGCEInstanceDiscovery with gcloud search function as well as filtering and metadata searches
 

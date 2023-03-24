@@ -135,6 +135,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
                 if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
                 if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                if ($_.disktype) { $mountcommand = $mountcommand + ' -disktype ' + $_.disktype } 
                 $agmip = $using:agmip 
                 $AGMToken = $using:AGMToken 
                 $AGMSESSIONID = $using:AGMSESSIONID
@@ -172,6 +173,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
                 if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
                 if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
+                if ($_.disktype) { $mountcommand = $mountcommand + ' -disktype ' + $_.disktype } 
                 $agmip = $using:agmip 
                 $AGMSESSIONID = $using:AGMSESSIONID
                 $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
@@ -212,7 +214,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             if ($app.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$app.nic3externalip } 
             if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
             if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
-
+            if ($app.disktype) { $mountcommand = $mountcommand + ' -disktype ' + $app.disktype } 
             $runcommand = Invoke-Expression $mountcommand 
         
             if ($runcommand.errormessage)
