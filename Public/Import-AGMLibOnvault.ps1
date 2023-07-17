@@ -18,19 +18,19 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     <#
     .SYNOPSIS
     Imports or forgets OnVault images
-    There is no Forget-AGMOnVault command.   You perform both import and forget from this function. 
+    There is no Forget-AGMOnVault command. You perform both import and forget from this function. 
 
     .EXAMPLE
     Import-AGMLibOnvault -listdiskpools
 
-    List all disk pools.  The appliance is the Appliance that will be targeted for import.  
+    List all disk pools. The appliance is the Appliance that will be targeted for import.  
     You will use the diskpoolid as part of all further commands
 
     .EXAMPLE
     Import-AGMLibOnvault -diskpoolid 199085 -listapplianceids
 
     List all appliances that have written to diskpoolid 12717.  
-    You will use the applianceid as part of all further commands.   It is the Appliance that wrote the backups
+    You will use the applianceid as part of all further commands. It is the Appliance that wrote the backups
 
     .EXAMPLE
     Import-AGMLibOnvault -diskpoolid 199085 -applianceid 144488110379 -listapps
@@ -174,7 +174,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($diskpoolgrab.count -eq 1)
         {
             $diskpoolid = $diskpoolgrab.id
-            write-host "Only one OnVault diskpool was found.  We will use this one:"  
+            write-host "Only one OnVault diskpool was found. We will use this one:"  
             write-host ""
             write-host $diskpoolgrab.name "(ID: $diskpoolid)"
             write-host ""
@@ -219,7 +219,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         {
             $applianceid = $appliancegrab.cluster.clusterid
             $appliancename = $appliancegrab.cluster.name
-            write-host "Only one Appliance was found.  We will use this one:"
+            write-host "Only one Appliance was found. We will use this one:"
             write-host ""
             write-host "$appliancename (ID: $applianceid)"
             write-host ""
@@ -319,7 +319,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         $ownerchoice = Read-Host "Please select from this list (1-2)"
         if ($ownerchoice -eq 2) { return }
         Write-Host ""
-        Write-Host "Do you want to have the selected appliance take ownership of any images. "
+        Write-Host "Do you want to have the selected appliance take ownership of any images."
         Write-Host ""
         Write-Host "1`: Don't take ownership (default)"
         Write-Host "2`: Take ownership of any imported images"
@@ -330,7 +330,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($ownerchoice -eq 3) { $forget = $true}
 
         Write-Host ""
-        Write-Host "Do you want to monitor the import to completion. "
+        Write-Host "Do you want to monitor the import to completion."
         Write-Host ""
         Write-Host "1`: Monitor the import (default)"
         Write-Host "2`: Dont monitor the import"
@@ -338,7 +338,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($ownerchoice -eq 1 -or $ownerchoice -eq "") { $monitor = $true}
     
         Clear-Host
-        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host "Guided selection is complete. The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "Import-AGMLibOnvault -diskpoolid $diskpoolid -applianceid $applianceid"  
         if ($forget) { Write-Host -nonewline " -forget" }
@@ -346,7 +346,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($monitor) { Write-Host -nonewline " -monitor" }
         if ($appid) { Write-Host -nonewline " -appid $appid" }
         Write-Host ""
-        Write-Host "1`: Run the command now.  This command will run in the background unless you selected monitor option. (default)"
+        Write-Host "1`: Run the command now. This command will run in the background unless you selected monitor option. (default)"
         Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
         if ($appuserchoice -eq 2)
@@ -354,9 +354,6 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             return
         }
     }
-    
-
-
 
     if ($appid)
     {
