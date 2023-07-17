@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[string]$appid,[switch][alias("f")]$forget,[switch][alias("m")]$monitor,[switch][alias("o")]$ownershiptakeover) 
 {
     <#
     .SYNOPSIS
     Imports or forgets PD Snapshot images
-    There is no Forget-AGMLibPDSnapshot command.  You can do import and forget from this function. 
+    There is no Forget-AGMLibPDSnapshot command. You can do import and forget from this function. 
 
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 
@@ -28,17 +27,17 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
     
-    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
+    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931
 
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -owner
     
-    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931 and takes ownership
+    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931 and takes ownership
 
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -forget
     
-    Forgets all PD Snapshot images imported from disk pool ID 20060633 and App ID 4788 onto Appliance ID 1415019931
+    Forgets all PD Snapshot images imported from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931
 
     .DESCRIPTION
     A function to import PD Snapshot images
@@ -59,7 +58,6 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
 
     if ((!($diskpoolid)) -or (!($applianceid)))
     {
-
         write-host ""
         Write-Host "This function is used to import PD Snapshot images into an Appliance."
         Write-host "We need to determine which pool to import from and which appliance created the images to import"
@@ -77,7 +75,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         if ($diskpoolgrab.count -eq 1)
         {
             $diskpoolid = $diskpoolgrab.id
-            write-host "Only one OnVault diskpool was found.  We will use this one:"  $diskpoolgrab.name 
+            write-host "Only one OnVault diskpool was found. We will use this one:"  $diskpoolgrab.name 
         }
         else
         {
@@ -109,7 +107,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
 
         write-host "Inspecting the disk pool for source appliances"
         write-host ""
-        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters -extrarequests "&jobclass=1"
+        $appliancegrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters -extrarequests "&jobclass=1"
         if ($appliancegrab.cluster.clusterid.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
@@ -119,7 +117,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         {
             $applianceid = $appliancegrab.cluster.clusterid
             $appliancename = $appliancegrab.cluster.name
-            write-host "Only one Appliance was found.  We will use this one: $appliancename (ID: $applianceid)"
+            write-host "Only one Appliance was found. We will use this one: $appliancename (ID: $applianceid)"
         }
         else
         {
@@ -145,12 +143,12 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
                     break
                 }
             }
-            $applianceid =  $appliancegrab.cluster.clusterid[($appselection - 1)]
-            $appliancename =  $appliancegrab.cluster.name[($appselection - 1)]
+            $applianceid = $appliancegrab.cluster.clusterid[($appselection - 1)]
+            $appliancename = $appliancegrab.cluster.name[($appselection - 1)]
         }
         Write-Host ""
         write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
-        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid  -extrarequests "&jobclass=1"
+        $applicationgrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters/$applianceid -extrarequests "&jobclass=1"
         if ($applicationgrab.host)
         {
             $printarray = @()
@@ -164,10 +162,10 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
             }
         }
         else {
-            Get-AGMErrorMessage -messagetoprint "Failed to find any application images to list"
+            Get-AGMErrorMessage -messagetoprint "Failed to find any source application images to list"
             return
         }
-        write-host "Found the following images."
+        write-host "Found the following source images."
         $printarray | sort-object hostname,appname | Format-Table
 
         Write-Host ""
@@ -178,7 +176,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         $ownerchoice = Read-Host "Please select from this list (1-2)"
         if ($ownerchoice -eq 2) { return }
         Write-Host ""
-        Write-Host "Do you want to have the selected appliance take ownership of any images. "
+        Write-Host "Do you want to have the selected appliance take ownership of any images."
         Write-Host ""
         Write-Host "1`: Don't take ownership (default)"
         Write-Host "2`: Take ownership of any imported images"
@@ -189,7 +187,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         if ($ownerchoice -eq 3) { $forget = $true}
 
         Write-Host ""
-        Write-Host "Do you want to monitor the import to completion. "
+        Write-Host "Do you want to monitor the import to completion."
         Write-Host ""
         Write-Host "1`: Monitor the import (default)"
         Write-Host "2`: Dont monitor the import"
@@ -197,7 +195,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         if ($ownerchoice -eq 1 -or $ownerchoice -eq "") { $monitor = $true}
     
         Clear-Host
-        Write-Host "Guided selection is complete.  The values entered resulted in the following command:"
+        Write-Host "Guided selection is complete. The values entered resulted in the following command:"
         Write-Host ""
         Write-Host -nonewline "Import-AGMLibPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid"  
         if ($forget) { Write-Host -nonewline " -forget" }
@@ -205,7 +203,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         if ($monitor) { Write-Host -nonewline " -monitor" }
         if ($appid) { Write-Host -nonewline " -appid $appid" }
         Write-Host ""
-        Write-Host "1`: Run the command now.  This command will run in the background unless you selected monitor option. (default)"
+        Write-Host "1`: Run the command now. This command will run in the background unless you selected monitor option. (default)"
         Write-Host "2`: Exit without running the command"
         $appuserchoice = Read-Host "Please select from this list (1-2)"
         if ($appuserchoice -eq 2)
@@ -263,7 +261,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
     }
     elseif ($monitor -and $importid)
     {
-        Write-host "Image count before import:  $startcount"
+        Write-host "Image count before import: $startcount"
         $done = 0
         do 
         {
@@ -305,10 +303,9 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
             Start-Sleep -seconds 10
             $endcount = Get-AGMImageCount -filtervalue "jobclass=snapshot&sourceuds=$applianceid&poolid=$diskpoolid"
         }
-        Write-host "Image count after import:  $endcount"
+        Write-host "Image count after import: $endcount"
     }
     else {
-
         $import
     }
 }
