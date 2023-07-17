@@ -25,7 +25,7 @@ Function Import-AGMLibSLT([string]$filename,[string]$bucket,[string]$objectname)
 
     .EXAMPLE
     Import-AGMLibSLT -bucket avwlab2testbucket -objectname itsthename.json1
-    Imports the contents of a JSON file in a GCS bucket.   
+    Imports the contents of a JSON file in a GCS bucket. 
     This presumes the Google Cloud Tools for PowerShell Module has been installed and that the user has access to the bucket
 
     .DESCRIPTION
@@ -57,7 +57,7 @@ Function Import-AGMLibSLT([string]$filename,[string]$bucket,[string]$objectname)
         }
         if ($json)
         {
-            Post-AGMAPIData  -endpoint /slt/import -body $json
+            Post-AGMAPIData -endpoint /slt/import -body $json
         }
         return
     }
@@ -76,5 +76,5 @@ Function Import-AGMLibSLT([string]$filename,[string]$bucket,[string]$objectname)
         Get-AGMErrorMessage -messagetoprint "The file named $filename could not be found."
         return
     }
-    Post-AGMAPIData  -endpoint /slt/import -body $json
+    Post-AGMAPIData -endpoint /slt/import -body $json
 }
