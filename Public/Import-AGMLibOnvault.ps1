@@ -51,17 +51,17 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     .EXAMPLE
     Import-AGMLibOnVault -diskpoolid 199085 -applianceid 144488110379 -appid 4788
     
-    Imports all OnVault images found in disk pool ID 199085 and source App ID 4788 created by Appliance ID 144488110379
+    Imports all OnVault images found in disk pool ID 199085 and source App ID 4788 (from the source appliance) created by Appliance ID 144488110379
 
     .EXAMPLE
     Import-AGMLibOnVault -diskpoolid 199085 -applianceid 144488110379 -appid 4788 -owner
     
-    Imports all OnVault images found in disk pool ID 199085 and source App ID 4788 created by Appliance ID 144488110379 and takes ownership
+    Imports all OnVault images found in disk pool ID 199085 and source App ID 4788 (from the source appliance) created by Appliance ID 144488110379 and takes ownership
 
     .EXAMPLE
     Import-AGMLibOnVault -diskpoolid 199085 -applianceid 144488110379 -appid 4788 -forget
     
-    Forgets all OnVault images imported found in disk pool ID 199085 and source App ID 4788 onto Appliance ID 144488110379
+    Forgets all OnVault images imported found in disk pool ID 199085 and source App ID 4788 (from the source appliance) onto Appliance ID 144488110379
 
     .DESCRIPTION
     A function to import OnVault images

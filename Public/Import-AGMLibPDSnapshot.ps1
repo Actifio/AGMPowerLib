@@ -197,7 +197,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         Clear-Host
         Write-Host "Guided selection is complete. The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "Import-AGMLibPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid"  
+        Write-Host -nonewline "Import-AGMLibPDSnapshot -diskpoolid $diskpoolid -applianceid $applianceid" 
         if ($forget) { Write-Host -nonewline " -forget" }
         if ($owner) { Write-Host -nonewline " -owner" }
         if ($monitor) { Write-Host -nonewline " -monitor" }
