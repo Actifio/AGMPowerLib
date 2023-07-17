@@ -1,4 +1,8 @@
 # Change log
+
+## AGMPowerLIB (0.0.0.73)
+* Minor updates for describing the import of source appIDs for PD snapshots.
+
 ## AGMPowerLIB (0.0.0.72)
 * disktype was being ignored by New-AGMLibGCPInstanceMultiMount
 
@@ -12,10 +16,10 @@
 * Added Confirm-AGMLibComputeEngineProject and Confirm-AGMLibComputeEngineImage
 
 ## AGMPowerLIB (0.0.0.68)
-* Reduce number of commands run by  New-AGMLibGCEInstanceDiscovery
+* Reduce number of commands run by New-AGMLibGCEInstanceDiscovery
 
 ## AGMPowerLIB (0.0.0.67)
-* Improve New-AGMLibLVMMount:  only show hosts with agent and show label when producing sample command
+* Improve New-AGMLibLVMMount: only show hosts with agent and show label when producing sample command
 * Improve error reporting in New-AGMLibGCEInstanceDiscovery when using textoutput
 
 ## AGMPowerLIB (0.0.0.66)
@@ -37,8 +41,8 @@
 
 ## AGMPowerLIB (0.0.0.61)
 * New-AGMLibGCEInstanceDiscovery
-  * Allow user to use label to specify diskbackup rule.   Right now will support only bootonly
-  * change -usertag to -backupplanlabel  while continuing to support only name
+* Allow user to use label to specify diskbackup rule. Right now will support only bootonly
+ * change -usertag to -backupplanlabel while continuing to support only name
 * Import-AGMLibOnVault improved guided mode output 
 * New-AGMLibGCVEfailover - ignore HCX node if its discovered and only work with nodes whose name start with esxi
 
@@ -50,30 +54,30 @@
 * Improve help examples in some commands
 * Add ostype field to Get-AGMLibHostList
 
-## AGMPowerLIB  (0.0.0.59)
+## AGMPowerLIB (0.0.0.59)
 * Added Restore-AGMLibSAPHANA to run restores on SAP HANA
 * Added New-AGMLibSAPHANAMultiMount to do multi mount for SAP HANA
 * Updated Mount-AGMLibSAPHANA to add CSV output to feed New-AGMLibSAPHANAMultiMount
 * Minor fixes to New-AGMLibGCPInstance 
 * New-AGMLibImage will now look for DirectOnvault job
 
-## AGMPowerLIB  (0.0.0.58)
+## AGMPowerLIB (0.0.0.58)
 * Get-AGMLibPolicies - added options 
-* If version check fails, print actual error.  This should surface expired openID Connect tokens 
+* If version check fails, print actual error. This should surface expired openID Connect tokens 
 
-## AGMPowerLIB  (0.0.0.57)
+## AGMPowerLIB (0.0.0.57)
 * New-AGMLibGCPInstance 
-  * was printing a dummy instancename for multi-instance recovery, this was causing issue, so field will be blank
-  * was not handling host projects correctly, added a new field nicXhostproject to process handle these.
+* was printing a dummy instancename for multi-instance recovery, this was causing issue, so field will be blank
+* was not handling host projects correctly, added a new field nicXhostproject to process handle these.
 
-## AGMPowerLIB  (0.0.0.56)
+## AGMPowerLIB (0.0.0.56)
 * Added Get-AGMLibApplianceLogs
 
-## AGMPowerLIB  (0.0.0.55)
+## AGMPowerLIB (0.0.0.55)
 * Added Get-AGMLibBackupSKU
 * Corrected issue with Set-AGMLibApplianceParameter asking for applianceid when it was supplied
 
-## AGMPowerLIB  (0.0.0.54)
+## AGMPowerLIB (0.0.0.54)
 Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.0.54
 
 * [GitHub commits](https://github.com/Actifio/AGMPowerLIB/commits/v0.0.0.54)
@@ -88,11 +92,11 @@ Important - upgrade to AGMPowerCLI 0.0.0.39 before upgrading to AGMPowerLib 0.0.
   * Offer sltname and sltid to be used in combination with -backup to auto backup all discovered VMs
   * If usertag is set and the value is 'ignored' or 'unmanaged' then do that rather than try and protect the instance with matching sltname
   * Added parallel execution when run under PS7
-* Remove-AGMLibMount  
+* Remove-AGMLibMount 
   * Added parallel execution for Forget GCE Instance when run under PS7
 * New-AGMLibGCPInstanceMultiMount 
   * Added parallel execution when run under PS7
 * New-AGMLibGCEMountExisting
-  * New function to allow mount of a GCE Instance backup to an existing GCE Instance    
+  * New function to allow mount of a GCE Instance backup to an existing GCE Instance 
 * Get-AGMLibApplianceParameter 
-  * change to use id rather than applianceid as this was confusing the two IDs.  Needs AGMPowerCLI 0.0.0.39
+  * change to use id rather than applianceid as this was confusing the two IDs. Needs AGMPowerCLI 0.0.0.39

@@ -25,7 +25,7 @@
 RootModule = 'AGMPowerLib.psm1'
 
 # Version number of this module.
-ModuleVersion = '0.0.0.72'
+ModuleVersion = '0.0.0.73'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -40,7 +40,7 @@ Author = 'Anthony Vandewerdt'
 CompanyName = 'Google'
 
 # Copyright statement for this module
-Copyright = '(c) 2022 Google, Inc. All rights reserved'
+Copyright = '(c) 2023 Google, Inc. All rights reserved'
 
 ################################################################################################################## 
 # Description of the functionality provided by this module
