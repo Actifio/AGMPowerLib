@@ -27,17 +27,17 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788
     
-    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931
+    Imports all PD Snapshot images from disk pool ID 20060633 and source App ID 4788 (from the source appliance) onto Appliance ID 1415019931
 
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -owner
     
-    Imports all PD Snapshot images from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931 and takes ownership
+    Imports all PD Snapshot images from disk pool ID 20060633 and source App ID 4788 (from the source appliance) onto Appliance ID 1415019931 and takes ownership
 
     .EXAMPLE
     Import-AGMLibPDSnapshot -diskpoolid 20060633 -applianceid 1415019931 -appid 4788 -forget
     
-    Forgets all PD Snapshot images imported from disk pool ID 20060633 and App ID 4788 (from the source appliance) onto Appliance ID 1415019931
+    Forgets all PD Snapshot images imported from disk pool ID 20060633 and source App ID 4788 (from the source appliance) onto Appliance ID 1415019931
 
     .DESCRIPTION
     A function to import PD Snapshot images
@@ -75,7 +75,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
         if ($diskpoolgrab.count -eq 1)
         {
             $diskpoolid = $diskpoolgrab.id
-            write-host "Only one OnVault diskpool was found. We will use this one:"  $diskpoolgrab.name 
+            write-host "Only one OnVault diskpool was found. We will use this one:" $diskpoolgrab.name 
         }
         else
         {
@@ -101,7 +101,7 @@ Function Import-AGMLibPDSnapshot([string]$diskpoolid,[string]$applianceid,[strin
                     break
                 }
             }
-            $diskpoolid =  $diskpoolgrab.id[($poolselection - 1)]
+            $diskpoolid = $diskpoolgrab.id[($poolselection - 1)]
         }
         
 

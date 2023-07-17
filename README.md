@@ -1,6 +1,6 @@
 # AGMPowerLib
 
-A Powershell module that allows PowerShell users to issue complex API calls to Actifio Global Manager. This module contains what we call composite functions, these being complex combination of API endpoints.  
+A Powershell module that allows PowerShell users to issue complex API calls to Actifio Global Manager. This module contains what we call composite functions, these being complex combination of API endpoints. 
 
 ### Table of Contents
 **[Prerequisites](#prerequisites)**<br>
@@ -14,7 +14,7 @@ A Powershell module that allows PowerShell users to issue complex API calls to A
 ## Prerequisites
 
 This module requires AGMPowerCLI to already be installed.
-Please visit this repo first:  https://github.com/Actifio/AGMPowerCLI
+Please visit this repo first: https://github.com/Actifio/AGMPowerCLI
 Once you have installed AGMPowerCLI, then come back here and install AGMPowerLib to get the composite functions.
 
 
@@ -33,7 +33,7 @@ If running PowerShell 5 on Windows first run this (some older Windows versions a
 ```
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 ```
-Now run this command. It is normal to get prompted to upgrade or install the NuGet Provider.  You may see other warnings as well.
+Now run this command. It is normal to get prompted to upgrade or install the NuGet Provider. You may see other warnings as well.
 
 ```
 Install-Module -Name AGMPowerLib
@@ -41,7 +41,7 @@ Install-Module -Name AGMPowerLib
 
 ### Upgrades using PowerShell Gallery
 
-Note if you run 'Install-Module' to update an installed module, it will complain.  You need to run 'Update-module' instead.
+Note if you run 'Install-Module' to update an installed module, it will complain. You need to run 'Update-module' instead.
 
 If running PowerShell 5 on Windows first run this (some older Windows versions are set to use downlevel TLS which will result in confusing error messages):
 ```
@@ -51,7 +51,7 @@ Now run this command:
 ```
 Update-Module -name AGMPowerLib
 ```
-It will install the latest version and leave the older version in place.  To see the version in use versus all versions downloaded use these two commands:
+It will install the latest version and leave the older version in place. To see the version in use versus all versions downloaded use these two commands:
 ```
 Get-InstalledModule AGMPowerLib
 Get-InstalledModule AGMPowerLib -AllVersions
@@ -65,9 +65,9 @@ Many corporate servers will not allow downloads from PowerShell gallery or even 
 
 ### Clone the Github repo
 
-1.  Using a GIT client on your Windows or Linux or Mac OS host, clone the AGMPowerLIB GIT repo (see example clone command below)
-1.  Now start PWSH and change directory to the AGMPowerLib directory that should contain our module files.
-1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
+1. Using a GIT client on your Windows or Linux or Mac OS host, clone the AGMPowerLIB GIT repo (see example clone command below)
+1. Now start PWSH and change directory to the AGMPowerLib directory that should contain our module files.
+1. There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1** 
 
 If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
@@ -77,12 +77,12 @@ git clone https://github.com/Actifio/AGMPowerLIB.git AGMPowerLIB
 ```
 ##### Manual ZIP Download
 
-1.  From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file.  Normally you would use the **Main** branch for this unless requested otherwise.  
-1.  Copy the Zip file to the server where you want to install it
-1.  For Windows, Right select on the zip file, choose  Properties and then use the **Unblock** button next to the message:  *This file came from another computer and might be blocked to help protect  your computer.*
-1.  For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder.  It doesn't matter where you put the folder.  For Mac it should automatically unzip.  For Linux use the unzip command to unzip the folder. 
-1.  Now start PWSH and change directory to the AGMPowerLib-main directory that should contain our module files.   
-1.  There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1**  
+1. From GitHub, use the Green Code download button to download the AGMPowerLib repo as a zip file. Normally you would use the **Main** branch for this unless requested otherwise. 
+1. Copy the Zip file to the server where you want to install it
+1. For Windows, Right select on the zip file, choose Properties and then use the **Unblock** button next to the message: *This file came from another computer and might be blocked to help protect your computer.*
+1. For Windows, now right select and use **Extract All** to extract the contents of the zip file to a folder. It doesn't matter where you put the folder. For Mac it should automatically unzip. For Linux use the unzip command to unzip the folder. 
+1. Now start PWSH and change directory to the AGMPowerLib-main directory that should contain our module files. 
+1. There is an installer file: **Install-AGMPowerLib.ps1** so run that with **./Install-AGMPowerLib.ps1** 
 If it finds multiple installs, we strongly recommend you delete them all and run the installer again to have just one install.
 
 For Download you could also use this:
@@ -106,7 +106,7 @@ Then run this command:
 ```
 Get-ChildItem .\Install-AGMPowerLib.ps1 | Unblock-File
 ```
-Then re-run the installer.  The installer will unblock the remaining files.
+Then re-run the installer. The installer will unblock the remaining files.
 
 #### Silent Install
 
@@ -114,13 +114,13 @@ You can run a silent install by adding **-silentinstall** or **-silentinstall0**
 
 * **-silentinstall0** or **-s0** will install the module in 'slot 0'
 * **-silentinstall** or **-s** will install the module in 'slot 1' or in the same location where it is currently installed
-* **-silentuninstall** or **-u** will silently uninstall the module.   You may need to exit the session to remove the module from memory
+* **-silentuninstall** or **-u** will silently uninstall the module. You may need to exit the session to remove the module from memory
 
 By slot we mean the output of **$env:PSModulePath** where 0 is the first module in the list, 1 is the second module and so on.
 If the module is already installed, then if you specify **-silentinstall** or **-s** it will reinstall in the same folder.
 If the module is not installed, then by default it will be installed into path 1
 ```
-PS C:\Windows\system32>  $env:PSModulePath.split(';')
+PS C:\Windows\system32> $env:PSModulePath.split(';')
 C:\Users\avw\Documents\WindowsPowerShell\Modules <-- this is 0
 C:\Program Files (x86)\WindowsPowerShell\Modules <-- this is 1
 PS C:\Windows\system32>
@@ -136,21 +136,21 @@ Here is an example of a silent install:
 PS C:\Windows\system32> C:\Users\avw\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 -silentinstall 
 Detected PowerShell version:    5
 Downloaded AGMPowerLib version: 0.0.0.35
-Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib\
+Installed AGMPowerLib version:  0.0.0.35 in C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib\
 ```
 Here is an example of a silent upgrade:
 ```
 PS C:\Windows\system32> C:\Users\avw\Downloads\AGMPowerLib-main\AGMPowerLib-main\Install-AGMPowerLib.ps1 -silentinstall 
 Detected PowerShell version:    5
 Downloaded AGMPowerLib version: 0.0.0.34
-Found AGMPowerLib version:      0.0.0.34 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
-Installed AGMPowerLib version:  0.0.0.35 in  C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
+Found AGMPowerLib version:      0.0.0.34 in C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
+Installed AGMPowerLib version:  0.0.0.35 in C:\Program Files (x86)\WindowsPowerShell\Modules\AGMPowerLib
 PS C:\Windows\system32>
 ```
 
 #### Silent Uninstall
 
-You can uninstall the module silently by adding **-silentuninstall** or **-u**  to the Install command.  
+You can uninstall the module silently by adding **-silentuninstall** or **-u** to the Install command. 
 
 # Usage Examples
 
@@ -190,11 +190,11 @@ The following examples were all moved from the Readme to the Usage Examples page
 Have a patch that will benefit this project? Awesome! Follow these steps to have
 it accepted.
 
-1.  Please sign our [Contributor License Agreement](CONTRIBUTING.md).
-1.  Fork this Git repository and make your changes.
-1.  Create a Pull Request.
-1.  Incorporate review feedback to your changes.
-1.  Accepted!
+1. Please sign our [Contributor License Agreement](CONTRIBUTING.md).
+1. Fork this Git repository and make your changes.
+1. Create a Pull Request.
+1. Incorporate review feedback to your changes.
+1. Accepted!
 
 ## License
 

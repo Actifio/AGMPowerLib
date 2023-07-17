@@ -23,13 +23,13 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     .EXAMPLE
     Import-AGMLibOnvault -listdiskpools
 
-    List all disk pools. The appliance is the Appliance that will be targeted for import.  
+    List all disk pools. The appliance is the Appliance that will be targeted for import. 
     You will use the diskpoolid as part of all further commands
 
     .EXAMPLE
     Import-AGMLibOnvault -diskpoolid 199085 -listapplianceids
 
-    List all appliances that have written to diskpoolid 12717.  
+    List all appliances that have written to diskpoolid 12717. 
     You will use the applianceid as part of all further commands. It is the Appliance that wrote the backups
 
     .EXAMPLE
@@ -131,7 +131,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
     # list appliance
     if (($listapplianceids) -and ($diskpoolid))
     {
-        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters
+        $appliancegrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters
         if ($appliancegrab.cluster.clusterid.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
@@ -174,7 +174,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         if ($diskpoolgrab.count -eq 1)
         {
             $diskpoolid = $diskpoolgrab.id
-            write-host "Only one OnVault diskpool was found. We will use this one:"  
+            write-host "Only one OnVault diskpool was found. We will use this one:" 
             write-host ""
             write-host $diskpoolgrab.name "(ID: $diskpoolid)"
             write-host ""
@@ -203,13 +203,13 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
                     break
                 }
             }
-            $diskpoolid =  $diskpoolgrab.id[($poolselection - 1)]
+            $diskpoolid = $diskpoolgrab.id[($poolselection - 1)]
         }
         
 
         write-host "Inspecting the disk pool for source appliances"
         write-host ""
-        $appliancegrab = Get-AGMAPIData  -endpoint /diskpool/$diskpoolid/vaultclusters
+        $appliancegrab = Get-AGMAPIData -endpoint /diskpool/$diskpoolid/vaultclusters
         if ($appliancegrab.cluster.clusterid.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any appliances to list"
@@ -248,8 +248,8 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
                     break
                 }
             }
-            $applianceid =  $appliancegrab.cluster.clusterid[($appselection - 1)]
-            $appliancename =  $appliancegrab.cluster.name[($appselection - 1)]
+            $applianceid = $appliancegrab.cluster.clusterid[($appselection - 1)]
+            $appliancename = $appliancegrab.cluster.name[($appselection - 1)]
         }
         Write-Host ""
         write-host "Inspecting the disk pool for source applications created by source Appliance $appliancename"
@@ -340,7 +340,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         Clear-Host
         Write-Host "Guided selection is complete. The values entered resulted in the following command:"
         Write-Host ""
-        Write-Host -nonewline "Import-AGMLibOnvault -diskpoolid $diskpoolid -applianceid $applianceid"  
+        Write-Host -nonewline "Import-AGMLibOnvault -diskpoolid $diskpoolid -applianceid $applianceid" 
         if ($forget) { Write-Host -nonewline " -forget" }
         if ($owner) { Write-Host -nonewline " -owner" }
         if ($monitor) { Write-Host -nonewline " -monitor" }
@@ -381,7 +381,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
         }
         else 
         {
-            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid  
+            $import = Import-AGMOnvault -diskpoolid $diskpoolid -applianceid $applianceid 
         }
     }
 
@@ -408,7 +408,6 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             }
             elseif ($jobgrab.status -like "pending")
             {
-
                 write-host "Import status: " $jobgrab.status 
                 Start-Sleep -s 5
             }
@@ -426,7 +425,7 @@ Function Import-AGMLibOnVault([string]$diskpoolid,[string]$applianceid,[string]$
             }
             else 
             {
-                $done = 1    
+                $done = 1 
             }
         } until ($done -eq 1)
         $importcount = $jobgrab.Result.backup.count
