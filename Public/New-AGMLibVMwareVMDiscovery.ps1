@@ -113,14 +113,14 @@ function New-AGMLibVMwareVMDiscovery {
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceNoBackup')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceBackupUseId')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceBackupUseName')]
-        [int]
+        [string]
         $applianceid,
 
         # The id of the vCenter host.
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceNoBackup')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceBackupUseId')]
         [Parameter(Mandatory = $true, ParameterSetName = 'UseSpecifiedApplianceBackupUseName')]
-        [int]
+        [string]
         $vcenterid,
         
         # Mutually exclusive with -backup option, this option is enabled by default.
