@@ -31,12 +31,16 @@ To learn applianceid (clusterid), use Get-AGMAppliance
 The default is to fetch 5 Instances at a time.  You can change this with -limit.
 You can also manually supply applianceid and vcenterid rather than using a CSV file
 
-If the following is specified then discovery will occur with no backup plans being applied:
--nobackup
+If sltid/sltname and sltname/slpname are not specified, it will default to -nobackup option.
+-nobackup option is mutually exclusive with sltid/sltname or sltname/slpname
+If -nobackup is specified then discovery will occur with no backup plans being applied.
 
 If the following are specified in combination then all instances will have a backup plan applied to it:
--backup -sltname "<name"
--backup -sltid <slt ID learned with Get-AGMSLT>
+-backup -sltname "<name1>" -slpname "<name2>"
+-backup -sltid <slt ID learned with Get-AGMSLT> -slpid <slp ID learned with Get-AGMSLP>
+
+.EXAMPLE
+New-AGMLibVMwareVMDiscovery -discoveryfile discovery.csv -username user-01@abc.com
 
 .EXAMPLE
 New-AGMLibVMwareVMDiscovery -discoveryfile discovery.csv -nobackup -username user-01@abc.com
@@ -46,6 +50,9 @@ New-AGMLibVMwareVMDiscovery -discoveryfile discovery.csv -sltid 2121511 -slpid 6
 
 .EXAMPLE
 New-AGMLibVMwareVMDiscovery -discoveryfile discovery.csv -sltname LocalSnap -slpname LocalProfile -username user-01@abc.com -passfilepath '.vcenterpass'
+
+.EXAMPLE
+New-AGMLibVMwareVMDiscovery -applianceid 143112195179 -vcenterid 2110151 -username user-01@abc.com -passfilepath '.vcenterpass'
 
 .EXAMPLE
 New-AGMLibVMwareVMDiscovery -applianceid 143112195179 -vcenterid 2110151 -nobackup -username user-01@abc.com -passfilepath '.vcenterpass'
