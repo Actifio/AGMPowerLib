@@ -1,5 +1,7 @@
 # Change log
 
+## AGMPowerLIB (0.0.0.74)
+* Add New-AGMLibVMwareVMDiscovery
 ## AGMPowerLIB (0.0.0.73)
 * Minor updates for describing the import of source appIDs for PD snapshots.
 
