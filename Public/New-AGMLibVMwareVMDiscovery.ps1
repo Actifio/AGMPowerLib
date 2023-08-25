@@ -227,8 +227,6 @@ function New-AGMLibVMwareVMDiscovery {
 
         $vcenter_vms_to_protect = Find-vCenterTaggedVMs -VmTag $vmtag
         $vms_to_protect = @()
-        $vms_to_create_app = @()
-        $vms_already_created_app = @()
         New-AGMVMDiscovery -vCenterId $vcenter_id | ForEach-Object {
             # Make sure the discovered VMs contains the VM we want to protect.
             # Skip those VMs that have been already protected
@@ -237,107 +235,135 @@ function New-AGMLibVMwareVMDiscovery {
             }
 
             $vms_to_protect += $_
-
-            if ($_.exists -eq $true) {
-                $vms_already_created_app += $_
-            }
-            else {
-                $vms_to_create_app += $_
-            }
         }
 
         Write-Output "Discovering VMs - Done`n"
 
-        if ($vms_already_created_app.count -gt 0) {
-            Write-Output "VMs have already created an application: $($vms_already_created_app.vmname)`n"
-        }
-
-        if ($vms_to_create_app.count -gt 0) {
-            Write-Output "Creating applications for the VMs: $($vms_to_create_app.vmname)`n"
-
-            $clustername = Get-AGMClusterName -vCenterId $vcenter_id 
-            New-AGMVMApp -vCenterId $vcenter_id -Cluster $appliance.id -ClusterName $clustername -VmUUIDs $vms_to_create_app.uuid
-
-            # Waiting for all apps being added
-            # Check it every 10 seconds until all apps are added
-            $start_ts = [int64](Get-Date -UFormat %s)
-            $apps_filter = $vms_to_create_app | Join-String -Property uuid -OutputPrefix "apptype=VMBackup&" -Separator "&" -FormatString "uniquename={0}"
-            while ($true) {
-                $all_apps = Get-AGMApplication -filtervalue $apps_filter
-
-                # Show progress
-                $progress = 100 * ($all_apps.count / $vms_to_create_app.count)
-                Write-Progress -Activity "Applications creation in progress" -Status $("{0:F2}% Completed" -f $progress) -PercentComplete $progress
-
-                if ($all_apps.count -eq $vms_to_create_app.count) {
-                    Write-Progress "Applications creation - Done" "Done" -Completed
-                    Write-Output "All applications have been created successfully.`n"
-                    break
-                }
-
-                if (([int64](Get-Date -UFormat %s) - $start_ts) -ge $timeout) {
-                    Write-Warning "Timeout ($timeout secs) while waiting for all applications being created.`n"
-                    Write-Warning "Applications have been created so far: $($all_apps.appname)`n"
-                    break
-                }
-
-                Start-Sleep -Seconds 10
-            }
-        }
-        else {
-            Write-Output "Do not need to create applications for the tagged VMs.`n"
-        }
-
-        if ($nobackup) {
-            Write-Output "-nobackup option enabled, won't apply SLA to applications.`n"
-            return
-        }
+        # Group VMs by clustername
+        $vms_grouped_by_clustername = $vms_to_protect | Group-Object -Property "clustername"
         
-        $apps_filter = $vms_to_protect | Join-String -Property uuid -OutputPrefix "apptype=VMBackup&" -Separator "&" -FormatString "uniquename={0}"
-        $all_apps = Get-AGMApplication -filtervalue $apps_filter
+        Write-Output "Clusters need to be processed: $($vms_grouped_by_clustername.Name)"
+        
+        # Loop over groupped VMs to create app and apply SLA
+        $vms_grouped_by_clustername | ForEach-Object {
+            $cluster_name = $_.Name
+            $vms_group = $_.Group
 
-        $apps_protectable = $all_apps | Where-Object { ($_.isprotected -eq $false) -and ($_.protectable -eq 1) }
-        $apps_already_protected = $all_apps | Where-Object { $_.isprotected -eq $true }
+            Write-Output "Now processing the cluster: $cluster_name"
 
-        if ($apps_already_protected.count -gt 0) {
-            Write-Output "$($apps_already_protected.count) applications have already been protected: $($apps_already_protected.appname)`n"
-        }
-
-        if ($apps_protectable.count -le 0) {
-            Write-Warning "No protectable applications.`n"
-            return
-        }
-
-        Write-Output "Fetching SLA list...`n"
-
-        $new_sla_list = @()
-        $apps_protectable | ForEach-Object {
-            $new_sla_list += [PSCustomObject]@{
-                appid = $_.id
-                sltid = $sltid
-                slpid = $slpid
+            $vms_to_create_app = @()
+            $vms_already_created_app = @()
+            $vms_group | ForEach-Object {
+                if ($_.exists -eq $true) {
+                    $vms_already_created_app += $_
+                }
+                else {
+                    $vms_to_create_app += $_
+                }
             }
+
+            if ($vms_already_created_app.count -gt 0) {
+                Write-Output "VMs have already created an application: $($vms_already_created_app.vmname)`n"
+            }
+    
+            if ($vms_to_create_app.count -gt 0) {
+                Write-Output "Creating applications for the VMs: $($vms_to_create_app.vmname)`n"
+    
+                New-AGMVMApp -vCenterId $vcenter_id -Cluster $appliance.id -ClusterName $cluster_name -VmUUIDs $vms_to_create_app.uuid
+    
+                Invoke-WaitingAppsCreationCompleted -VmsToCreateApp $vms_to_create_app
+            }
+            else {
+                Write-Output "Do not need to create applications for the tagged VMs.`n"
+            }
+
+            if ($nobackup) {
+                Write-Output "-nobackup option enabled, won't apply SLA to applications.`n"
+                return
+            }
+            
+            $apps_filter = $vms_to_protect | Join-String -Property uuid -OutputPrefix "apptype=VMBackup&" -Separator "&" -FormatString "uniquename={0}"
+            $all_apps = Get-AGMApplication -filtervalue $apps_filter
+    
+            $apps_protectable = $all_apps | Where-Object { ($_.isprotected -eq $false) -and ($_.protectable -eq 1) }
+            $apps_already_protected = $all_apps | Where-Object { $_.isprotected -eq $true }
+    
+            if ($apps_already_protected.count -gt 0) {
+                Write-Output "$($apps_already_protected.count) applications have already been protected: $($apps_already_protected.appname)`n"
+            }
+    
+            if ($apps_protectable.count -le 0) {
+                Write-Warning "No protectable applications.`n"
+                return
+            }
+    
+            Write-Output "Fetching SLA list...`n"
+    
+            $new_sla_list = @()
+            $apps_protectable | ForEach-Object {
+                $new_sla_list += [PSCustomObject]@{
+                    appid = $_.id
+                    sltid = $sltid
+                    slpid = $slpid
+                }
+            }
+    
+            Write-Output "SLA list:"
+            Write-Output $new_sla_list
+    
+            Write-Output "`nApplying SLA to all applications...`n"
+            $new_sla_list | ForEach-Object -ThrottleLimit $parallelism -Parallel {
+                $VerbosePreference = $using:VerbosePreference
+                $agmip = $using:agmip
+                $AGMSESSIONID = $using:AGMSESSIONID
+                $AGMToken = $using:AGMToken
+    
+                $new_sla_cmd = 'New-AGMSLA -appid ' + $_.appid + ' -sltid ' + $_.sltid + ' -slpid ' + $_.slpid
+                Write-Verbose "$(Get-Date) Running $new_sla_cmd`n"
+    
+                New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid > $null
+                Start-Sleep -Seconds 5
+            }
+    
+            Write-Output "Successfully protected tagged VMs for Cluster: $cluster_name, vCenter ID: $vcenter_id, Appliance applianceid: $appliance_id, Appliance Name: $($appliance.name)!`n"
         }
-
-        Write-Output "SLA list:"
-        Write-Output $new_sla_list
-
-        Write-Output "`nApplying SLA to all applications...`n"
-        $new_sla_list | ForEach-Object -ThrottleLimit $parallelism -Parallel {
-            $VerbosePreference = $using:VerbosePreference
-            $agmip = $using:agmip
-            $AGMSESSIONID = $using:AGMSESSIONID
-            $AGMToken = $using:AGMToken
-
-            $new_sla_cmd = 'New-AGMSLA -appid ' + $_.appid + ' -sltid ' + $_.sltid + ' -slpid ' + $_.slpid
-            Write-Verbose "$(Get-Date) Running $new_sla_cmd`n"
-
-            New-AGMSLA -appid $_.appid -sltid $_.sltid -slpid $_.slpid > $null
-            Start-Sleep -Seconds 5
-        }
-
-        Write-Output "Successfully protected tagged VMs for vCenter ID: $vcenter_id, Appliance applianceid: $appliance_id, Appliance Name: $($appliance.name)!`n"
     }
 
     Write-Output "Successfully protected all tagged VMs!`n"
+}
+
+function Invoke-WaitingAppsCreationCompleted {
+    [CmdletBinding()]
+    param (
+        # VMs that need to create an application for.
+        [Parameter(Mandatory)]
+        [PSCustomObject[]]
+        $VmsToCreateApp
+    )
+
+    # Waiting for all apps being added
+    # Check it every 10 seconds until all apps are added
+    $start_ts = [int64](Get-Date -UFormat %s)
+    $apps_filter = $VmsToCreateApp | Join-String -Property uuid -OutputPrefix "apptype=VMBackup&" -Separator "&" -FormatString "uniquename={0}"
+    while ($true) {
+        $all_apps = Get-AGMApplication -filtervalue $apps_filter
+
+        # Show progress
+        $progress = 100 * ($all_apps.count / $VmsToCreateApp.count)
+        Write-Progress -Activity "Applications creation in progress" -Status $("{0:F2}% Completed" -f $progress) -PercentComplete $progress
+
+        if ($all_apps.count -eq $VmsToCreateApp.count) {
+            Write-Progress "Applications creation - Done" "Done" -Completed
+            Write-Output "All applications have been created successfully.`n"
+            break
+        }
+
+        if (([int64](Get-Date -UFormat %s) - $start_ts) -ge $timeout) {
+            Write-Warning "Timeout ($timeout secs) while waiting for all applications being created.`n"
+            Write-Warning "Applications have been created so far: $($all_apps.appname)`n"
+            break
+        }
+
+        Start-Sleep -Seconds 10
+    }
 }
