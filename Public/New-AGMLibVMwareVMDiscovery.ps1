@@ -197,15 +197,11 @@ function New-AGMLibVMwareVMDiscovery {
         )
     }
 
-    # Get SLT and SLP ids if sltname and slpname are passed in
-    if ($sltname -and $slpname) {
-        $sltid = (Get-AGMSLT -filtervalue "name=$sltname").id
-        $slpid = (Get-AGMSLP -filtervalue "name=$slpname").id
-
-        if (!$sltid -or !$slpid) {
-            Get-AGMErrorMessage -messagetoprint "The specified slt name or the slp name does not exist."
-            return
-        }
+    if ($sltid -and $slpid) {
+        Invoke-ValidatePrameters -SltId $sltid -SlpId $slpid -ErrorAction Stop
+    }
+    elseif ($sltname -and $slpname) {
+        Invoke-ValidatePrameters -SltName $sltname -SlpName $slpname -ErrorAction Stop
     }
 
     # Loop over the applianceid and vcenterid list, apply SLA to all the tagged VMs.
@@ -296,6 +292,8 @@ function New-AGMLibVMwareVMDiscovery {
                 Write-Warning "No protectable applications.`n"
                 return
             }
+
+            Write-Output "Protecting applications: $($apps_protectable.appname)`n"
     
             Write-Output "Fetching SLA list...`n"
     
@@ -311,7 +309,7 @@ function New-AGMLibVMwareVMDiscovery {
             Write-Output "SLA list:"
             Write-Output $new_sla_list
     
-            Write-Output "`nApplying SLA to all applications...`n"
+            Write-Output "`nApplying SLA to all protectable applications...`n"
             $new_sla_list | ForEach-Object -ThrottleLimit $parallelism -Parallel {
                 $VerbosePreference = $using:VerbosePreference
                 $agmip = $using:agmip
@@ -366,4 +364,49 @@ function Invoke-WaitingAppsCreationCompleted {
 
         Start-Sleep -Seconds 10
     }
+}
+
+function Invoke-ValidatePrameters {
+    [CmdletBinding()]
+    param (
+        # The id of the SLT
+        # Mutually exclusive with -sltname and -slpname options.
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseId')]
+        [int]
+        $SltId,
+
+        # The id of the SLP
+        # Mutually exclusive with -sltname and -slpname options.
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseId')]
+        [int]
+        $SlpId,
+
+        # The name of the SLT
+        # Mutually exclusive with -sltid and -slpid options.
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseName')]
+        [string]
+        $SltName,
+
+        # The name of the SLP
+        # Mutually exclusive with -sltid and -slpid options.
+        [Parameter(Mandatory = $true, ParameterSetName = 'UseName')]
+        [string]
+        $SlpName
+    )
+
+    # Get SLT and SLP ids if sltname and slpname are passed in
+    $slt_filter = "id=$SltId"
+    $slp_filter = "id=$SlpId"
+    if ($SltName -and $SlpName) {
+        $slt_filter = "name=$SltName"
+        $slp_filter = "name=$SlpName"
+    }
+
+    $slt = Get-AGMSLT -filtervalue $slt_filter
+    $slp = Get-AGMSLP -filtervalue $slp_filter
+
+    if (!$slt.id -or !$slp.id) {
+        throw "The specified slt id/name or the slp id/name does not exist."
+    }
+
 }
