@@ -349,7 +349,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             if ($credgrab.credentialid)
             {
                 $srcid = $credgrab.srcid
-                $diskpoolgrab = $diskpooldatagrab | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.srcid -eq srcid)}
+                $diskpoolgrab = $diskpooldatagrab | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.srcid -eq $srcid)}
                 if ($diskpoolgrab.name)
                 {
                     $poolname = $diskpoolgrab.name
