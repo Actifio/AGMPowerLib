@@ -329,7 +329,7 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             $ct = Get-Date
             write-host "$ct Running Get-AGMDiskpool"
         }
-        $diskpooldatagrab = Get-AGMDiskpool -filtervalue pooltype=cloud | Select-object name,@{N='credentialid';E={$_.cloudcredential.id}}
+        $diskpooldatagrab = Get-AGMDiskpool -filtervalue pooltype=cloud | Select-object name,srcid,@{N='credentialid';E={$_.cloudcredential.id}}
         if ($textoutput)
         {
             $ct = Get-Date
@@ -348,8 +348,8 @@ Function New-AGMLibGCEInstanceDiscovery ([string]$discoveryfile,[switch]$nobacku
             $credgrab = ($srccredgrab | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.applianceid -eq $cred.applianceid)})
             if ($credgrab.credentialid)
             {
-                #$srcid = $credgrab.srcid
-                $diskpoolgrab = $diskpooldatagrab | where-object {($_.credentialid -eq $cred.credentialid)}
+                $srcid = $credgrab.srcid
+                $diskpoolgrab = $diskpooldatagrab | where-object {($_.credentialid -eq $cred.credentialid) -and ($_.srcid -eq srcid)}
                 if ($diskpoolgrab.name)
                 {
                     $poolname = $diskpoolgrab.name
