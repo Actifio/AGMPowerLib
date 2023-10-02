@@ -1,4 +1,6 @@
 # Change log
+## AGMPowerLIB (0.0.0.75)
+* fix duplicate srcid issue in New-AGMLibGCEInstanceDiscovery
 
 ## AGMPowerLIB (0.0.0.74)
 * Add New-AGMLibVMwareVMDiscovery
