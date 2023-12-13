@@ -40,28 +40,28 @@ If the following are specified in combination then all instances will have a bac
 -backup -sltid <slt ID learned with Get-AGMSLT> -slpid <slp ID learned with Get-AGMSLP>
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -username user-01@abc.com
+New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -username solution-user-01@gve.local
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -nobackup -username user-01@abc.com
+New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -nobackup -username solution-user-01@gve.local
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -sltid 2121511 -slpid 6006 -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -sltid 2121511 -slpid 6006 -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -sltname LocalSnap -slpname LocalProfile -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -discoveryfile discovery.csv -sltname LocalSnap -slpname LocalProfile -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -nobackup -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -nobackup -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -sltid 2121511 -slpid 6006 -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -sltid 2121511 -slpid 6006 -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 
 .EXAMPLE
-New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -sltname LocalSnap -slpname LocalProfile -username user-01@abc.com -passfilepath '.vcenterpass'
+New-AGMLibVMwareVMDiscovery -vmtag mytag -applianceid 143112195179 -vcenterid 2110151 -sltname LocalSnap -slpname LocalProfile -username solution-user-01@gve.local -passfilepath '.vcenterpass'
 #>
 function New-AGMLibVMwareVMDiscovery {
     [CmdletBinding()]
