@@ -1160,10 +1160,6 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     {
         $json = $json + '{"displayName":"HOST PROJECT ID","name":"hostprojectid","helpId":1014,"type":"text","description":"SharedVPC Host Project ID","currentValue":"' +$sharedvpcprojectid +'","modified":true,"size":80},'
     }
-    else 
-    {
-        $json = $json + '{"displayName":"HOST PROJECT ID","name":"hostprojectid","helpId":1014,"type":"text","description":"SharedVPC Host Project ID","currentValue":"","modified":false,"size":80},'
-    }
     #region
     $json = $json + '{"displayName":"REGION","name":"region","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"regionname","name":"' +$region +'","selected":true}],"_getchoices":"getRegions#handle,cloudcredential","_dependent":["zone","machinetype","vpc","subnet","privateips","externalip"]},'
     # zone
