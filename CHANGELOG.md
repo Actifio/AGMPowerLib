@@ -1,4 +1,6 @@
 # Change log
+## AGMPowerLIB (0.0.0.76)
+* Removed hostprojectid from the payload of New-AGMLibGCEConversion
 ## AGMPowerLIB (0.0.0.75)
 * fix duplicate srcid issue in New-AGMLibGCEInstanceDiscovery
 
