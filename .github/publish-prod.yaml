@@ -1,0 +1,18 @@
+name: Publish PowerShell Module
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  publish-to-gallery:
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish to PowerShell Gallery
+        env:
+          NUGET_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
+        shell: pwsh
+        run: |
+          Publish-Module -Path . -NuGetApiKey $env:NUGET_KEY -Verbose
