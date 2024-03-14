@@ -1,4 +1,6 @@
 # Change log
+## AGMPowerLIB (0.0.0.77)
+* Completely removed hostprojectid from the payload of New-AGMLibGCEConversion as it's not used anywhere and will fail New-AGMLibGCEConversion.
 ## AGMPowerLIB (0.0.0.76)
 * Removed hostprojectid from the payload of New-AGMLibGCEConversion
 ## AGMPowerLIB (0.0.0.75)

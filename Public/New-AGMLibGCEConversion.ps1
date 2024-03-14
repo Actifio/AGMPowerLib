@@ -1155,19 +1155,14 @@ Function New-AGMLibGCEConversion([string]$appid,[string]$appname,[string]$imagei
     $json = '{"cloudvmoptions":{"@type":"cloudVmMountRest","fields":[{"displayName":"","name":"cloudcredentials","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":[{"displayName":"CLOUD CREDENTIALS NAME","name":"cloudcredential","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"credentialname","name":"' +$srcid +'","selected":true}],"_getchoices":"getCloudCredentials#cloudcredentiallist,image","_dependent":["project","region","zone","machinetype","vpc","subnet","privateips","externalip"],"disabled":true,"hidden":true},'
     # project name
     $json = $json + '{"displayName":"PROJECT NAME","name":"project","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"projectname","name":"' +$projectname +'","selected":true}],"_getchoices":"getAllProjects#handle,cloudcredential","_dependent":["region","zone","machinetype","vpc","subnet","privateips","externalip"]},'
-    # host project name
-    if ($sharedvpcprojectid)
-    {
-        $json = $json + '{"displayName":"HOST PROJECT ID","name":"hostprojectid","helpId":1014,"type":"text","description":"SharedVPC Host Project ID","currentValue":"' +$sharedvpcprojectid +'","modified":true,"size":80},'
-    }
-    #region
+    # region
     $json = $json + '{"displayName":"REGION","name":"region","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"regionname","name":"' +$region +'","selected":true}],"_getchoices":"getRegions#handle,cloudcredential","_dependent":["zone","machinetype","vpc","subnet","privateips","externalip"]},'
     # zone
     $json = $json + '{"displayName":"ZONE","name":"zone","helpId":1014,"type":"selection","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"zonename","name":"' +$zone +'","selected":true}],"_getchoices":"getZonesPerRegion#handle,cloudcredential,region","_dependent":["machinetype","vpc","subnet","privateips","externalip"]}],"groupType":"layout"},{"displayName":"","name":"instancesettings","helpId":1014,"type":"group","description":"","required":true,"modified":false,"children":['
-    #instance name
+    # instance name
     $json = $json + '{"displayName":"INSTANCE NAME","name":"instancename","helpId":1014,"type":"text","description":"","required":true,"modified":false,"size":40,"_getDefault":"getDefaultInstanceName","currentValue":"' +$instancename +'"},'
     $json = $json + '{"displayName":"MACHINE TYPE","name":"machinetype","helpId":1014,"type":"dropdown","description":"","required":true,"modified":false,"dynamic":true,"choices":[{"displayName":"machinetype","name":"' +$machinetype +'","selected":true,"groupType":"Best Fit"}],"_getchoices":"getMachineTypes#handle,cloudcredential,region,project,zone","_dependent":["networksettings"],"groupBy":true},' 
-    #service account
+    # service account
     $json = $json + '{"displayName":"SERVICE ACCOUNT","name":"serviceaccount","helpId":1014,"type":"text","description":"","required":true,"currentValue":"' +$serviceaccount +'","modified":false,"size":40,"_getDefault":"getDefaultServiceAccount"},'
     # sole tenant name
     if ($nodegroup)
