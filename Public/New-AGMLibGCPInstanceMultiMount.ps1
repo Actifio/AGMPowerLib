@@ -134,12 +134,15 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 if ($_.nic3internalip) { $mountcommand = $mountcommand + ' -nic3internalip ' +$_.nic3internalip } 
                 if ($_.nic3externalip) { $mountcommand = $mountcommand + ' -nic3externalip ' +$_.nic3externalip } 
                 if ($_.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $_.poweronvm } 
-                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel } 
-                if ($_.disktype) { $mountcommand = $mountcommand + ' -disktype ' + $_.disktype } 
+                if ($_.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $_.retainlabel }
+                if ($_.disktype) {
+                    $types = ($_.disktype -split ",") | ForEach-Object { ($_ -split "\s+-\s+")[1].Trim() }
+                    $mountcommand += ' -disktype ' + ($types -join ",")
+                }
                 $agmip = $using:agmip 
                 $AGMToken = $using:AGMToken 
                 $AGMSESSIONID = $using:AGMSESSIONID
-                Invoke-Expression $mountcommand 
+                Invoke-Expression $mountcommand
                 Start-Sleep -seconds 15
             } -throttlelimit $limit
         }
@@ -177,7 +180,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 $agmip = $using:agmip 
                 $AGMSESSIONID = $using:AGMSESSIONID
                 $IGNOREAGMCERTS = $using:IGNOREAGMCERTS
-                Invoke-Expression $mountcommand 
+                Invoke-Expression $mountcommand
                 Start-Sleep -seconds 15
             } -throttlelimit $limit
         }
@@ -215,7 +218,8 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             if ($app.poweronvm) { $mountcommand = $mountcommand + ' -poweronvm ' + $app.poweronvm } 
             if ($app.retainlabel) { $mountcommand = $mountcommand + ' -retainlabel ' + $app.retainlabel } 
             if ($app.disktype) { $mountcommand = $mountcommand + ' -disktype ' + $app.disktype } 
-            $runcommand = Invoke-Expression $mountcommand 
+            $runcommand = Invoke-Expression $mountcommand
+
         
             if ($runcommand.errormessage)
             { 
@@ -290,7 +294,8 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 }
             }
         }
-        
+
+
         if (!($textoutput))
         {
             $printarray
