@@ -1,6 +1,4 @@
 # Change log
-## AGMPowerLIB (0.0.0.78)
-* fix Unable to list all VPC using power CLI module
 ## AGMPowerLIB (0.0.0.77)
 * Completely removed hostprojectid from the payload of New-AGMLibGCEConversion as it's not used anywhere and will fail New-AGMLibGCEConversion.
 ## AGMPowerLIB (0.0.0.76)
