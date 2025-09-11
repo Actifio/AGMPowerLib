@@ -10,6 +10,9 @@ jobs:
     environment: prod
     steps:
       - uses: actions/checkout@v4
+      - name: Install AGMPowerCLI
+        run: Install-Module -Name AGMPowerCLI -Force -Scope CurrentUser
+        shell: pwsh
       - name: Publish to PowerShell Gallery
         env:
           NUGET_KEY: ${{ secrets.POWERSHELL_GALLERY_API_KEY }}
