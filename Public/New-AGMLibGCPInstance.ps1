@@ -19,6 +19,7 @@ Function New-AGMLibGCPInstance (
         [string]$imageid,
         [string]$imagename,
         [string]$srcid,
+        [string]$clusterid,
         [string]$projectname,
         [string]$zone,
         [string]$region,
@@ -84,6 +85,7 @@ Function New-AGMLibGCPInstance (
     -imageid         You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
     -imagename       You need to supply either the imageid or the imagename or both (or specify -appid instead to get the latest image)
     -srcid           Learn this with Get-AGMLibCredentialSrcID.  You need to use the correct srcid that matches the appliance that is protecting the application.
+    -clusterid       Enforce the mount to happen on the image from this cluster (optional). If not specified, latest image will be picked irrespective of the Sky Appliance it belong to.
     -serviceaccount  The service account that is being used to request the instance creation.  This is optional.  Otherwise it will use the account from the cloud credential
     -projectname     This is the unique Google Project name
     -region          This is the GCP location such as: australia-southeast1 (used only by Actifio Sky Appliance)
@@ -1739,7 +1741,14 @@ Function New-AGMLibGCPInstance (
     # if recovery point specified without imagename or ID
     if ( (!($imagename)) -and (!($imageid)) -and ($appid) )
     {
-        $imagecheck = Get-AGMImage -filtervalue "appid=$appid&jobclass=snapshot&apptype=GCPInstance" -sort id:desc -limit 1
+        $imageFilter = "appid=$appid&jobclass=snapshot&apptype=GCPInstance"
+        
+        # Inject the cluster constraint if provided
+        if ($clusterid) {
+            $imageFilter += "&clusterid=$clusterid"
+        }
+
+        $imagecheck = Get-AGMImage -filtervalue $imageFilter -sort id:desc -limit 1
         if ($imagecheck.id.count -eq 0)
         {
             Get-AGMErrorMessage -messagetoprint "Failed to find any images for appid $appid"

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textoutput,[decimal]$limit) 
+Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[string]$clusterid,[switch]$textoutput,[decimal]$limit) 
 {
     <#
     .SYNOPSIS
@@ -111,6 +111,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
                 if ($_.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$_.nic0hostproject +'"' }
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($using:clusterid) { $mountcommand = $mountcommand + ' -clusterid "' + $using:clusterid + '"'}
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
                 if ($_.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
                 if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
@@ -152,6 +153,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
                 $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$_.srcid +' -zone ' +$_.zone +' -projectname ' +$_.projectname +' -machinetype ' +$_.machinetype +' -instancename ' +$_.instancename +' -nic0network "' +$_.nic0network +'" -nic0subnet "' +$_.nic0subnet +'"'
                 if ($_.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$_.nic0hostproject +'"' }
                 if ($_.appid) { $mountcommand = $mountcommand + ' -appid "' +$_.appid +'"' }
+                if ($using:clusterid) { $mountcommand = $mountcommand + ' -clusterid "' + $using:clusterid + '"'}
                 if ($_.appname) {  $mountcommand = $mountcommand + ' -appname "' +$_.appname +'"' }
                 if ($_.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
                 if ($_.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$_.networktags +'"' } 
@@ -193,6 +195,7 @@ Function New-AGMLibGCPInstanceMultiMount ([string]$instancelist,[switch]$textout
             $mountcommand = 'New-AGMLibGCPInstance -srcid ' +$app.srcid +' -zone ' +$app.zone +' -projectname ' +$app.projectname +' -machinetype ' +$app.machinetype +' -instancename ' +$app.instancename +' -nic0network "' +$app.nic0network +'" -nic0subnet "' +$app.nic0subnet +'"'
             if ($app.nic0hostproject) { $mountcommand = $mountcommand + ' -nic0hostproject "' +$app.nic0hostproject +'"' }
             if ($app.appid) { $mountcommand = $mountcommand + ' -appid "' +$app.appid +'"' }
+            if ($clusterid) { $mountcommand = $mountcommand + ' -clusterid "' + $clusterid +'"'}
             if ($app.appname) {  $mountcommand = $mountcommand + ' -appname "' +$app.appname +'"' }
             if ($app.soletenancy) {  $mountcommand = $mountcommand + ' -soletenancy "' +$_.soletenancy +'"' }
             if ($app.networktags) { $mountcommand = $mountcommand + ' -networktags "' +$app.networktags +'"' } 
